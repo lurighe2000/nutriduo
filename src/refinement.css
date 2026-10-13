@@ -264,6 +264,8 @@ h3 {
 .dark .suggestion {
   color: var(--ink);
 }
+.dark .button:not(.secondary), .dark .mobile-add { color: #102238 !important; }
+.dark .button.secondary { color: var(--ink) !important; }
 .dark .photo-tile > .icon-button {
   background: var(--surface);
 }
