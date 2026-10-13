@@ -1,0 +1,733 @@
+@media (min-width: 1550px) {
+  .main-content {
+    padding-top: 35px;
+  }
+  .energy-body {
+    gap: 42px;
+  }
+  .energy-ring {
+    width: 200px;
+    height: 200px;
+  }
+  .energy-copy > strong {
+    font-size: 44px;
+  }
+}
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 195px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .main-shell {
+    margin-left: 195px;
+  }
+  .main-content {
+    padding: 25px;
+  }
+  .topbar {
+    padding: 0 25px;
+  }
+  .energy-card {
+    padding: 23px;
+  }
+  .energy-body {
+    gap: 15px;
+  }
+  .energy-ring {
+    width: 155px;
+    height: 155px;
+  }
+  .energy-copy > strong {
+    font-size: 31px;
+  }
+  .energy-copy .eyebrow {
+    font-size: 12px;
+  }
+  .energy-note {
+    display: none;
+  }
+  .macro-row {
+    gap: 12px;
+  }
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1.65fr) minmax(230px, 1fr);
+  }
+  .suggestions {
+    gap: 12px;
+  }
+  .suggestion {
+    padding: 18px 13px;
+    gap: 10px;
+  }
+  .suggestion-icon {
+    display: none;
+  }
+  .dashboard-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stats-inline {
+    gap: 10px;
+  }
+  .stats-inline strong {
+    font-size: 21px;
+  }
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 980px) {
+  .sidebar {
+    width: 85px;
+    padding: 25px 12px;
+  }
+  .sidebar .brand {
+    font-size: 0;
+    gap: 0;
+    margin-bottom: 40px;
+    justify-content: center;
+  }
+  .sidebar .brand > span:not(.brand-icon) {
+    font-size: 0;
+  }
+  .sidebar .brand-icon {
+    margin: 0;
+  }
+  .sidebar-label,
+  .sidebar nav button > span,
+  .sidebar-note,
+  .profile-switch > span:not(.avatar),
+  .profile-switch > svg {
+    display: none;
+  }
+  .sidebar nav button {
+    justify-content: center;
+    padding: 15px;
+  }
+  .profile-switch {
+    margin-top: auto;
+    justify-content: center;
+  }
+  .main-shell {
+    margin-left: 85px;
+  }
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
+  }
+  .energy-body {
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+  }
+  .energy-copy {
+    text-align: center;
+  }
+  .energy-copy > strong {
+    font-size: 26px;
+    margin: 3px 0;
+  }
+  .energy-copy p {
+    display: none;
+  }
+  .energy-ring {
+    width: 170px;
+    height: 170px;
+  }
+  .energy-card .pill {
+    font-size: 12px;
+  }
+  .energy-card .card-heading {
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .hydration-card {
+    justify-content: center;
+  }
+  .hydration-card .card-heading {
+    margin-bottom: auto;
+  }
+  .water-number {
+    margin-top: 35px;
+  }
+  .water-glasses {
+    margin-bottom: 30px;
+  }
+  .fiber {
+    margin-top: 30px;
+  }
+  .macro-row {
+    padding-top: 17px;
+  }
+  .macro > span {
+    font-size: 12px;
+  }
+  .energy-card h2 {
+    font-size: 14px;
+  }
+  .metric-grid {
+    gap: 15px;
+  }
+  .metric {
+    padding: 20px;
+  }
+  .metric > strong {
+    font-size: 30px;
+  }
+  .workout-intro {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .workout-intro .actions {
+    margin: 0;
+  }
+  .dashboard-bottom {
+    grid-template-columns: 1fr;
+  }
+  .suggestions {
+    grid-template-columns: 1fr;
+  }
+  .suggestion {
+    align-items: center;
+    padding: 18px;
+    gap: 15px;
+  }
+  .suggestion-icon {
+    display: grid;
+  }
+  .suggestion h3 {
+    font-size: 15px;
+  }
+  .suggestion p {
+    font-size: 14px;
+    margin: 0;
+  }
+  .suggestion small {
+    display: none;
+  }
+  .coach-note {
+    padding: 15px 8px;
+  }
+}
+@media (max-width: 650px) {
+  .sidebar {
+    display: none;
+  }
+  .main-shell {
+    margin: 0;
+  }
+  .topbar {
+    height: 67px;
+    padding: 0 20px;
+  }
+  .breadcrumb {
+    font-size: 12px;
+  }
+  .breadcrumb span {
+    padding: 0 10px;
+  }
+  .local-badge {
+    font-size: 12px;
+    max-width: 160px;
+    line-height: 1.5;
+  }
+  .topbar-right {
+    gap: 13px;
+  }
+  .main-content {
+    padding: 20px 18px 110px;
+  }
+  .date-control {
+    margin-bottom: 18px;
+    font-size: 12px;
+  }
+  .section-title {
+    align-items: flex-start;
+  }
+  .section-title h1 {
+    font-size: 27px;
+    max-width: 300px;
+  }
+  .section-title > .button {
+    display: none;
+  }
+  .section-title .eyebrow {
+    font-size: 12px;
+  }
+  .page-subtitle {
+    font-size: 14px;
+    margin-bottom: 22px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+  .energy-body {
+    flex-direction: row;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0 24px;
+  }
+  .energy-copy {
+    text-align: left;
+    flex: 1;
+  }
+  .energy-ring {
+    height: 150px;
+    width: 150px;
+  }
+  .energy-copy .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  .energy-copy strong {
+    font-size: 30px;
+    margin: 9px 0;
+  }
+  .energy-copy p {
+    display: block;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .energy-card {
+    padding: 21px;
+  }
+  .energy-card h2 {
+    font-size: 15px;
+  }
+  .energy-card .pill {
+    font-size: 12px;
+  }
+  .macro-row {
+    gap: 13px;
+    padding-top: 20px;
+  }
+  .macro > span {
+    font-size: 12px;
+  }
+  .macro strong {
+    font-size: 21px;
+  }
+  .hydration-card {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px 14px;
+  }
+  .hydration-card .card-heading {
+    grid-column: 1/3;
+    margin: 0 0 5px;
+  }
+  .water-number {
+    font-size: 32px;
+    margin: 14px 0;
+    align-self: center;
+    white-space: nowrap;
+  }
+  .water-glasses {
+    margin: 0;
+    align-self: center;
+  }
+  .water-glasses svg {
+    width: 17px;
+  }
+  .hydration-card > .muted {
+    grid-column: 1/3;
+    margin: 3px 0 10px;
+  }
+  .water-actions {
+    grid-column: 1/3;
+  }
+  .hydration-card .text-button {
+    grid-column: 1/3;
+    font-size: 12px;
+    padding: 8px 0;
+  }
+  .fiber {
+    grid-column: 1/3;
+    margin-top: 6px;
+    padding-top: 14px;
+  }
+  .training-preview {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 15px;
+  }
+  .training-preview .card-heading {
+    grid-column: 1/3;
+    margin-bottom: 6px;
+  }
+  .training-preview h2 {
+    font-size: 24px;
+    margin: 10px 0;
+  }
+  .training-preview p {
+    font-size: 12px;
+    align-self: center;
+    margin: 0;
+  }
+  .training-footer {
+    grid-column: 1/3;
+    margin-top: 15px;
+  }
+  .section-heading {
+    margin-top: 28px;
+  }
+  .section-heading h2 {
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .section-heading > span {
+    display: none;
+  }
+  .dashboard-bottom {
+    gap: 8px;
+    margin-top: 17px;
+  }
+  .trend-card {
+    padding: 22px;
+  }
+  .stats-inline {
+    gap: 10px;
+  }
+  .stats-inline strong {
+    font-size: 23px;
+  }
+  .stats-inline span {
+    font-size: 12px;
+  }
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .bottom-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    min-width: 55px;
+    min-height: 45px;
+  }
+  .bottom-nav button.active {
+    color: var(--primary);
+  }
+  .bottom-nav button.active svg {
+    stroke-width: 2.5;
+  }
+  .mobile-add {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    bottom: calc(85px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 52px;
+    height: 52px;
+    z-index: 15;
+    border-radius: 17px;
+    background: var(--primary);
+    color: white !important;
+    box-shadow: 0 6px 15px #213c6430;
+  }
+  .toast {
+    bottom: 150px;
+    font-size: 13px;
+    max-height: 30dvh;
+    overflow: auto;
+  }
+  .tabs {
+    gap: 0;
+    margin-bottom: 22px;
+  }
+  .tabs button {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  .tabs.compact button {
+    font-size: 12px;
+    padding: 10px;
+    gap: 5px;
+  }
+  .tabs.compact button svg {
+    width: 14px;
+  }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 94dvh;
+    margin: auto 0 0;
+    border-radius: 22px 22px 0 0;
+    border-bottom: 0;
+  }
+  .modal-head {
+    padding: 18px 20px;
+  }
+  .modal-head h2 {
+    font-size: 20px;
+  }
+  .modal-content {
+    padding: 20px 18px calc(26px + env(safe-area-inset-bottom));
+  }
+  .form-grid {
+    gap: 0 12px;
+  }
+  .field > span {
+    font-size: 14px;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  .ingredient {
+    padding: 15px 12px;
+  }
+  .ingredient-top {
+    grid-template-columns: 1.6fr 1fr 25px;
+    gap: 8px;
+  }
+  .ingredient-top .field > span {
+    font-size: 12px;
+  }
+  .ingredient-top input {
+    padding: 10px 7px;
+  }
+  .ingredient-top .icon-button {
+    min-width: 28px;
+  }
+  .macro-fields {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 10px;
+  }
+  .record-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+  .record-grid .card {
+    padding: 22px;
+  }
+  .record-grid .button {
+    font-size: 13px;
+  }
+  .metric-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+  }
+  .metric-grid .metric:last-child {
+    grid-column: 1/3;
+  }
+  .metric {
+    padding: 20px;
+    margin-bottom: 0;
+  }
+  .metric > strong {
+    font-size: 29px;
+  }
+  .metric > span {
+    font-size: 12px;
+  }
+  .chart-card {
+    margin-top: 20px;
+    padding: 20px 16px;
+  }
+  .card-heading h2 {
+    font-size: 15px;
+  }
+  .segmented button {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .photo-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .photo-tile img {
+    height: 190px;
+  }
+  .comparison img {
+    height: 260px;
+  }
+  .comparison figcaption {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .achievement-grid {
+    grid-template-columns: 1fr;
+  }
+  .workout-intro {
+    padding: 24px;
+  }
+  .workout-intro h2 {
+    font-size: 24px;
+  }
+  .workout-intro .actions {
+    gap: 8px;
+  }
+  .workout-intro .button {
+    font-size: 13px;
+    padding: 10px 13px;
+  }
+  .exercise-row {
+    gap: 13px;
+    padding: 20px 15px;
+  }
+  .exercise-row h3 {
+    font-size: 15px;
+  }
+  .exercise-row p {
+    font-size: 13px;
+  }
+  .exercise-number {
+    font-size: 20px;
+    min-width: 26px;
+  }
+  .exercise-rest {
+    display: none;
+  }
+  .set-row {
+    grid-template-columns: repeat(3, 1fr) 28px;
+    gap: 10px;
+  }
+  .set-row > strong {
+    grid-column: 1/5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .set-row small {
+    margin: 0;
+  }
+  .plan-exercise {
+    grid-template-columns: repeat(3, 1fr) 27px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+  .plan-exercise > .field:first-child {
+    grid-column: 1/5;
+    margin-bottom: 0;
+  }
+  .plan-exercise .icon-button {
+    min-width: 27px;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .settings-card {
+    padding: 22px 17px;
+    border-radius: 15px;
+  }
+  .settings-card h2 {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .settings-card p {
+    font-size: 12px;
+    line-height: 1.7;
+    margin-bottom: 17px;
+  }
+  .settings-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+  }
+  .settings-icon svg {
+    width: 21px;
+  }
+  .summary-strip {
+    padding: 16px;
+    gap: 15px;
+    font-size: 13px;
+  }
+  .summary-strip strong {
+    font-size: 16px;
+  }
+  .food-row {
+    padding: 15px 12px;
+    gap: 8px;
+  }
+  .food-row .button {
+    padding: 10px 13px;
+  }
+  .gate-panel > form {
+    padding: 25px 20px;
+  }
+  .gate-panel h1 {
+    font-size: 28px;
+  }
+  .gate-panel {
+    margin-top: 30px;
+  }
+  .goal-preview strong {
+    font-size: 30px;
+  }
+  .goal-preview div {
+    font-size: 13px;
+  }
+}
+@media (max-width: 370px) {
+  .energy-body {
+    flex-direction: column;
+  }
+  .energy-copy {
+    text-align: center;
+  }
+  .energy-copy p {
+    display: none;
+  }
+  .energy-card .card-heading {
+    flex-direction: column;
+  }
+  .macro-row {
+    gap: 8px;
+  }
+  .macro > span {
+    font-size: 12px;
+  }
+  .macro strong small {
+    display: block;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .stats-inline {
+    flex-wrap: wrap;
+  }
+  .topbar .breadcrumb {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+@media (max-width: 650px) {
+  .section-title {
+    flex-wrap: wrap;
+  }
+  .section-title > .button {
+    display: inline-flex;
+    margin: 6px 0 13px;
+  }
+  .section-title h1 {
+    max-width: 100%;
+  }
+}
