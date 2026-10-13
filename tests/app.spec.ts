@@ -275,13 +275,11 @@ test("medidas, fotos comprimidas y respaldo con imágenes", async ({ page }) => 
   expect(backup.data.measurements[0].cm).toBe(78.5);
   expect(backup.profile.pinHash).toBeUndefined();
   backup.data.weights[0].profileId = "ari";
-  await page
-    .getByLabel("Elegir archivo JSON")
-    .setInputFiles({
-      name: "invalido.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(backup)),
-    });
+  await page.getByLabel("Elegir archivo JSON").setInputFiles({
+    name: "invalido.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
   await expect(page.locator('dialog [role="status"]')).toContainText(
     "perfil mezclado",
   );
@@ -381,4 +379,136 @@ test("tema oscuro persistente en móvil y regreso a claro", async ({ page }) => 
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("Atrás recorre secciones, pestañas y fecha sin salir ni restaurar una sesión", async ({
+  page,
+}) => {
+  await setup(page);
+  await navigate(page, "Comidas");
+  await page.getByRole("button", { name: "Recetas", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Crear receta", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page.locator(".tabs button.active")).toHaveText("Hoy");
+  await expect(
+    page.getByRole("heading", { name: "Comidas", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(
+    page.getByRole("heading", { name: "Comidas", exact: true }),
+  ).toBeVisible();
+  const original = await page.getByLabel("Fecha de los registros").inputValue();
+  await page.getByRole("button", { name: "Día anterior", exact: true }).click();
+  await expect(page.getByLabel("Fecha de los registros")).not.toHaveValue(
+    original,
+  );
+  await page.goBack();
+  await expect(page.getByLabel("Fecha de los registros")).toHaveValue(original);
+  await page.getByRole("button", { name: "Volver", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Elegí tu perfil", exact: true }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(
+    page.getByRole("heading", { name: "Elegí tu perfil", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".app-shell")).toHaveCount(0);
+});
+
+test("Atrás cierra primero formularios y un cierre normal no deja pasos vacíos", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Más", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Tu perfil y objetivos/ }).click();
+  await expect(
+    page.getByRole('dialog').getByRole("heading", { name: "Tu perfil y objetivos", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Ajustes", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Tu perfil y objetivos/ }).click();
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Registrar comida", exact: true })
+    .first()
+    .click();
+  await page.getByRole("button", { name: "IA externa", exact: true }).click();
+  await page.goBack();
+  await expect(page.locator("dialog .tabs button.active")).toContainText(
+    "Componentes",
+  );
+  await page.goBack();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(page.locator(".ring-text strong")).toHaveText("0");
+});
+
+test("Atrás en confirmación de backup vuelve a la ventana anterior sin restaurar", async ({
+  page,
+}) => {
+  await setup(page);
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Tus datos van con vos/ }).click();
+  const event = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Backup completo JSON/ }).click();
+  const path = await (await event).path();
+  await page.getByLabel("Elegir archivo JSON").setInputFiles(path!);
+  await expect(page.locator("dialog")).toHaveCount(2);
+  await page.goBack();
+  await expect(page.locator("dialog")).toHaveCount(1);
+  await expect(page.getByLabel("Elegir archivo JSON")).toBeVisible();
+  await page.goBack();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Ajustes", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+});
+
+test("Atrás durante selección y onboarding regresa al paso anterior", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await expect(page.getByLabel("Crear PIN", { exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Elegí tu perfil", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await page.getByLabel("Crear PIN", { exact: true }).fill("1234");
+  await page.getByLabel("Repetir PIN").fill("1234");
+  await page.getByRole("button", { name: "Crear mi PIN" }).click();
+  await expect(page.getByLabel("Peso actual (kg)")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByLabel("PIN", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("PIN", { exact: true })).toHaveValue("");
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Elegí tu perfil", exact: true }),
+  ).toBeVisible();
 });

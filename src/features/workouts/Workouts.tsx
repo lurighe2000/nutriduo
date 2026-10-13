@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dumbbell, Plus, Trash2, Check, Timer } from "lucide-react";
 import { useApp } from "../../app/context";
+import { useHistoryChoice } from "../../app/navigation";
 import { meta } from "../../db";
 import { type ExerciseSet, type Records, planSchema } from "../../schemas";
 import { progression } from "../../services/workouts";
@@ -16,8 +17,8 @@ import { niceDate } from "../../utils/date";
 export default function Workouts() {
   const { profile: p, data, date, repo, run, notify } = useApp();
   const plan = data.plans[0];
-  const [selected, setSelected] = useState(0),
-    [logging, setLogging] = useState(false),
+  const [selected, setSelected] = useHistoryChoice<number>("workouts.day", 0);
+  const [logging, setLogging] = useState(false),
     [sets, setSets] = useState<ExerciseSet[]>([]),
     [editPlan, setEditPlan] = useState<Records["plans"]>(),
     [notes, setNotes] = useState(""),

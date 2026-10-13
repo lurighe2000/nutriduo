@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useApp } from "../../app/context";
+import { useHistoryChoice } from "../../app/navigation";
 import { db, meta } from "../../db";
 import {
   profileSchema,
@@ -55,13 +56,13 @@ export default function More() {
     run,
     notify,
   } = useApp();
+  const [period, setPeriod] = useHistoryChoice<string>("more.period", "Semana");
   const [panel, setPanel] = useState(""),
     [draft, setDraft] = useState<Profile>(p),
     [backup, setBackup] = useState<Backup>(),
     [pin, setPinValue] = useState(""),
     [oldPin, setOldPin] = useState(""),
     [install, setInstall] = useState<InstallEvent>(),
-    [period, setPeriod] = useState("Semana"),
     [ml, setMl] = useState(300),
     [busy, setBusy] = useState(false);
   useEffect(() => {

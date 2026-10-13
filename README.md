@@ -78,6 +78,8 @@ El build sigue siendo portable: Cloudflare Pages, Vercel o Netlify pueden public
 
 La apariencia tiene botones **Claro / Oscuro** en el encabezado y se recuerda por perfil. Ambos temas cubren formularios, diálogos, progreso y entrenamiento.
 
+El botón **Volver** y Atrás del navegador recorren las secciones, pestañas y fechas anteriores. Los formularios y confirmaciones tienen sus propios pasos y se cierran antes de retroceder de sección. Desde Inicio se vuelve a elegir perfil. El historial sólo guarda identificadores de navegación: no almacena PINs, fotos ni credenciales de sesión, y Adelante no permite reabrir un perfil bloqueado.
+
 ## Verificación y alcance
 
 Tests de navegador en Chromium de escritorio y viewport móvil: onboarding/PIN, comida, edición, peso, separación de perfiles, producto con respuesta controlada, IA, receta, entrenamiento, backup, XLSX y recarga offline. Los tests usan una base aislada de navegador, no los datos del usuario.

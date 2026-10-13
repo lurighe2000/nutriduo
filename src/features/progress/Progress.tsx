@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Camera, TrendingUp, Trash2 } from "lucide-react";
 import { useApp } from "../../app/context";
+import { useHistoryChoice } from "../../app/navigation";
 import { db, meta } from "../../db";
 import {
   Button,
@@ -19,8 +20,9 @@ import { niceDate, shiftDate, today } from "../../utils/date";
 import type { Records } from "../../schemas";
 export default function Progress() {
   const { profile: p, data, date, repo, run, notify } = useApp();
-  const [tab, setTab] = useState("Peso"),
-    [form, setForm] = useState(""),
+  const [tab, setTab] = useHistoryChoice<string>("progress.tab", "Peso");
+  const [days, setDays] = useHistoryChoice<string>("progress.days", "30");
+  const [form, setForm] = useState(""),
     [kg, setKg] = useState(
       [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0]?.kg ??
         p.initialWeight,
@@ -29,7 +31,6 @@ export default function Progress() {
     [measure, setMeasure] = useState("Cintura"),
     [custom, setCustom] = useState(""),
     [view, setView] = useState<Records["photos"]["view"]>("Frente"),
-    [days, setDays] = useState("30"),
     [photo, setPhoto] = useState<{ image: string; thumbnail: string }>(),
     [photoBusy, setPhotoBusy] = useState(false),
     [compare, setCompare] = useState<string[]>([]),

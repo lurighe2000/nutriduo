@@ -264,8 +264,13 @@ h3 {
 .dark .suggestion {
   color: var(--ink);
 }
-.dark .button:not(.secondary), .dark .mobile-add { color: #102238 !important; }
-.dark .button.secondary { color: var(--ink) !important; }
+.dark .button:not(.secondary),
+.dark .mobile-add {
+  color: #102238 !important;
+}
+.dark .button.secondary {
+  color: var(--ink) !important;
+}
 .dark .photo-tile > .icon-button {
   background: var(--surface);
 }
@@ -407,6 +412,41 @@ h3 {
     font-size: 16px;
   }
   .app-footer {
+    font-size: 12px;
+  }
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 5px 9px;
+  color: var(--primary);
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.back-button:hover {
+  background: var(--soft);
+}
+@media (max-width: 650px) {
+  .topbar-left {
+    gap: 4px;
+  }
+  .back-button {
+    padding: 5px;
+    min-width: 44px;
+  }
+  .back-button > span {
+    display: none;
+  }
+  .topbar-left .breadcrumb {
     font-size: 12px;
   }
 }

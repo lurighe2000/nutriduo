@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Copy, Star, Trash2, Pencil } from "lucide-react";
 import { useApp } from "../../app/context";
+import { useHistoryChoice } from "../../app/navigation";
 import {
   Button,
   Empty,
@@ -20,8 +21,8 @@ import { SOURCE_LABELS } from "../../nutrition/constants";
 import MealEditor, { ItemFields } from "./MealEditor";
 export default function Meals() {
   const { data, profile: p, date, repo, run, addMeal } = useApp();
-  const [tab, setTab] = useState("Hoy"),
-    [editing, setEditing] = useState<Meal>(),
+  const [tab, setTab] = useHistoryChoice<string>("meals.tab", "Hoy");
+  const [editing, setEditing] = useState<Meal>(),
     [recipe, setRecipe] = useState<Recipe | null | undefined>(),
     [remove, setRemove] = useState<Meal>(),
     [food, setFood] = useState<Food>(),

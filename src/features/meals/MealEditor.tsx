@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { ZodError } from "zod";
 import { useApp } from "../../app/context";
+import { useHistoryChoice } from "../../app/navigation";
 import { meta, db } from "../../db";
 import {
   type Meal,
@@ -158,7 +159,7 @@ export default function MealEditor({
     [time, setTime] = useState(
       existing?.time ?? new Date().toTimeString().slice(0, 5),
     ),
-    [tab, setTab] = useState("manual"),
+    [navigationId] = useState(() => crypto.randomUUID()),
     [search, setSearch] = useState(""),
     [json, setJson] = useState(""),
     [questions, setQuestions] = useState<string[]>([]),
@@ -167,6 +168,10 @@ export default function MealEditor({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [remember, setRemember] = useState(true);
+  const [tab, setTab] = useHistoryChoice<string>(
+    `mealEditor.${navigationId}.tab`,
+    "manual",
+  );
   const total = mealTotal(items);
   const update = (idx: number, item: Item) =>
     setItems((v) => v.map((it, i) => (i === idx ? item : it)));

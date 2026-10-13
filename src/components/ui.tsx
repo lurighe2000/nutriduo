@@ -7,6 +7,7 @@ import {
 } from "react";
 import { X, Plus, ArrowRight } from "lucide-react";
 import { AppContext } from "../app/context";
+import { useDialogBack } from "../app/navigation";
 export function Button({
   children,
   onClick,
@@ -109,6 +110,7 @@ export function Modal({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const close = useDialogBack(onClose);
   const context = useContext(AppContext);
   useEffect(() => {
     const d = ref.current;
@@ -119,14 +121,17 @@ export function Modal({
     <dialog
       ref={ref}
       className="modal"
-      onCancel={onClose}
+      onCancel={(e) => {
+        e.preventDefault();
+        close();
+      }}
       onClick={(e) => {
-        if (e.target === ref.current) onClose();
+        if (e.target === ref.current) close();
       }}
     >
       <div className="modal-head">
         <h2>{title}</h2>
-        <button className="icon-button" aria-label="Cerrar" onClick={onClose}>
+        <button className="icon-button" aria-label="Cerrar" onClick={close}>
           <X size={20} />
         </button>
       </div>

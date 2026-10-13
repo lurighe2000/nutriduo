@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useProfileBack } from "../../app/profileBack";
 import {
   ArrowUpRight,
   Leaf,
@@ -29,6 +30,37 @@ export default function Gate({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const p = selected;
+  const verifiedHere = useRef(false);
+  useProfileBack(
+    !p ? "profiles" : !verified ? "pin" : stage === 0 ? "setup" : "proposal",
+    (step) => {
+      setError("");
+      setPinValue("");
+      setRepeat("");
+      if (step === "profiles" || !p) {
+        verifiedHere.current = false;
+        setSelected(null);
+        setVerified(false);
+        setStage(0);
+        return;
+      }
+      if (step === "pin") {
+        const stored = profiles.find((profile) => profile.id === p.id);
+        setSelected({
+          ...p,
+          pinHash: stored?.pinHash,
+          pinSalt: stored?.pinSalt,
+        });
+        setVerified(false);
+        setStage(0);
+        return;
+      }
+      if (verifiedHere.current) {
+        setVerified(true);
+        setStage(step === "proposal" ? 1 : 0);
+      }
+    },
+  );
   async function enter() {
     if (!p) return;
     setBusy(true);
@@ -40,7 +72,10 @@ export default function Gate({
         await setPin(p.id, pin);
       }
       if (p.onboarded) onUnlock(p.id);
-      else setVerified(true);
+      else {
+        verifiedHere.current = true;
+        setVerified(true);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo abrir el perfil.");
     } finally {

@@ -34,6 +34,7 @@ import Dashboard from "../features/dashboard/Dashboard";
 import MealEditor from "../features/meals/MealEditor";
 import { Button } from "../components/ui";
 import ThemeToggle from "../components/ThemeToggle";
+import { NavigationContext, useAppNavigation } from "./navigation";
 const Meals = lazy(() => import("../features/meals/Meals"));
 const Progress = lazy(() => import("../features/progress/Progress"));
 const Workouts = lazy(() => import("../features/workouts/Workouts"));
@@ -146,9 +147,9 @@ function Shell({
   setDark: (v: boolean) => void;
 }) {
   useEffect(() => setDark(profile.dark), [profile.dark, setDark]);
-  const [date, setDate] = useState(today()),
-    [page, setPage] = useState("inicio"),
-    [mealOpen, setMealOpen] = useState(false),
+  const { navigation: appNavigation, date, page } = useAppNavigation(lock);
+  const { setDate, navigate } = appNavigation;
+  const [mealOpen, setMealOpen] = useState(false),
     [notice, setNotice] = useState(""),
     [offline, setOffline] = useState(!navigator.onLine);
   const repo = repository(profile.id);
@@ -178,10 +179,6 @@ function Shell({
     const t = setTimeout(() => setNotice(""), 5500);
     return () => clearTimeout(t);
   }, [notice]);
-  const navigate = (v: string) => {
-    setPage(v);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
   async function run(task: () => Promise<unknown>, success?: string) {
     try {
       await task();
@@ -237,169 +234,182 @@ function Shell({
   }, [profile.name]);
   if (!data) return <div className="loading">Abriendo tus registros…</div>;
   return (
-    <AppContext.Provider
-      value={{
-        profile,
-        data,
-        repo,
-        date,
-        setDate,
-        page,
-        navigate,
-        run,
-        notify: setNotice,
-        lock,
-        addMeal: () => setMealOpen(true),
-        notice,
-      }}
-    >
-      <div className={`app-shell theme-${profile.id} ${dark ? "dark" : ""}`}>
-        <aside className="sidebar">
-          <div className="brand">
-            <span className="brand-icon">
+    <NavigationContext.Provider value={appNavigation}>
+      <AppContext.Provider
+        value={{
+          profile,
+          data,
+          repo,
+          date,
+          setDate,
+          page,
+          navigate,
+          run,
+          notify: setNotice,
+          lock,
+          addMeal: () => setMealOpen(true),
+          notice,
+        }}
+      >
+        <div className={`app-shell theme-${profile.id} ${dark ? "dark" : ""}`}>
+          <aside className="sidebar">
+            <div className="brand">
+              <span className="brand-icon">
+                <Leaf size={22} />
+              </span>
+              nutri<span>duo</span>
+            </div>
+            <div className="sidebar-label">MI ESPACIO</div>
+            <nav>
+              {navigation.map((n) => (
+                <button
+                  key={n.id}
+                  className={page === n.id ? "active" : ""}
+                  onClick={() => navigate(n.id)}
+                >
+                  <n.icon size={20} />
+                  <span>{n.label}</span>
+                  {page === n.id && <span className="nav-mark" />}
+                </button>
+              ))}
+            </nav>
+            <div className="sidebar-note">
               <Leaf size={22} />
-            </span>
-            nutri<span>duo</span>
+              <strong>Datos locales</strong>
+              <p>
+                Guardá un backup para llevar tus registros a otro dispositivo.
+              </p>
+            </div>
+            <button className="profile-switch" onClick={lock}>
+              <span className="avatar">{profile.name[0]}</span>
+              <span>
+                <strong>{profile.name}</strong>
+                <small>Cambiar perfil</small>
+              </span>
+              <LogOut size={18} />
+            </button>
+          </aside>
+          <div className="main-shell">
+            <header className="topbar">
+              <div className="topbar-left">
+                <button
+                  type="button"
+                  className="back-button"
+                  aria-label="Volver"
+                  onClick={appNavigation.back}
+                >
+                  <ChevronLeft size={21} />
+                  <span>Volver</span>
+                </button>
+                <div className="breadcrumb">
+                  Mi espacio <span>/</span>{" "}
+                  {navigation.find((n) => n.id === page)?.label}
+                </div>
+              </div>
+              <div className="topbar-right">
+                <ThemeToggle
+                  dark={dark}
+                  onChange={(value) =>
+                    void run(async () => {
+                      await db.profiles.update(profile.id, { dark: value });
+                      setDark(value);
+                    })
+                  }
+                />
+                <span className="local-badge">
+                  {offline ? (
+                    <WifiOff size={14} />
+                  ) : (
+                    <span className="local-dot" />
+                  )}
+                  {offline ? "Modo offline" : "Guardado en este dispositivo"}
+                </span>
+                <button
+                  className="mini-avatar"
+                  aria-label="Cambiar perfil"
+                  onClick={lock}
+                >
+                  {profile.name[0]}
+                </button>
+              </div>
+            </header>
+            <main className="main-content">
+              <div className="date-control">
+                <button
+                  aria-label="Día anterior"
+                  onClick={() => setDate(shiftDate(date, -1))}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <label>
+                  <span>
+                    {date === today() ? "Hoy · " : ""}
+                    {niceDate(date)}
+                  </span>
+                  <input
+                    aria-label="Fecha de los registros"
+                    type="date"
+                    value={date}
+                    max={today()}
+                    onChange={(e) => e.target.value && setDate(e.target.value)}
+                  />
+                </label>
+                <button
+                  aria-label="Día siguiente"
+                  disabled={date >= today()}
+                  onClick={() => setDate(shiftDate(date, 1))}
+                >
+                  <ChevronRight size={16} />
+                </button>
+                {date !== today() && (
+                  <button onClick={() => setDate(today())}>Hoy</button>
+                )}
+              </div>
+              <Suspense fallback={<div className="loading">Abriendo…</div>}>
+                {page === "inicio" ? (
+                  <Dashboard />
+                ) : page === "comidas" ? (
+                  <Meals />
+                ) : page === "entreno" ? (
+                  <Workouts />
+                ) : page === "progreso" ? (
+                  <Progress />
+                ) : (
+                  <More />
+                )}
+              </Suspense>
+              <footer className="app-footer">
+                Guardado en este dispositivo <span>NutriDuo · 1.1</span>
+              </footer>
+            </main>
           </div>
-          <div className="sidebar-label">MI ESPACIO</div>
-          <nav>
+          <nav className="bottom-nav">
             {navigation.map((n) => (
               <button
                 key={n.id}
                 className={page === n.id ? "active" : ""}
                 onClick={() => navigate(n.id)}
               >
-                <n.icon size={20} />
+                <n.icon size={21} />
                 <span>{n.label}</span>
-                {page === n.id && <span className="nav-mark" />}
               </button>
             ))}
           </nav>
-          <div className="sidebar-note">
-            <Leaf size={22} />
-            <strong>Datos locales</strong>
-            <p>
-              Guardá un backup para llevar tus registros a otro dispositivo.
-            </p>
-          </div>
-          <button className="profile-switch" onClick={lock}>
-            <span className="avatar">{profile.name[0]}</span>
-            <span>
-              <strong>{profile.name}</strong>
-              <small>Cambiar perfil</small>
-            </span>
-            <LogOut size={18} />
+          <button
+            className="mobile-add"
+            aria-label="Registrar comida"
+            onClick={() => setMealOpen(true)}
+          >
+            <Plus size={24} />
           </button>
-        </aside>
-        <div className="main-shell">
-          <header className="topbar">
-            <div className="breadcrumb">
-              Mi espacio <span>/</span>{" "}
-              {navigation.find((n) => n.id === page)?.label}
+          {notice && (
+            <div className="toast" role="status" onClick={() => setNotice("")}>
+              {notice}
             </div>
-            <div className="topbar-right">
-              <ThemeToggle
-                dark={dark}
-                onChange={(value) =>
-                  void run(async () => {
-                    await db.profiles.update(profile.id, { dark: value });
-                    setDark(value);
-                  })
-                }
-              />
-              <span className="local-badge">
-                {offline ? (
-                  <WifiOff size={14} />
-                ) : (
-                  <span className="local-dot" />
-                )}
-                {offline ? "Modo offline" : "Guardado en este dispositivo"}
-              </span>
-              <button
-                className="mini-avatar"
-                aria-label="Cambiar perfil"
-                onClick={lock}
-              >
-                {profile.name[0]}
-              </button>
-            </div>
-          </header>
-          <main className="main-content">
-            <div className="date-control">
-              <button
-                aria-label="Día anterior"
-                onClick={() => setDate(shiftDate(date, -1))}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <label>
-                <span>
-                  {date === today() ? "Hoy · " : ""}
-                  {niceDate(date)}
-                </span>
-                <input
-                  aria-label="Fecha de los registros"
-                  type="date"
-                  value={date}
-                  max={today()}
-                  onChange={(e) => e.target.value && setDate(e.target.value)}
-                />
-              </label>
-              <button
-                aria-label="Día siguiente"
-                disabled={date >= today()}
-                onClick={() => setDate(shiftDate(date, 1))}
-              >
-                <ChevronRight size={16} />
-              </button>
-              {date !== today() && (
-                <button onClick={() => setDate(today())}>Hoy</button>
-              )}
-            </div>
-            <Suspense fallback={<div className="loading">Abriendo…</div>}>
-              {page === "inicio" ? (
-                <Dashboard />
-              ) : page === "comidas" ? (
-                <Meals />
-              ) : page === "entreno" ? (
-                <Workouts />
-              ) : page === "progreso" ? (
-                <Progress />
-              ) : (
-                <More />
-              )}
-            </Suspense>
-            <footer className="app-footer">
-              Guardado en este dispositivo <span>NutriDuo · 1.1</span>
-            </footer>
-          </main>
+          )}
+          {mealOpen && <MealEditor onClose={() => setMealOpen(false)} />}
         </div>
-        <nav className="bottom-nav">
-          {navigation.map((n) => (
-            <button
-              key={n.id}
-              className={page === n.id ? "active" : ""}
-              onClick={() => navigate(n.id)}
-            >
-              <n.icon size={21} />
-              <span>{n.label}</span>
-            </button>
-          ))}
-        </nav>
-        <button
-          className="mobile-add"
-          aria-label="Registrar comida"
-          onClick={() => setMealOpen(true)}
-        >
-          <Plus size={24} />
-        </button>
-        {notice && (
-          <div className="toast" role="status" onClick={() => setNotice("")}>
-            {notice}
-          </div>
-        )}
-        {mealOpen && <MealEditor onClose={() => setMealOpen(false)} />}
-      </div>
-    </AppContext.Provider>
+      </AppContext.Provider>
+    </NavigationContext.Provider>
   );
 }
