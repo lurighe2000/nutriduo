@@ -19,8 +19,8 @@ self.addEventListener("push", (event) => {
           typeof message.tag === "string"
             ? message.tag.slice(0, 100)
             : "nutriduo-recordatorio",
-        icon: new URL("icon-192.png", self.registration.scope).href,
-        badge: new URL("icon-192.png", self.registration.scope).href,
+        icon: new URL("icon-192-duo.png", self.registration.scope).href,
+        badge: new URL("badge-duo.png", self.registration.scope).href,
         data: { url: self.registration.scope },
       },
     ),

@@ -62,6 +62,8 @@ Más → Tus datos van con vos → Backup completo JSON. Incluye el perfil desbl
 
 El service worker de Workbox precachea el shell, vistas, fuentes WOFF2 e iconos. Se activa en build de producción, no durante desarrollo. Tras la primera carga, comidas, fotos, entrenamiento y progreso funcionan offline. OFF necesita red para un producto no almacenado. Una actualización disponible muestra **Actualizar ahora / Después**. La persona guarda sus borradores antes de aceptar la recarga; IndexedDB y el PIN se conservan. Se comprueban novedades al abrir la app, al volver a ella con conexión y cada hora mientras está visible. Las versiones anteriores sin aviso pueden requerir cerrar todas las ventanas/pestañas de NutriDuo y volver a abrir para activar la actualización pendiente, sin borrar los datos del sitio.
 
+El logo Conexión azul/rosa se usa dentro de la app, en el manifiesto y en el ícono de inicio de iOS. Las notificaciones usan un PNG independiente de 96 px con silueta blanca y fondo transparente, nunca el recuadro del ícono completo. Fuentes y exportación reproducible: [assets/brand](assets/brand/README.md). La versión 1.7 permite identificar esta actualización en el pie de la app.
+
 Android: menú Chrome → Instalar aplicación. iPhone: Safari → Compartir → Agregar a pantalla de inicio. HTTPS es necesario para cámara, Web Crypto, service worker e instalación; localhost es una excepción de desarrollo. Un enlace HTTP de la red local no equivale a HTTPS. El navegador puede desalojar almacenamiento local: la app solicita persistencia y los backups siguen siendo importantes.
 
 Cada origen y dispositivo tiene su propia base: los datos de localhost no aparecen en la versión publicada ni en otro teléfono. No hay sincronización automática.

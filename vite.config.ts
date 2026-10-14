@@ -8,7 +8,14 @@ export default defineConfig({
     VitePWA({
       registerType: "prompt",
       injectRegister: false,
-      includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png"],
+      includeAssets: [
+        "favicon.svg",
+        "favicon-duo.png",
+        "icon-192-duo.png",
+        "icon-512-duo.png",
+        "apple-touch-icon-duo.png",
+        "badge-duo.png",
+      ],
       manifest: {
         name: "NutriDuo",
         short_name: "NutriDuo",
@@ -19,9 +26,9 @@ export default defineConfig({
         start_url: "./",
         scope: "./",
         icons: [
-          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "icon-192-duo.png", sizes: "192x192", type: "image/png" },
           {
-            src: "icon-512.png",
+            src: "icon-512-duo.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",

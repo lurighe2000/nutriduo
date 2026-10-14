@@ -63,6 +63,15 @@ h3 {
 .sidebar .brand-icon,
 .brand-icon {
   border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.brand-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
 }
 .sidebar-note > svg {
   display: none;

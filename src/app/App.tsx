@@ -37,6 +37,7 @@ import { Button } from "../components/ui";
 import ThemeToggle from "../components/ThemeToggle";
 import Breadcrumbs from "../components/Breadcrumbs";
 import ProfileAvatar from "../components/ProfileAvatar";
+import BrandIcon from "../components/BrandIcon";
 import AccountMenu from "../features/settings/AccountMenu";
 import { forgetAIConnections } from "../services/integratedAI";
 import { NavigationContext, useAppNavigation } from "./navigation";
@@ -287,9 +288,7 @@ function Shell({
         <div className={`app-shell theme-${profile.id} ${dark ? "dark" : ""}`}>
           <aside className="sidebar">
             <div className="brand">
-              <span className="brand-icon">
-                <Leaf size={22} />
-              </span>
+              <BrandIcon />
               nutri<span>duo</span>
             </div>
             <div className="sidebar-label">MI ESPACIO</div>
@@ -424,7 +423,7 @@ function Shell({
                 </div>
               </Suspense>
               <footer className="app-footer">
-                Guardado en este dispositivo <span>NutriDuo · 1.6</span>
+                Guardado en este dispositivo <span>NutriDuo · 1.7</span>
               </footer>
             </main>
           </div>

@@ -1,9 +1,9 @@
 import ProfileAvatar from "../../components/ProfileAvatar";
+import BrandIcon from "../../components/BrandIcon";
 import { useState, useRef } from "react";
 import { useProfileBack } from "../../app/profileBack";
 import {
   ArrowUpRight,
-  Leaf,
   LockKeyhole,
   ArrowLeft,
   ShieldCheck,
@@ -118,9 +118,7 @@ export default function Gate({
   return (
     <main className={`welcome ${p?.id === "ari" ? "theme-ari" : ""}`}>
       <div className="brand">
-        <span className="brand-icon">
-          <Leaf size={24} />
-        </span>
+        <BrandIcon />
         nutri<span>duo</span>
         <small>NUTRICIÓN Y ENTRENAMIENTO</small>
       </div>
