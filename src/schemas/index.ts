@@ -104,6 +104,7 @@ export const mealSchema = baseSchema.extend({
   items: z.array(itemSchema).min(1).max(50),
   notes: z.string().max(2000).default(""),
   photo: imageSchema.optional(),
+  photos: z.array(imageSchema).optional(),
 });
 export const recipeSchema = baseSchema.extend({
   name: z.string().trim().min(1).max(150),

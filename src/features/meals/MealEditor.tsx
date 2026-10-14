@@ -25,7 +25,8 @@ import { zero, mealTotal, itemTotal, scale } from "../../nutrition/formulas";
 import { MEAL_TYPES, SOURCE_LABELS } from "../../nutrition/constants";
 import { rounded } from "../../utils/date";
 import { Modal, Button, Field, NumberField, Select } from "../../components/ui";
-import { compressPhoto } from "../../services/photos";
+import { compressPhoto, mealPhotos } from "../../services/photos";
+import MealPhotos from "./MealPhotos";
 import { aiItems, aiPrompt, parseAnalysis } from "../../services/ai";
 import { lookupProduct } from "../../services/products";
 import AIAnalyzer from "./AIAnalyzer";
@@ -193,7 +194,8 @@ export default function MealEditor({
     [items, setItems] = useState<Item[]>(
       existing?.items ?? recipe?.items ?? [],
     ),
-    [photo, setPhoto] = useState(existing?.photo),
+    [photos, setPhotos] = useState(() => mealPhotos(existing)),
+    [photosBusy, setPhotosBusy] = useState(false),
     [notes, setNotes] = useState(existing?.notes ?? ""),
     [servings, setServings] = useState(recipe?.servings ?? 1),
     [time, setTime] = useState(
@@ -263,7 +265,8 @@ export default function MealEditor({
               .slice(0, 150),
           type,
           items,
-          photo,
+          photo: photos[0],
+          photos,
           notes,
         });
         await db.transaction(
@@ -326,12 +329,25 @@ export default function MealEditor({
       setBusy(false);
     }
   }
-  async function photoInput(file?: File) {
-    if (!file) return;
-    await run(async () => {
-      const compressed = await compressPhoto(file);
-      setPhoto(compressed.image);
-    });
+  const uploading = useRef(false);
+  async function photoInput(files: File[]) {
+    if (!files.length || uploading.current) return;
+    uploading.current = true;
+    setPhotosBusy(true);
+    try {
+      await run(async () => {
+        for (const file of files) {
+          const compressed = await compressPhoto(file);
+          setPhotos((previous) => [...previous, compressed.image]);
+        }
+      });
+    } finally {
+      uploading.current = false;
+      setPhotosBusy(false);
+    }
+  }
+  function removePhoto(index: number) {
+    setPhotos((previous) => previous.filter((_, i) => i !== index));
   }
   function importAI(repair = false) {
     try {
@@ -409,11 +425,12 @@ export default function MealEditor({
       )}
       {tab === "analizar" ? (
         <AIAnalyzer
-          photo={photo}
+          photos={photos}
+          photosBusy={photosBusy}
           description={description}
           setDescription={setDescription}
           onPhoto={photoInput}
-          onRemovePhoto={() => setPhoto(undefined)}
+          onRemovePhoto={removePhoto}
           onReview={reviewAI}
         />
       ) : tab === "buscar" ? (
@@ -524,7 +541,7 @@ export default function MealEditor({
       ) : tab === "IA externa" ? (
         <>
           <p>
-            Analizá la foto fuera de NutriDuo. Después pegá el JSON y revisá
+            Analizá las fotos fuera de NutriDuo. Después pegá el JSON y revisá
             cada componente antes de guardar.
           </p>
           <div className="actions">
@@ -540,31 +557,39 @@ export default function MealEditor({
               <Clipboard size={17} />
               Copiar prompt para ChatGPT
             </Button>
-            {photo && (
+            {photos.length > 0 && (
               <Button
                 secondary
                 onClick={() =>
                   void run(async () => {
-                    const blob = await (await fetch(photo)).blob();
-                    const file = new File([blob], "comida.jpg", {
-                      type: "image/jpeg",
-                    });
-                    if (navigator.canShare?.({ files: [file] }))
+                    const files = await Promise.all(
+                      photos.map(
+                        async (photo, index) =>
+                          new File(
+                            [await (await fetch(photo)).blob()],
+                            `comida-${index + 1}.jpg`,
+                            { type: "image/jpeg" },
+                          ),
+                      ),
+                    );
+                    if (navigator.canShare?.({ files }))
                       await navigator.share({
-                        files: [file],
+                        files,
                         text: aiPrompt(p),
                       });
                     else {
-                      const a = document.createElement("a");
-                      a.href = photo;
-                      a.download = "comida.jpg";
-                      a.click();
+                      for (const [index, photo] of photos.entries()) {
+                        const a = document.createElement("a");
+                        a.href = photo;
+                        a.download = `comida-${index + 1}.jpg`;
+                        a.click();
+                      }
                     }
-                  }, "Foto preparada")
+                  }, "Fotos preparadas")
                 }
               >
                 <Share2 size={17} />
-                Compartir foto
+                Compartir fotos
               </Button>
             )}
           </div>
@@ -623,25 +648,14 @@ export default function MealEditor({
             )}
           </div>
           {!recipeMode && (
-            <div className="photo-inputs">
-              <label className="upload-button">
-                <Camera size={17} />
-                Sacar foto
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => void photoInput(e.target.files?.[0])}
-                />
-              </label>
-              <label className="upload-button">
-                Elegir foto / etiqueta
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => void photoInput(e.target.files?.[0])}
-                />
-              </label>
+            <>
+              <MealPhotos
+                photos={photos}
+                onAdd={photoInput}
+                onRemove={removePhoto}
+                loading={photosBusy}
+                disabled={busy}
+              />
               <Field
                 label="Hora"
                 type="time"
@@ -649,19 +663,7 @@ export default function MealEditor({
                 required
                 onChange={(e) => setTime(e.target.value)}
               />
-            </div>
-          )}
-          {photo && (
-            <div className="meal-photo-preview">
-              <img src={photo} alt="Comida registrada" />
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => setPhoto(undefined)}
-              >
-                Quitar foto
-              </button>
-            </div>
+            </>
           )}
           {questions.length > 0 && (
             <div className="notice">
@@ -722,7 +724,7 @@ export default function MealEditor({
             </small>
           </div>
           <Micronutrients items={items} />
-          <Button type="submit" disabled={busy || !items.length}>
+          <Button type="submit" disabled={busy || photosBusy || !items.length}>
             {busy
               ? "Guardando…"
               : recipeMode

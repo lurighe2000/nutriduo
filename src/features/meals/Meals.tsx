@@ -1,3 +1,5 @@
+import { mealPhotos } from "../../services/photos";
+import { MealPhotoGallery } from "./MealPhotos";
 import { useState } from "react";
 import { Plus, Copy, Star, Trash2, Pencil } from "lucide-react";
 import { useApp } from "../../app/context";
@@ -107,9 +109,7 @@ export default function Meals() {
             <div className="record-grid">
               {meals.slice(0, 60).map((m) => (
                 <article className="card meal-detail" key={m.id}>
-                  {m.photo && (
-                    <img className="record-photo" src={m.photo} alt={m.name} />
-                  )}
+                  <MealPhotoGallery photos={mealPhotos(m)} alt={m.name} />
                   <div className="card-heading">
                     <span className="eyebrow">
                       {m.type} · {m.time}

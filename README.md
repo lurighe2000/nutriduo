@@ -28,7 +28,7 @@ Abrí la URL que imprime Vite. En el primer ingreso completá peso, altura, naci
 
 - Dos perfiles, temas azul/dorado y rosa, modo oscuro, PIN con PBKDF2/SHA-256 (600.000 iteraciones), salt y bloqueo tras cinco fallos.
 - Objetivos iniciales confirmados, dashboard, energía, macros, fibra, hidratación y cierre explícito de días completos.
-- Comidas con componentes editables, foto comprimida, recientes, favoritos, repetir y duplicar ayer. Biblioteca personal sin valores inventados.
+- Comidas con componentes editables y varias fotos comprimidas del plato, productos, etiquetas y preparación. Se agregan de a una o en selección múltiple, se pueden ampliar y quitar individualmente y se conservan en edición, repetición y backups. Recientes, favoritos, repetir y duplicar ayer. Biblioteca personal sin valores inventados.
 - Recetas e ingredientes con cálculo por porción y uso en comidas.
 - Peso diario, promedios de 7 días, gráficos de 30/90 días e histórico, medidas personalizadas y comparación de fotos.
 - Rutina inicial de tres sesiones editables, carga/repeticiones/RIR, historial, sugerencias de progresión y registro manual de pasos/pádel.

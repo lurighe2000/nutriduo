@@ -558,7 +558,7 @@ test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo 
     .getByRole("button", { name: "Analizar comida", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Analizar foto y descripción" }),
+    page.getByRole("button", { name: "Analizar fotos y descripción" }),
   ).toBeDisabled();
   await page
     .getByRole("button", { name: "Configurar conexión", exact: true })
@@ -573,15 +573,52 @@ test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo 
     .getByRole("button", { name: "Conectar análisis", exact: true })
     .click();
   await expect(page.getByText(/Groq conectado/)).toBeVisible();
+  const images = await page.evaluate(() =>
+    ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"].map((color) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 192;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, 192, 192);
+      return canvas.toDataURL("image/png").split(",")[1];
+    }),
+  );
+  const files = images.map((image, i) => ({
+    name: `foto-${i + 1}.png`,
+    mimeType: "image/png",
+    buffer: Buffer.from(image, "base64"),
+  }));
   await page
     .getByLabel("Elegir foto para analizar")
-    .setInputFiles("public/icon-192.png");
-  await expect(page.getByAltText("Plato para analizar")).toBeVisible();
+    .setInputFiles(files.slice(0, 2));
+  await expect(page.locator(".meal-photo-card")).toHaveCount(2);
+  const firstPhoto = await page
+    .getByAltText("Plato para analizar", { exact: true })
+    .getAttribute("src");
+  await page
+    .getByLabel("Elegir foto para analizar")
+    .setInputFiles(files.slice(2, 4));
+  await expect(page.locator(".meal-photo-card")).toHaveCount(4);
+  await page.getByLabel("Sacar foto para analizar").setInputFiles(files[4]);
+  await expect(page.locator(".meal-photo-card")).toHaveCount(5);
+  await expect(
+    page.getByAltText("Plato para analizar", { exact: true }),
+  ).toHaveAttribute("src", firstPhoto!);
+  await page
+    .getByRole("button", { name: "Quitar foto 2", exact: true })
+    .click();
+  await expect(page.locator(".meal-photo-card")).toHaveCount(4);
+  await page.locator(".ai-analyzer h3").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/meal-photos-mobile.png" });
+  await page
+    .getByRole("button", { name: "Ampliar foto 3", exact: true })
+    .click();
+  await expect(page.getByAltText("Vista ampliada de la foto 3")).toBeVisible();
   await page
     .getByLabel("Descripción, cantidades, cocción y marcas")
     .fill("Arroz marca Fixture, 150 g cocidos, hervido, con aceite");
   await page
-    .getByRole("button", { name: "Analizar foto y descripción" })
+    .getByRole("button", { name: "Analizar fotos y descripción" })
     .click();
   await expect(
     page.getByText("¿Cuánto aceite agregaste?", { exact: true }),
@@ -590,7 +627,7 @@ test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo 
     .getByLabel("Descripción, cantidades, cocción y marcas")
     .fill("Arroz marca Fixture, 150 g cocidos, hervido; 5 g de aceite");
   await page
-    .getByRole("button", { name: "Analizar foto y descripción" })
+    .getByRole("button", { name: "Analizar fotos y descripción" })
     .click();
   await page
     .getByRole("button", { name: "Revisar componentes", exact: true })
@@ -631,8 +668,42 @@ test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo 
   });
   await expect(page.locator(".ring-text strong")).toHaveText("0");
   expect(posted).toHaveLength(2);
-  expect(Object.keys(posted[1]).sort()).toEqual(["description", "photo"]);
+  expect(Object.keys(posted[1]).sort()).toEqual(["description", "photos"]);
   expect(posted[1].description).toContain("marca Fixture");
+  const uploadedPhotos = posted[1].photos as string[];
+  expect(uploadedPhotos).toHaveLength(2);
+  expect(uploadedPhotos.every((image: string) => image.length <= 2000000)).toBe(
+    true,
+  );
+  // Read the actual uploaded sheets: every remaining original must appear once.
+  const pixels = await page.evaluate(async (photos: string[]) => {
+    const colors: number[][] = [];
+    for (const photo of photos) {
+      const bitmap = await createImageBitmap(await (await fetch(photo)).blob());
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(bitmap, 0, 0);
+      for (const x of [canvas.width / 4, (canvas.width * 3) / 4])
+        colors.push(
+          Array.from(ctx.getImageData(x, canvas.height * 0.6, 1, 1).data).slice(
+            0,
+            3,
+          ),
+        );
+      bitmap.close();
+    }
+    return colors;
+  }, uploadedPhotos);
+  expect(
+    pixels.map((color) => color.map((channel) => (channel > 128 ? 255 : 0))),
+  ).toEqual([
+    [255, 0, 0],
+    [0, 0, 255],
+    [255, 255, 0],
+    [255, 0, 255],
+  ]);
   await page
     .getByRole("button", { name: "Confirmar y registrar", exact: true })
     .click();
@@ -641,6 +712,7 @@ test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo 
     .locator(".bottom-nav")
     .getByRole("button", { name: "Comidas", exact: true })
     .click();
+  await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(4);
   await page.locator(".meal-detail .micronutrients summary").click();
   await expect(page.locator(".meal-detail .micronutrients")).toContainText(
     "2,25 mg",
@@ -700,7 +772,7 @@ test("cuota IA agotada conserva foto y descripción y mantiene la carga manual",
     .getByLabel("Descripción, cantidades, cocción y marcas")
     .fill("Comida de prueba con descripción");
   await page
-    .getByRole("button", { name: "Analizar foto y descripción" })
+    .getByRole("button", { name: "Analizar fotos y descripción" })
     .click();
   await expect(page.getByRole("alert")).toContainText("cuota gratuita");
   await expect(
@@ -1184,4 +1256,86 @@ test("Atrás durante selección y onboarding regresa al paso anterior", async ({
   await expect(
     page.getByRole("heading", { name: "Elegí tu perfil", exact: true }),
   ).toBeVisible();
+});
+
+test("fotos de comida se suman en carga manual, persisten y restauran fotos antiguas", async ({
+  page,
+}) => {
+  await setup(page);
+  await manualMeal(page);
+  await navigate(page, "Comidas");
+  await page.getByRole("button", { name: "Editar gramos" }).click();
+  await page
+    .getByLabel("Elegir fotos de comida")
+    .setInputFiles(["public/icon-192.png", "public/icon-512.png"]);
+  await expect(page.locator("dialog .meal-photo-card")).toHaveCount(2);
+  const original = await page
+    .getByAltText("Comida registrada", { exact: true })
+    .getAttribute("src");
+  await page
+    .getByLabel("Elegir fotos de comida")
+    .setInputFiles("public/icon-192.png");
+  await expect(page.locator("dialog .meal-photo-card")).toHaveCount(3);
+  await expect(
+    page.getByAltText("Comida registrada", { exact: true }),
+  ).toHaveAttribute("src", original!);
+  await page
+    .getByRole("button", { name: "Guardar cambios", exact: true })
+    .click();
+  await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(3);
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Tus datos van con vos/ }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Backup completo JSON/ }).click();
+  const backup = JSON.parse(
+    await readFile((await (await download).path())!, "utf8"),
+  );
+  expect(backup.data.meals[0].photos).toHaveLength(3);
+  expect(backup.data.meals[0].photo).toBe(original);
+  await page.getByLabel("Elegir archivo JSON").setInputFiles({
+    name: "fotos.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(page.locator(".toast")).toHaveText("Backup restaurado");
+  await navigate(page, "Comidas");
+  await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(3);
+  // Old backups only contain photo; it becomes the first image when editing.
+  delete backup.data.meals[0].photos;
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Tus datos van con vos/ }).click();
+  await page.getByLabel("Elegir archivo JSON").setInputFiles({
+    name: "foto-antigua.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(page.locator(".toast")).toHaveText("Backup restaurado");
+  await navigate(page, "Comidas");
+  await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(1);
+  await page.getByRole("button", { name: "Editar gramos" }).click();
+  await expect(
+    page.getByAltText("Comida registrada", { exact: true }),
+  ).toHaveAttribute("src", original!);
+  await page
+    .getByLabel("Sacar foto de comida")
+    .setInputFiles("public/icon-512.png");
+  await expect(page.locator("dialog .meal-photo-card")).toHaveCount(2);
+  await page
+    .getByRole("button", { name: "Quitar foto 1", exact: true })
+    .click();
+  await expect(page.locator("dialog .meal-photo-card")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "Guardar cambios", exact: true })
+    .click();
+  await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(1);
+  await page.reload();
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await page.getByLabel("PIN", { exact: true }).fill("1234");
+  await page.getByRole("button", { name: "Entrar a mi espacio" }).click();
+  await navigate(page, "Comidas");
+  await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(1);
 });

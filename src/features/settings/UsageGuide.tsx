@@ -23,9 +23,9 @@ const sections = [
   {
     title: "Registrar una comida con la IA",
     steps: [
-      "Tocá + o Registrar comida y elegí Analizar comida. Sacá o elegí una foto del plato.",
+      "Tocá + o Registrar comida y elegí Analizar comida. Sacá fotos del plato, productos y preparación o elegí varias juntas. Cada nueva foto se suma a las anteriores; podés ampliarlas y quitar cualquiera.",
       "Describí alimentos, cantidades aproximadas, cocción, aceite, salsas y marcas. Aclarar qué está crudo o cocido ayuda a interpretar la porción.",
-      "Tocá Analizar foto y descripción. Si aparecen preguntas, agregá las respuestas a la descripción y volvé a analizar.",
+      "Tocá Analizar fotos y descripción. Si aparecen preguntas, agregá las respuestas a la descripción y volvé a analizar.",
       "La propuesta muestra alimentos, gramos y calorías estimadas. La confianza es la declarada por la IA; no garantiza precisión.",
       "Tocá Revisar componentes y corregí cantidades o valores. Elegí nombre, momento de la comida y hora.",
       "El total se muestra al pie del formulario. La comida se guarda al tocar Confirmar y registrar; después se actualiza el resumen diario.",
@@ -40,7 +40,7 @@ const sections = [
       "Mis alimentos: reutilizá la biblioteca personal y una porción de tus recetas.",
       "Código de barras: escribí el código o usá la cámara para buscar un producto. Verificá la ficha con su etiqueta; si no aparece, cargala en Componentes.",
       "IA externa: copiá el prompt para analizar fuera de la app, pegá la respuesta JSON y tocá Validar y revisar antes de guardar.",
-      "Sin conexión o con la cuota de IA agotada, podés seguir cargando manualmente. Analizar envía únicamente la foto y descripción de esa consulta.",
+      "Sin conexión o con la cuota de IA agotada, podés seguir cargando manualmente. Analizar envía únicamente las fotos adjuntas y descripción de esa consulta.",
     ],
   },
   {

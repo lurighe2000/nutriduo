@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Camera } from "lucide-react";
+import MealPhotos from "./MealPhotos";
 import { Button } from "../../components/ui";
 import { useApp } from "../../app/context";
 import { aiSchema } from "../../schemas";
@@ -8,18 +8,20 @@ import { analyzeMeal, currentAIConnection } from "../../services/integratedAI";
 import { type AnalysisResponse } from "../../services/aiContract";
 import AIConnectionForm from "./AIConnectionForm";
 export default function AIAnalyzer({
-  photo,
+  photos,
+  photosBusy,
   description,
   setDescription,
   onPhoto,
   onRemovePhoto,
   onReview,
 }: {
-  photo?: string;
+  photos: string[];
+  photosBusy: boolean;
   description: string;
   setDescription: (v: string) => void;
-  onPhoto: (file?: File) => Promise<void>;
-  onRemovePhoto: () => void;
+  onPhoto: (files: File[]) => Promise<void>;
+  onRemovePhoto: (index: number) => void;
   onReview: (analysis: z.infer<typeof aiSchema>) => void;
 }) {
   const { profile } = useApp();
@@ -42,7 +44,7 @@ export default function AIAnalyzer({
     <section className="ai-analyzer">
       <h3>Tu plato, con contexto</h3>
       <p className="muted">
-        Foto + descripción para estimar los componentes. Después revisás los
+        Fotos + descripción para estimar los componentes. Después revisás los
         datos y decidís qué guardar.
       </p>
       {!connected && (
@@ -77,52 +79,20 @@ export default function AIAnalyzer({
           </button>
         </p>
       )}
-      <div className="photo-inputs">
-        <label className="upload-button">
-          <Camera size={17} />
-          Sacar foto del plato
-          <input
-            disabled={busy}
-            aria-label="Sacar foto para analizar"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={(e) => {
-              changed();
-              void onPhoto(e.target.files?.[0]);
-            }}
-          />
-        </label>
-        <label className="upload-button">
-          Elegir foto del plato
-          <input
-            disabled={busy}
-            aria-label="Elegir foto para analizar"
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              changed();
-              void onPhoto(e.target.files?.[0]);
-            }}
-          />
-        </label>
-      </div>
-      {photo && (
-        <div className="meal-photo-preview">
-          <img src={photo} alt="Plato para analizar" />
-          <button
-            className="text-button"
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              changed();
-              onRemovePhoto();
-            }}
-          >
-            Quitar foto
-          </button>
-        </div>
-      )}
+      <MealPhotos
+        photos={photos}
+        loading={photosBusy}
+        disabled={busy}
+        analysis
+        onAdd={async (files) => {
+          changed();
+          await onPhoto(files);
+        }}
+        onRemove={(index) => {
+          changed();
+          onRemovePhoto(index);
+        }}
+      />
       <label className="field">
         <span>Descripción, cantidades, cocción y marcas</span>
         <textarea
@@ -138,14 +108,18 @@ export default function AIAnalyzer({
         />
       </label>
       <p className="muted small">
-        Al analizar se envían esta foto y descripción a Groq a través de tu
-        servicio. No se envían el PIN, peso, objetivos ni otros registros. La
-        comida se guarda sólo al confirmar.
+        Al analizar se envían todas las fotos adjuntas y la descripción a Groq a
+        través de tu servicio. No se envían el PIN, peso, objetivos ni otros
+        registros. La comida se guarda sólo al confirmar.
       </p>
       <div className="actions">
         <Button
           disabled={
-            !connected || !photo || description.trim().length < 5 || busy
+            !connected ||
+            !photos.length ||
+            description.trim().length < 5 ||
+            busy ||
+            photosBusy
           }
           onClick={() => {
             const controller = new AbortController();
@@ -153,7 +127,7 @@ export default function AIAnalyzer({
             setBusy(true);
             setError("");
             setResult(null);
-            void analyzeMeal(profile.id, photo!, description, controller.signal)
+            void analyzeMeal(profile.id, photos, description, controller.signal)
               .then((value) => {
                 if (!controller.signal.aborted) setResult(value);
               })
@@ -170,7 +144,7 @@ export default function AIAnalyzer({
               });
           }}
         >
-          {busy ? "Analizando comida…" : "Analizar foto y descripción"}
+          {busy ? "Analizando comida…" : "Analizar fotos y descripción"}
         </Button>
         {busy && (
           <Button secondary onClick={changed}>

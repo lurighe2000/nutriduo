@@ -136,8 +136,8 @@ async function equalSecret(a: string, b: string) {
   for (let i = 0; i < p.length; i++) diff |= p[i] ^ q[i];
   return diff === 0;
 }
-async function readBody(request: Request) {
-  if (Number(request.headers.get("content-length")) > MAX_BODY)
+async function readBody(request: Request, maxBody = MAX_BODY) {
+  if (Number(request.headers.get("content-length")) > maxBody)
     throw new Error("body_limit");
   const reader = request.body?.getReader();
   if (!reader) throw new Error("body_empty");
@@ -148,7 +148,7 @@ async function readBody(request: Request) {
     const chunk = await reader.read();
     if (chunk.done) break;
     bytes += chunk.value.byteLength;
-    if (bytes > MAX_BODY) {
+    if (bytes > maxBody) {
       await reader.cancel();
       throw new Error("body_limit");
     }
@@ -262,11 +262,11 @@ export function createHandler(upstream: typeof fetch = fetch) {
       );
     let body: unknown;
     try {
-      body = await readBody(request);
-    } catch {
+      body = await readBody(request, path === "/analyze" ? 6100000 : MAX_BODY);
+    } catch (error) {
       return reply(
-        { error: "Solicitud inválida o foto demasiado grande." },
-        400,
+        { error: "Solicitud inválida o fotos demasiado grandes." },
+        error instanceof Error && error.message === "body_limit" ? 413 : 400,
       );
     }
     try {
@@ -312,7 +312,7 @@ export function createHandler(upstream: typeof fetch = fetch) {
         return reply(
           {
             error:
-              "Agregá una foto válida y una descripción con cantidades y cocción.",
+              "Agregá fotos válidas y una descripción con cantidades y cocción.",
           },
           400,
         );
@@ -332,7 +332,10 @@ export function createHandler(upstream: typeof fetch = fetch) {
                 role: "user",
                 content: [
                   { type: "text", text: input.data.description },
-                  { type: "image_url", image_url: { url: input.data.photo } },
+                  ...input.data.photos.map((photo) => ({
+                    type: "image_url",
+                    image_url: { url: photo },
+                  })),
                 ],
               },
             ],

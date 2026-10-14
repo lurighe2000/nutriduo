@@ -1,3 +1,4 @@
+import { analysisPhotos } from "./photos";
 import { z } from "zod";
 import {
   analysisRequestSchema,
@@ -176,14 +177,16 @@ export async function connectAI(
 }
 export async function analyzeMeal(
   id: ProfileId,
-  photo: string,
+  photos: string[],
   description: string,
   signal?: AbortSignal,
 ) {
   const connection = currentAIConnection(id);
   if (!connection)
     throw new Error("Conectá el análisis para este perfil primero.");
-  const input = analysisRequestSchema.parse({ photo, description });
+  const images = await analysisPhotos(photos, signal);
+  signal?.throwIfAborted();
+  const input = analysisRequestSchema.parse({ photos: images, description });
   return analysisResponseSchema.parse(
     await request(connection, "/analyze", input, signal),
   );

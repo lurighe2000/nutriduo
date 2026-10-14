@@ -1,3 +1,4 @@
+import { mealPhotos } from "../../services/photos";
 import {
   ArrowUpRight,
   Plus,
@@ -220,8 +221,8 @@ export default function Dashboard() {
                   onClick={() => navigate("comidas")}
                 >
                   <span className="meal-emoji">
-                    {m.photo ? (
-                      <img src={m.photo} alt="" />
+                    {mealPhotos(m)[0] ? (
+                      <img src={mealPhotos(m)[0]} alt="" />
                     ) : (
                       <Leaf size={21} />
                     )}

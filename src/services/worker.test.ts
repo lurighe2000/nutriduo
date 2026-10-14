@@ -52,7 +52,9 @@ describe("servicio de IA", () => {
     for (const food of catalog.foods)
       expect(nutrientFoodSchema.safeParse(food).success).toBe(true);
     const results = searchCatalog("rice cooked");
-    expect(searchCatalog("banana raw edible portion").length).toBeGreaterThan(0);
+    expect(searchCatalog("banana raw edible portion").length).toBeGreaterThan(
+      0,
+    );
     expect(results.length).toBeGreaterThan(0);
     expect(
       results.every(
@@ -106,6 +108,13 @@ describe("servicio de IA", () => {
       },
       { photo, description: "" },
       { photo, description: "Plato de prueba", model: "paid-model" },
+      { photos: [], description: "Plato de prueba" },
+      { photos: [photo, photo, photo, photo], description: "Plato de prueba" },
+      { photos: [photo], photo, description: "Plato de prueba" },
+      {
+        photos: [photo, "https://example.com/label.jpg"],
+        description: "Plato de prueba",
+      },
     ])
       expect((await handle(request("/analyze", body), env)).status).toBe(400);
     expect(upstream).not.toHaveBeenCalled();
@@ -160,6 +169,69 @@ describe("servicio de IA", () => {
     expect(
       await (await createHandler(upstream)(request(), env)).json(),
     ).toEqual(value);
+  });
+  it("envía todas las imágenes en orden en una sola consulta y acepta más de 2 MB en total", async () => {
+    const upstream = vi.fn(async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: JSON.stringify({ status: "ready", analysis }) },
+          },
+        ],
+      }),
+    );
+    const photos = ["a", "b", "c"].map(
+      (value) => `data:image/jpeg;base64,${value.repeat(1000000)}`,
+    );
+    const response = await createHandler(upstream)(
+      request("/analyze", {
+        photos,
+        description: "Plato, etiqueta y preparación; sólo consumí 150 g",
+      }),
+      env,
+    );
+    expect(response.status).toBe(200);
+    expect(upstream).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(
+      (upstream.mock.calls as unknown as [string, RequestInit][])[0][1]
+        .body as string,
+    );
+    expect(
+      body.messages[1].content
+        .slice(1)
+        .map((part: { image_url: { url: string } }) => part.image_url.url),
+    ).toEqual(photos);
+    expect(body.messages[0].content).toContain(
+      "no sumes un plato ni ingrediente más de una vez",
+    );
+  });
+  it("rechaza fotos o cuerpos demasiado grandes sin llamar a Groq", async () => {
+    const upstream = vi.fn();
+    const handle = createHandler(upstream);
+    expect(
+      (
+        await handle(
+          request("/analyze", {
+            photos: [`data:image/jpeg;base64,${"a".repeat(2000000)}`],
+            description: "Plato de prueba",
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await handle(
+          request("/analyze", {
+            photos: [photo],
+            description: "a".repeat(6100000),
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(413);
+    expect(upstream).not.toHaveBeenCalled();
   });
   it("cuota agotada no reintenta, no cambia de modelo y no expone secretos", async () => {
     const upstream = vi.fn(

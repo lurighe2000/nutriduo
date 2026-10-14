@@ -1,6 +1,6 @@
 # Servicio gratuito de NutriDuo
 
-La web sigue en GitHub Pages. Este Worker sólo recibe la foto y descripción que la persona decide analizar. No recibe PIN, perfil, peso, objetivos ni historial. No almacena fotos, prompts ni respuestas y tiene logs desactivados. Groq procesa el análisis. La búsqueda nutricional usa un catálogo oficial incluido; si se configura una clave USDA opcional, ese servicio recibe únicamente el término de búsqueda de un alimento.
+La web sigue en GitHub Pages. Este Worker sólo recibe las fotos y descripción que la persona decide analizar. No recibe PIN, perfil, peso, objetivos ni historial. No almacena fotos, prompts ni respuestas y tiene logs desactivados. Groq procesa el análisis. La búsqueda nutricional usa un catálogo oficial incluido; si se configura una clave USDA opcional, ese servicio recibe únicamente el término de búsqueda de un alimento.
 
 ## Activación
 
@@ -16,6 +16,7 @@ Los comandos de configuración solicitan secretos interactivamente. No ponerlos 
 ## Límites y funcionamiento
 
 - Modelo fijo `qwen/qwen3.8-27b`, salida JSON y hasta 2048 tokens de respuesta. El cliente no puede elegir modelos o instrucciones del sistema.
+- `/analyze` acepta `{photos, description}` y el formato anterior `{photo, description}` para instalaciones pendientes de actualización. Hasta tres imágenes de 2 millones de caracteres cada una; cuerpo máximo de 6,1 MB. La app conserva cada foto por separado y, cuando hay más de dos, genera láminas numeradas con todas ellas para una sola consulta. Envía como máximo dos imágenes para dejar espacio para descripción y respuesta dentro de la cuota gratuita de tokens. Muchas fotos reducen el detalle disponible por etiqueta: el análisis debe preguntar cuando el texto no sea legible. El prompt evita contar varias vistas de un plato o un envase completo como consumo adicional.
 - 3 solicitudes por minuto y ruta en cada ubicación de Cloudflare. Este límite local protege de ráfagas; no es una cuota global. También se aplican las cuotas de Groq de la organización y el límite del plan Workers Free.
 - No hay reintentos automáticos, proveedores alternativos pagos, ni cambios de plan. Un HTTP 429 mantiene el formulario para volver a intentar o cargar manualmente. El costo depende de conservar ambas cuentas en sus planes gratuitos; la app no puede comprobar ni modificar el plan de facturación de terceros.
 - Solicitudes autorizadas con código y origen permitido. CORS no sustituye la autenticación. Rutas `/health`, `/analyze` y `/nutrition/search`; cuerpos limitados y validados, sin URLs de fotos remotas.

@@ -726,11 +726,11 @@ export default function More() {
         <Modal title="Privacidad y acceso" onClose={() => setPanel("")}>
           <p>
             Sin publicidad ni analytics. Comidas, peso, balanza y progreso se
-            guardan en este dispositivo. Analizar envía la foto y descripción de
-            esa consulta a tu servicio de Cloudflare y Groq. La búsqueda
-            nutricional consulta USDA a través de tu servicio; los códigos de
-            barras consultan Open Food Facts. El menú semanal se calcula
-            localmente.
+            guardan en este dispositivo. Analizar envía las fotos adjuntas y
+            descripción de esa consulta a tu servicio de Cloudflare y Groq. La
+            búsqueda nutricional consulta USDA a través de tu servicio; los
+            códigos de barras consultan Open Food Facts. El menú semanal se
+            calcula localmente.
           </p>
           <p>
             El PIN evita entrar por error a otro perfil. No cifra IndexedDB ni
