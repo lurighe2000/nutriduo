@@ -4,6 +4,7 @@ import type { Profile, Records, TableName } from "../schemas";
 export type Data = { [K in TableName]: Records[K][] };
 export interface AppContextValue {
   profile: Profile;
+  setAppearance: (dark: boolean) => void;
   data: Data;
   repo: ReturnType<typeof repository>;
   date: string;

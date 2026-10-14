@@ -53,6 +53,7 @@ interface InstallEvent extends Event {
 export default function More() {
   const {
     profile: p,
+    setAppearance,
     data,
     repo,
     date,
@@ -283,6 +284,7 @@ export default function More() {
                     "Este objetivo es demasiado bajo para el ajuste orientativo de la app. Revisalo con un profesional.",
                   );
                 await db.profiles.put(valid);
+                setAppearance(valid.dark);
                 setPanel("");
               }, "Preferencias guardadas");
             }}
@@ -624,6 +626,7 @@ export default function More() {
           onConfirm={() =>
             void run(async () => {
               await restoreBackup(backup, p.id);
+              setAppearance(backup.profile.dark);
               setBackup(undefined);
               setPanel("");
             }, "Backup restaurado")

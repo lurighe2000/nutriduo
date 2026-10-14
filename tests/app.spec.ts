@@ -1114,7 +1114,15 @@ test("tema oscuro persistente en móvil y regreso a claro", async ({ page }) => 
     "background-color",
     "rgb(24, 33, 44)",
   );
-  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await expect(page.getByLabel("Usar tema oscuro")).toBeChecked();
+  await page.getByLabel("Usar tema oscuro").uncheck();
+  await page
+    .getByRole("button", { name: "Confirmar objetivos y preferencias" })
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(page.locator(".app-shell")).not.toHaveClass(/dark/);
+  await page.getByRole("button", { name: "Oscuro", exact: true }).click();
+  await expect(page.locator(".app-shell")).toHaveClass(/dark/);
   await page.getByRole("button", { name: "Claro", exact: true }).click();
   await expect(page.locator(".app-shell")).not.toHaveClass(/dark/);
   expect(
@@ -1338,4 +1346,118 @@ test("fotos de comida se suman en carga manual, persisten y restauran fotos anti
   await page.getByRole("button", { name: "Entrar a mi espacio" }).click();
   await navigate(page, "Comidas");
   await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(1);
+});
+
+test("tema responde al tacto en modo instalado aunque el guardado esté ocupado", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 412, height: 915 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  await context.addInitScript(() => {
+    const matchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      const result = matchMedia(query);
+      if (query === "(display-mode: standalone)")
+        Object.defineProperty(result, "matches", { value: true });
+      return result;
+    };
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Oscuro", exact: true }).tap();
+    await expect(page.locator(".appearance-frame")).toHaveClass(/dark/);
+    await page.getByRole("button", { name: "Claro", exact: true }).tap();
+    await expect(page.locator(".appearance-frame")).not.toHaveClass(/dark/);
+    await setup(page);
+    expect(
+      await page.evaluate(
+        () => matchMedia("(display-mode: standalone)").matches,
+      ),
+    ).toBe(true);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          const open = indexedDB.open("nutriduo-v1");
+          open.onerror = () => reject(open.error);
+          open.onsuccess = () => {
+            const database = open.result;
+            let holding = true;
+            (
+              window as Window & { releaseThemeHold?: () => void }
+            ).releaseThemeHold = () => {
+              holding = false;
+            };
+            const transaction = database.transaction("profiles", "readwrite");
+            transaction.oncomplete = () => database.close();
+            const store = transaction.objectStore("profiles");
+            const keepAlive = () => {
+              const request = store.get("luca");
+              request.onsuccess = () => {
+                resolve();
+                if (holding) keepAlive();
+              };
+            };
+            keepAlive();
+          };
+        }),
+    );
+    try {
+      await page.getByRole("button", { name: "Oscuro", exact: true }).tap();
+      await expect(page.locator(".app-shell")).toHaveClass(/dark/, {
+        timeout: 1000,
+      });
+      await page.getByRole("button", { name: "Claro", exact: true }).tap();
+      await expect(page.locator(".app-shell")).not.toHaveClass(/dark/, {
+        timeout: 1000,
+      });
+      await page.getByRole("button", { name: "Oscuro", exact: true }).tap();
+      await expect(page.locator(".app-shell")).toHaveClass(/dark/, {
+        timeout: 1000,
+      });
+    } finally {
+      await page.evaluate(() =>
+        (
+          window as Window & { releaseThemeHold?: () => void }
+        ).releaseThemeHold?.(),
+      );
+    }
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            new Promise<boolean>((resolve, reject) => {
+              const open = indexedDB.open("nutriduo-v1");
+              open.onerror = () => reject(open.error);
+              open.onsuccess = () => {
+                const database = open.result;
+                const request = database
+                  .transaction("profiles")
+                  .objectStore("profiles")
+                  .get("luca");
+                request.onsuccess = () => {
+                  resolve(request.result.dark);
+                  database.close();
+                };
+              };
+            }),
+        ),
+      )
+      .toBe(true);
+    await page.reload();
+    await page.getByRole("button", { name: /Luca Construir/ }).tap();
+    await page.getByLabel("PIN", { exact: true }).fill("1234");
+    await page.getByRole("button", { name: "Entrar a mi espacio" }).tap();
+    await expect(page.locator(".app-shell")).toHaveClass(/dark/);
+    await page.getByRole("button", { name: "Claro", exact: true }).tap();
+    await expect(page.locator(".app-shell")).not.toHaveClass(/dark/);
+    await expect(
+      page.getByRole("heading", { name: "Hoy, Luca" }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });

@@ -3,6 +3,7 @@ import {
   Suspense,
   useEffect,
   useState,
+  useRef,
   Component,
   type ReactNode,
 } from "react";
@@ -150,7 +151,20 @@ function Shell({
   dark: boolean;
   setDark: (v: boolean) => void;
 }) {
-  useEffect(() => setDark(profile.dark), [profile.dark, setDark]);
+  const themeWrites = useRef(Promise.resolve());
+  function changeTheme(value: boolean) {
+    // Rendering must not wait for IndexedDB. Serialize writes so rapid taps
+    // persist the last choice without an older save changing the visible theme.
+    setDark(value);
+    const write = themeWrites.current.then(() =>
+      db.profiles.update(profile.id, { dark: value }),
+    );
+    themeWrites.current = write.then(
+      () => undefined,
+      () => undefined,
+    );
+    void run(() => write);
+  }
   const { navigation: appNavigation, date, page } = useAppNavigation(lock);
   const { setDate, navigate } = appNavigation;
   const [mealOpen, setMealOpen] = useState(false),
@@ -242,6 +256,7 @@ function Shell({
       <AppContext.Provider
         value={{
           profile,
+          setAppearance: setDark,
           data,
           repo,
           date,
@@ -311,15 +326,7 @@ function Shell({
                 </div>
               </div>
               <div className="topbar-right">
-                <ThemeToggle
-                  dark={dark}
-                  onChange={(value) =>
-                    void run(async () => {
-                      await db.profiles.update(profile.id, { dark: value });
-                      setDark(value);
-                    })
-                  }
-                />
+                <ThemeToggle dark={dark} onChange={changeTheme} />
                 <span className="local-badge">
                   {offline ? (
                     <WifiOff size={14} />
@@ -383,7 +390,7 @@ function Shell({
                 )}
               </Suspense>
               <footer className="app-footer">
-                Guardado en este dispositivo <span>NutriDuo · 1.3</span>
+                Guardado en este dispositivo <span>NutriDuo · 1.4</span>
               </footer>
             </main>
           </div>

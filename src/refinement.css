@@ -222,7 +222,8 @@ h3 {
   justify-content: center;
   gap: 6px;
   font-size: 12px;
-  min-height: 34px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 5px 10px;
   border-radius: 5px;
   background: none;
@@ -311,13 +312,13 @@ h3 {
     font-size: 16px;
   }
   .theme-toggle button {
-    min-height: 36px;
+    min-height: 44px;
   }
   .theme-toggle button span {
     display: none;
   }
   .theme-toggle button {
-    width: 38px;
+    width: 44px;
     padding: 6px;
   }
   .welcome-theme {
