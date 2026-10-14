@@ -11,6 +11,7 @@ export const SOURCE_LABELS = {
   estimated: "Estimación",
   ai_estimated: "Estimación IA",
   verified: "Verificado",
+  database: "Base nutricional · porción estimada",
 };
 export const MEAL_TYPES = [
   "Desayuno",

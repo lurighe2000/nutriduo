@@ -74,5 +74,8 @@ export async function lookupProduct(
     saturatedFat: get("saturated-fat_100g"),
     sodium: get("sodium_100g"),
     salt: get("salt_100g"),
+    fiberKnown: get("fiber_100g") !== undefined,
+    micronutrientsPer100: get("sodium_100g") === undefined ? undefined : { sodium_mg: get("sodium_100g")! * 1000 },
+    nutritionReference: { source: "openfoodfacts", id: barcode, description: p.product_name || "Producto sin nombre" },
   };
 }

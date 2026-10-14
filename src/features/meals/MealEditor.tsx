@@ -28,6 +28,11 @@ import { Modal, Button, Field, NumberField, Select } from "../../components/ui";
 import { compressPhoto } from "../../services/photos";
 import { aiItems, aiPrompt, parseAnalysis } from "../../services/ai";
 import { lookupProduct } from "../../services/products";
+import AIAnalyzer from "./AIAnalyzer";
+import NutritionLookup from "./NutritionLookup";
+import Micronutrients from "../../components/Micronutrients";
+import { aiSchema } from "../../schemas";
+import { z } from "zod";
 export function blankItem(): Item {
   return {
     id: crypto.randomUUID(),
@@ -98,7 +103,10 @@ export function ItemFields({
                   onChange({
                     ...item,
                     per100: { ...item.per100, [k]: n },
-                    source: item.source === "barcode" ? "manual" : item.source,
+                    fiberKnown: k === "fiber" ? true : item.fiberKnown,
+                    source: ["barcode", "database"].includes(item.source)
+                      ? "manual"
+                      : item.source,
                   })
                 }
               />
@@ -133,6 +141,36 @@ export function ItemFields({
         {rounded(total.protein)} g proteína · {rounded(total.carbs)} g carbos ·{" "}
         {rounded(total.fat)} g grasas
       </div>
+      {item.nutritionReference && (
+        <p className="muted small">
+          Ficha seleccionada: {item.nutritionReference.description} ·{" "}
+          {item.nutritionReference.source === "usda" ? (
+            <a
+              href={`https://fdc.nal.usda.gov/food-details/${encodeURIComponent(item.nutritionReference.id)}/nutrients`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              USDA
+            </a>
+          ) : (
+            <a
+              href={`https://world.openfoodfacts.org/product/${encodeURIComponent(item.nutritionReference.id)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open Food Facts
+            </a>
+          )}
+        </p>
+      )}
+      {item.fiberKnown === false && (
+        <p className="muted small">
+          Fibra sin dato: el cálculo actual no incluye su aporte. Podés
+          completarla desde la etiqueta.
+        </p>
+      )}
+      <Micronutrients items={[item]} />
+      <NutritionLookup item={item} onChange={onChange} />
     </div>
   );
 }
@@ -162,6 +200,7 @@ export default function MealEditor({
     [navigationId] = useState(() => crypto.randomUUID()),
     [search, setSearch] = useState(""),
     [json, setJson] = useState(""),
+    [description, setDescription] = useState(""),
     [questions, setQuestions] = useState<string[]>([]),
     [code, setCode] = useState(""),
     [scanning, setScanning] = useState(false),
@@ -186,6 +225,9 @@ export default function MealEditor({
         per100: food.per100,
         source: food.source,
         cooking: "",
+        micronutrientsPer100: food.micronutrientsPer100,
+        nutritionReference: food.nutritionReference,
+        fiberKnown: food.fiberKnown,
       },
     ]);
     setTab("manual");
@@ -244,6 +286,9 @@ export default function MealEditor({
                       per100: item.per100,
                       source: item.source,
                       servingSize: item.grams,
+                      micronutrientsPer100: item.micronutrientsPer100,
+                      nutritionReference: item.nutritionReference,
+                      fiberKnown: item.fiberKnown,
                     }),
                   );
               }
@@ -289,14 +334,7 @@ export default function MealEditor({
   function importAI(repair = false) {
     try {
       const parsed = parseAnalysis(json, repair);
-      setName(parsed.meal_name);
-      setItems(aiItems(parsed));
-      setQuestions(parsed.questions);
-      setNotes(
-        `Análisis IA · confianza ${Math.round(parsed.confidence * 100)}%. ${parsed.questions.join(" ")}`,
-      );
-      setTab("manual");
-      setError("");
+      reviewAI(parsed);
     } catch (e) {
       setError(
         e instanceof ZodError
@@ -304,6 +342,19 @@ export default function MealEditor({
           : "JSON inválido. Revisá el formato o intentá repararlo.",
       );
     }
+  }
+  function reviewAI(parsed: z.infer<typeof aiSchema>) {
+    setName(parsed.meal_name);
+    setItems(aiItems(parsed));
+    setQuestions(parsed.questions);
+    setNotes(
+      `${description ? description + "\n" : ""}Análisis IA · confianza ${Math.round(parsed.confidence * 100)}%. ${parsed.questions.join(" ")}`.slice(
+        0,
+        2000,
+      ),
+    );
+    setTab("manual");
+    setError("");
   }
   return (
     <Modal
@@ -317,39 +368,53 @@ export default function MealEditor({
       onClose={onClose}
     >
       <div className="tabs compact">
-        {["manual", "buscar", "código", "IA externa"].map((t, i) => (
-          <button
-            key={t}
-            className={tab === t ? "active" : ""}
-            onClick={() => {
-              setTab(t);
-              setError("");
-            }}
-          >
-            {
-              [
-                <Plus size={16} />,
-                <Search size={16} />,
-                <ScanBarcode size={16} />,
-                <Clipboard size={16} />,
-              ][i]
-            }
-            {t === "manual"
-              ? "Componentes"
-              : t === "buscar"
-                ? "Mis alimentos"
-                : t === "código"
-                  ? "Código de barras"
-                  : t}
-          </button>
-        ))}
+        {["manual", "analizar", "buscar", "código", "IA externa"].map(
+          (t, i) => (
+            <button
+              key={t}
+              className={tab === t ? "active" : ""}
+              onClick={() => {
+                setTab(t);
+                setError("");
+              }}
+            >
+              {
+                [
+                  <Plus size={16} />,
+                  <Camera size={16} />,
+                  <Search size={16} />,
+                  <ScanBarcode size={16} />,
+                  <Clipboard size={16} />,
+                ][i]
+              }
+              {t === "manual"
+                ? "Componentes"
+                : t === "analizar"
+                  ? "Analizar comida"
+                  : t === "buscar"
+                    ? "Mis alimentos"
+                    : t === "código"
+                      ? "Código de barras"
+                      : t}
+            </button>
+          ),
+        )}
       </div>
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
-      {tab === "buscar" ? (
+      {tab === "analizar" ? (
+        <AIAnalyzer
+          photo={photo}
+          description={description}
+          setDescription={setDescription}
+          onPhoto={photoInput}
+          onRemovePhoto={() => setPhoto(undefined)}
+          onReview={reviewAI}
+        />
+      ) : tab === "buscar" ? (
         <>
           <Field
             label="Buscar en mis alimentos"
@@ -654,6 +719,7 @@ export default function MealEditor({
               {rounded(total.fat / (recipeMode ? servings : 1))} g grasas
             </small>
           </div>
+          <Micronutrients items={items} />
           <Button type="submit" disabled={busy || !items.length}>
             {busy
               ? "Guardando…"

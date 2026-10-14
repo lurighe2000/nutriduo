@@ -44,6 +44,259 @@ async function manualMeal(page: Page) {
   await page.getByRole("button", { name: "Confirmar y registrar" }).click();
   await expect(page.locator("dialog")).toHaveCount(0);
 }
+test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo al confirmar", async ({
+  page,
+}) => {
+  let analyses = 0;
+  const posted: Record<string, unknown>[] = [];
+  await page.route("https://nutriduo-fixture.workers.dev/**", async (route) => {
+    const headers = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "Content-Type, Authorization",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+    };
+    if (route.request().method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/health")
+      return route.fulfill({
+        headers,
+        json: { ready: true, provider: "groq", nutritionDatabase: true },
+      });
+    if (path === "/nutrition/search")
+      return route.fulfill({
+        headers,
+        json: {
+          foods: [
+            {
+              name: "Rice, cooked (fixture)",
+              per100: {
+                calories: 130,
+                protein: 3,
+                carbs: 28,
+                fat: 1,
+                fiber: 0.4,
+              },
+              fiberKnown: true,
+              micronutrientsPer100: { sodium_mg: 0, iron_mg: 1.5 },
+              nutritionReference: {
+                source: "usda",
+                id: "123",
+                description: "Rice, cooked (fixture)",
+              },
+            },
+          ],
+        },
+      });
+    posted.push(route.request().postDataJSON());
+    analyses++;
+    return route.fulfill({
+      headers,
+      json:
+        analyses === 1
+          ? {
+              status: "needs_details",
+              questions: ["¿Cuánto aceite agregaste?"],
+            }
+          : {
+              status: "ready",
+              analysis: {
+                meal_name: "Arroz con aceite",
+                confidence: 0.6,
+                foods: [
+                  {
+                    name: "Arroz cocido",
+                    estimated_grams: 150,
+                    calories: 195,
+                    protein_g: 4.5,
+                    carbs_g: 42,
+                    fat_g: 1.5,
+                    confidence: 0.7,
+                    cooking: "hervido",
+                    database_query: "rice cooked",
+                  },
+                  {
+                    name: "Aceite",
+                    estimated_grams: 5,
+                    calories: 45,
+                    protein_g: 0,
+                    carbs_g: 0,
+                    fat_g: 5,
+                    confidence: 0.6,
+                  },
+                ],
+                questions: [],
+              },
+            },
+    });
+  });
+  await setup(page);
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page
+    .getByRole("button", { name: "Registrar comida", exact: true })
+    .last()
+    .click();
+  await page
+    .getByRole("button", { name: "Analizar comida", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Analizar foto y descripción" }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Configurar conexión", exact: true })
+    .click();
+  await page
+    .getByLabel("Dirección del servicio NutriDuo")
+    .fill("https://nutriduo-fixture.workers.dev");
+  await page
+    .getByLabel("Código de conexión NutriDuo")
+    .fill("fixture-access-code-at-least-32-characters");
+  await page
+    .getByRole("button", { name: "Conectar análisis", exact: true })
+    .click();
+  await expect(page.getByText(/Groq conectado/)).toBeVisible();
+  await page
+    .getByLabel("Elegir foto para analizar")
+    .setInputFiles("public/icon-192.png");
+  await expect(page.getByAltText("Plato para analizar")).toBeVisible();
+  await page
+    .getByLabel("Descripción, cantidades, cocción y marcas")
+    .fill("Arroz marca Fixture, 150 g cocidos, hervido, con aceite");
+  await page
+    .getByRole("button", { name: "Analizar foto y descripción" })
+    .click();
+  await expect(
+    page.getByText("¿Cuánto aceite agregaste?", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Descripción, cantidades, cocción y marcas")
+    .fill("Arroz marca Fixture, 150 g cocidos, hervido; 5 g de aceite");
+  await page
+    .getByRole("button", { name: "Analizar foto y descripción" })
+    .click();
+  await page
+    .getByRole("button", { name: "Revisar componentes", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Alimento", { exact: true }).first(),
+  ).toHaveValue("Arroz cocido");
+  await expect(page.getByLabel("Método de cocción").first()).toHaveValue(
+    "hervido",
+  );
+  await page
+    .getByText("Buscar una ficha nutricional", { exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Buscar en USDA", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Rice, cooked \(fixture\)/ }).click();
+  await page
+    .locator("dialog .micronutrients")
+    .last()
+    .locator("summary")
+    .click();
+  await expect(page.locator("dialog .micronutrients").last()).toContainText(
+    "Parcial: 1 de 2 componentes",
+  );
+  await expect(page.locator("dialog .micronutrients").last()).toContainText(
+    "2,25 mg",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/meal-ai-review-mobile.png",
+    fullPage: true,
+  });
+  await expect(page.locator(".ring-text strong")).toHaveText("0");
+  expect(posted).toHaveLength(2);
+  expect(Object.keys(posted[1]).sort()).toEqual(["description", "photo"]);
+  expect(posted[1].description).toContain("marca Fixture");
+  await page
+    .getByRole("button", { name: "Confirmar y registrar", exact: true })
+    .click();
+  await expect(page.locator(".ring-text strong")).toHaveText("240");
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Comidas", exact: true })
+    .click();
+  await page.locator(".meal-detail .micronutrients summary").click();
+  await expect(page.locator(".meal-detail .micronutrients")).toContainText(
+    "2,25 mg",
+  );
+});
+
+test("cuota IA agotada conserva foto y descripción y mantiene la carga manual", async ({
+  page,
+}) => {
+  let calls = 0;
+  await page.route("https://nutriduo-fixture.workers.dev/**", (route) => {
+    const headers = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "Content-Type, Authorization",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+    };
+    if (route.request().method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    if (new URL(route.request().url()).pathname === "/health")
+      return route.fulfill({
+        headers,
+        json: { ready: true, provider: "groq", nutritionDatabase: false },
+      });
+    calls++;
+    return route.fulfill({
+      status: 429,
+      headers,
+      json: { error: "La cuota gratuita de IA está agotada temporalmente." },
+    });
+  });
+  await setup(page);
+  await page
+    .getByRole("button", { name: "Registrar comida", exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Analizar comida", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Configurar conexión", exact: true })
+    .click();
+  await page
+    .getByLabel("Dirección del servicio NutriDuo")
+    .fill("https://nutriduo-fixture.workers.dev");
+  await page
+    .getByLabel("Código de conexión NutriDuo")
+    .fill("fixture-access-code-at-least-32-characters");
+  await page
+    .getByRole("button", { name: "Conectar análisis", exact: true })
+    .click();
+  await expect(page.getByText(/Groq conectado/)).toBeVisible();
+  await page
+    .getByLabel("Elegir foto para analizar")
+    .setInputFiles("public/icon-192.png");
+  await expect(page.getByAltText("Plato para analizar")).toBeVisible();
+  await page
+    .getByLabel("Descripción, cantidades, cocción y marcas")
+    .fill("Comida de prueba con descripción");
+  await page
+    .getByRole("button", { name: "Analizar foto y descripción" })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("cuota gratuita");
+  await expect(
+    page.getByLabel("Descripción, cantidades, cocción y marcas"),
+  ).toHaveValue("Comida de prueba con descripción");
+  await expect(page.getByAltText("Plato para analizar")).toBeVisible();
+  expect(calls).toBe(1);
+  await page.goBack();
+  await expect(page.locator("dialog .tabs button.active")).toHaveText(
+    "Componentes",
+  );
+  await page.getByRole("button", { name: "Agregar componente manual" }).click();
+  await expect(page.getByLabel("Alimento", { exact: true })).toBeVisible();
+});
 test("perfil, comida, edición de gramos, peso, PIN y aislamiento", async ({
   page,
 }) => {
@@ -436,7 +689,9 @@ test("Atrás cierra primero formularios y un cierre normal no deja pasos vacíos
     .click();
   await page.getByRole("button", { name: /Tu perfil y objetivos/ }).click();
   await expect(
-    page.getByRole('dialog').getByRole("heading", { name: "Tu perfil y objetivos", exact: true }),
+    page
+      .getByRole("dialog")
+      .getByRole("heading", { name: "Tu perfil y objetivos", exact: true }),
   ).toBeVisible();
   await page.goBack();
   await expect(page.locator("dialog")).toHaveCount(0);

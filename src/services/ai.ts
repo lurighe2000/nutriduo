@@ -29,6 +29,9 @@ export function aiItems(data: z.infer<typeof aiSchema>): Item[] {
     source: "ai_estimated",
     confidence: f.confidence,
     cooking: "",
+    ...(f.cooking ? { cooking: f.cooking } : {}),
+    nutritionQuery: f.database_query,
+    fiberKnown: f.fiber_g !== undefined,
   }));
 }
 export function aiPrompt(p: Profile) {

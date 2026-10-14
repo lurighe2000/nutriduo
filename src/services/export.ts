@@ -1,5 +1,6 @@
 import { createBackup, download } from "./backup";
 import { itemTotal, dailyTotals } from "../nutrition/formulas";
+import { micronutrientExport } from "../nutrition/micronutrients";
 import { type ProfileId, type Backup } from "../schemas";
 type Cell = string | number | boolean | null | undefined;
 type Row = Record<string, Cell>;
@@ -27,10 +28,15 @@ export function exportRows(b: Backup): Record<string, Row[]> {
         Carbohidratos: itemTotal(i).carbs,
         Grasas: itemTotal(i).fat,
         Fibra: itemTotal(i).fiber,
+        Fibra_con_dato: i.fiberKnown !== false,
         Fuente: i.source,
         Confianza: i.confidence,
         Notas: m.notes,
         Cocción: i.cooking,
+        ...micronutrientExport(i),
+        Referencia_nutricional: i.nutritionReference
+          ? `${i.nutritionReference.source}:${i.nutritionReference.id}`
+          : undefined,
       })),
     ),
     Alimentos: d.foods.map((f) => ({
@@ -50,6 +56,12 @@ export function exportRows(b: Backup): Record<string, Row[]> {
       Porción: f.servingSize,
       Unidad: f.unit,
       URL: f.sourceUrl,
+      ...Object.fromEntries(
+        Object.entries(f.micronutrientsPer100 ?? {}).map(([key, value]) => [
+          `${key}_100g`,
+          value,
+        ]),
+      ),
     })),
     Peso: d.weights.map((w) => ({ Fecha: w.date, Perfil: p.name, Kg: w.kg })),
     Medidas: d.measurements.map((m) => ({
@@ -97,6 +109,7 @@ export function exportRows(b: Backup): Record<string, Row[]> {
         Ingrediente: i.name,
         Gramos: i.grams,
         ...itemTotal(i),
+        ...micronutrientExport(i),
       })),
     ),
     Hidratación: d.hydration.map((w) => ({

@@ -34,6 +34,7 @@ import Dashboard from "../features/dashboard/Dashboard";
 import MealEditor from "../features/meals/MealEditor";
 import { Button } from "../components/ui";
 import ThemeToggle from "../components/ThemeToggle";
+import { forgetAIConnections } from "../services/integratedAI";
 import { NavigationContext, useAppNavigation } from "./navigation";
 const Meals = lazy(() => import("../features/meals/Meals"));
 const Progress = lazy(() => import("../features/progress/Progress"));
@@ -99,6 +100,9 @@ export default function App() {
     };
   }, []);
   const p = profiles?.find((x) => x.id === active);
+  useEffect(() => {
+    if (active === null) forgetAIConnections();
+  }, [active]);
   if (initError)
     return (
       <div className="empty" role="alert">

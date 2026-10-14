@@ -1,0 +1,19 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "nutriduo-ai",
+  "main": "index.ts",
+  "account_id": "f58393104440faaed43dd72b4a792a60",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGINS": "https://lurighe2000.github.io,http://localhost:4173,http://localhost:5173",
+  },
+  "observability": { "enabled": false },
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "101310",
+      "simple": { "limit": 3, "period": 60 },
+    },
+  ],
+}

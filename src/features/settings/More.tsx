@@ -19,6 +19,7 @@ import {
   type Profile,
 } from "../../schemas";
 import { setPin } from "../../services/pin";
+import AIConnectionForm from "../meals/AIConnectionForm";
 import {
   createBackup,
   parseBackup,
@@ -110,6 +111,12 @@ export default function More() {
     setBusy(false);
   }
   const cards = [
+    {
+      id: "ia",
+      icon: BookOpen,
+      title: "Análisis de comidas",
+      text: "Conexión al servicio gratuito y revisión de nutrientes.",
+    },
     {
       id: "perfil",
       icon: Settings,
@@ -214,6 +221,11 @@ export default function More() {
             </div>
           ))}
       </section>
+      {panel === "ia" && (
+        <Modal title="Análisis de comidas" onClose={() => setPanel("")}>
+          <AIConnectionForm />
+        </Modal>
+      )}
       {panel === "perfil" && (
         <Modal title="Tu perfil y objetivos" onClose={() => setPanel("")}>
           <form

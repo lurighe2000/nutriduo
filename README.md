@@ -66,6 +66,10 @@ Cada origen y dispositivo tiene su propia base: los datos de localhost no aparec
 
 Para IA: sacar/elegir foto → copiar prompt → analizar externamente → pegar JSON → validar → revisar gramos y componentes → confirmar. Los valores recibidos representan el total del componente, se convierten a base 100. Compartir foto usa Web Share cuando está disponible, o descarga la imagen. La app no reconoce comidas ni estima grasa corporal por sí sola.
 
+La pestaña **Analizar comida** prepara el análisis integrado de foto + descripción, cantidades, cocción y marcas mediante Groq Free y un Worker de Cloudflare. Requiere activar el servicio personal según [worker/README.md](worker/README.md); hasta entonces muestra estado pendiente de conexión. Una consulta nunca guarda la comida. La IA puede pedir aclaraciones o proponer componentes; la persona los revisa y confirma. Cuota agotada, falta de red y errores conservan el formulario para carga manual.
+
+Las fichas USDA seleccionadas aportan sodio, vitaminas y minerales disponibles, con unidades y procedencia por componente. Requieren una clave gratuita propia de FoodData Central en el servidor. Las etiquetas de OFF aportan sodio cuando existe. Los totales adicionales se muestran en el editor y Comidas, indicando cobertura parcial. No se inventan datos ausentes, y los registros guardados conservan una copia de esos valores para correcciones de gramos, recetas, backups y exportaciones. No hay objetivos ni diagnóstico por micronutrientes.
+
 ## Cloud opcional
 
 `src/services/sync.ts` define `SyncAdapter` y `LocalSyncAdapter`. No hay un cliente Supabase configurado ni una falsa sincronización. Para implementarlo: autenticación por persona, `profile_id` asociado a `auth.uid()`, RLS en cada tabla, almacenamiento privado, consentimiento por foto, cola de cambios y resolución de conflictos. No colocar una service-role key en Vite. Se pospone hasta verificar el uso real de la base local.

@@ -15,7 +15,27 @@ export const sourceSchema = z.enum([
   "estimated",
   "ai_estimated",
   "verified",
+  "database",
 ]);
+export const micronutrientsSchema = z.object({
+  sodium_mg: nonnegative.optional(),
+  potassium_mg: nonnegative.optional(),
+  calcium_mg: nonnegative.optional(),
+  iron_mg: nonnegative.optional(),
+  magnesium_mg: nonnegative.optional(),
+  zinc_mg: nonnegative.optional(),
+  vitamin_a_ug: nonnegative.optional(),
+  vitamin_c_mg: nonnegative.optional(),
+  vitamin_d_ug: nonnegative.optional(),
+  vitamin_e_mg: nonnegative.optional(),
+  vitamin_b12_ug: nonnegative.optional(),
+  folate_ug: nonnegative.optional(),
+});
+export const nutritionReferenceSchema = z.object({
+  source: z.enum(["usda", "openfoodfacts"]),
+  id: z.string().min(1).max(100),
+  description: z.string().min(1).max(300),
+});
 export const macrosSchema = z.object({
   calories: nonnegative,
   protein: nonnegative,
@@ -45,6 +65,9 @@ export const foodSchema = baseSchema.extend({
   saturatedFat: nonnegative.optional(),
   sodium: nonnegative.optional(),
   salt: nonnegative.optional(),
+  micronutrientsPer100: micronutrientsSchema.optional(),
+  fiberKnown: z.boolean().optional(),
+  nutritionReference: nutritionReferenceSchema.optional(),
 });
 export const itemSchema = z.object({
   id: z.string(),
@@ -55,6 +78,10 @@ export const itemSchema = z.object({
   confidence: z.number().min(0).max(1).optional(),
   cooking: z.string().max(200).default(""),
   foodId: z.string().optional(),
+  micronutrientsPer100: micronutrientsSchema.optional(),
+  fiberKnown: z.boolean().optional(),
+  nutritionReference: nutritionReferenceSchema.optional(),
+  nutritionQuery: z.string().max(150).optional(),
 });
 export const imageSchema = z
   .string()
@@ -214,6 +241,8 @@ export const aiSchema = z.object({
         fat_g: nonnegative,
         fiber_g: nonnegative.optional(),
         confidence: z.number().min(0).max(1),
+        cooking: z.string().max(200).optional(),
+        database_query: z.string().max(150).optional(),
       }),
     )
     .min(1)
@@ -240,6 +269,7 @@ export type Records = { [K in TableName]: z.infer<(typeof tables)[K]> };
 export type Profile = z.infer<typeof profileSchema>;
 export type ProfileId = Profile["id"];
 export type Macros = z.infer<typeof macrosSchema>;
+export type Micronutrients = z.infer<typeof micronutrientsSchema>;
 export type Item = z.infer<typeof itemSchema>;
 export type Food = Records["foods"];
 export type Meal = Records["meals"];

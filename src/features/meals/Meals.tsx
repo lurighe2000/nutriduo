@@ -19,6 +19,7 @@ import { rounded, shiftDate, niceDate } from "../../utils/date";
 import { type Meal, type Recipe, type Food } from "../../schemas";
 import { SOURCE_LABELS } from "../../nutrition/constants";
 import MealEditor, { ItemFields } from "./MealEditor";
+import Micronutrients from "../../components/Micronutrients";
 export default function Meals() {
   const { data, profile: p, date, repo, run, addMeal } = useApp();
   const [tab, setTab] = useHistoryChoice<string>("meals.tab", "Hoy");
@@ -81,6 +82,9 @@ export default function Meals() {
               <strong>{rounded(total.fat)} g</strong> grasas
             </span>
           </div>
+          {tab === "Hoy" && meals.length > 0 && (
+            <Micronutrients items={meals.flatMap((m) => m.items)} />
+          )}
           {tab === "Hoy" && (
             <button className="text-button" onClick={() => setDuplicate(true)}>
               <Copy size={16} />
@@ -143,6 +147,7 @@ export default function Meals() {
                       <Trash2 size={17} />
                     </button>
                   </div>
+                  <Micronutrients items={m.items} />
                 </article>
               ))}
             </div>
@@ -316,6 +321,9 @@ export default function Meals() {
                 per100: food.per100,
                 source: food.source,
                 cooking: "",
+                micronutrientsPer100: food.micronutrientsPer100,
+                nutritionReference: food.nutritionReference,
+                fiberKnown: food.fiberKnown,
               }}
               onChange={(i) =>
                 setFood({
@@ -324,6 +332,9 @@ export default function Meals() {
                   servingSize: i.grams,
                   per100: i.per100,
                   source: i.source,
+                  micronutrientsPer100: i.micronutrientsPer100,
+                  nutritionReference: i.nutritionReference,
+                  fiberKnown: i.fiberKnown,
                 })
               }
               onRemove={() => setFood(undefined)}
