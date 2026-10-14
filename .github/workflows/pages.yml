@@ -29,6 +29,7 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /nutriduo/
+          VITE_AI_ENDPOINT: https://nutriduo-ai.lucarighetti2000.workers.dev
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

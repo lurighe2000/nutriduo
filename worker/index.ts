@@ -7,6 +7,27 @@ import {
   type NutrientFood,
 } from "../src/services/aiContract";
 import type { Micronutrients } from "../src/schemas";
+import catalog from "./nutrition-catalog.json";
+const normalize = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+const catalogIndex = (catalog.foods as NutrientFood[]).map((food) => ({
+  food,
+  text: normalize(food.name),
+}));
+export function searchCatalog(query: string): NutrientFood[] {
+  const words = normalize(query)
+    .split(" ")
+    .filter((word) => word && !["edible", "portion", "food", "foods"].includes(word));
+  if (!words.length) return [];
+  return catalogIndex
+    .filter((entry) => words.every((word) => entry.text.includes(word)))
+    .sort((a, b) => a.text.length - b.text.length)
+    .slice(0, 8)
+    .map((entry) => entry.food);
+}
 
 export interface Env {
   GROQ_API_KEY?: string;
@@ -183,7 +204,7 @@ export function createHandler(upstream: typeof fetch = fetch) {
         ready: true,
         provider: "groq",
         model: "qwen/qwen3.8-27b",
-        nutritionDatabase: Boolean(env.USDA_API_KEY),
+        nutritionDatabase: true,
       });
     if (
       request.method !== "POST" ||
@@ -210,20 +231,13 @@ export function createHandler(upstream: typeof fetch = fetch) {
     }
     try {
       if (path === "/nutrition/search") {
-        if (!env.USDA_API_KEY)
-          return reply(
-            {
-              error:
-                "La base nutricional todavía no está conectada. Podés usar una etiqueta o registrar la estimación.",
-            },
-            503,
-          );
         const input = z
           .object({ query: z.string().trim().min(2).max(150) })
           .strict()
           .safeParse(body);
         if (!input.success)
           return reply({ error: "Ingresá un alimento para buscar." }, 400);
+        if (!env.USDA_API_KEY) return reply({ foods: searchCatalog(input.data.query) });
         const response = await upstream(
           "https://api.nal.usda.gov/fdc/v1/foods/search",
           {

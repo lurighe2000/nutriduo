@@ -36,7 +36,7 @@ Abrí la URL que imprime Vite. En el primer ingreso completá peso, altura, naci
 - Barcode mediante cámara ZXing y entrada manual. Open Food Facts API v2, caché por perfil, timeout y corrección.
 - Prompt de análisis para ChatGPT con JSON Schema completo, importación Zod, reparación sintáctica y revisión antes de guardar.
 - XLSX con 13 hojas, CSV de comidas y JSON completo por perfil con fotos. Restauración validada, confirmada y transaccional.
-- Manifest, iconos, shell offline y fuentes locales; sin analytics ni llamadas a IA.
+- Manifest, iconos, shell offline y fuentes locales; sin analytics. El análisis de IA sólo se solicita desde su formulario.
 
 ## Arquitectura y datos
 
@@ -66,9 +66,9 @@ Cada origen y dispositivo tiene su propia base: los datos de localhost no aparec
 
 Para IA: sacar/elegir foto → copiar prompt → analizar externamente → pegar JSON → validar → revisar gramos y componentes → confirmar. Los valores recibidos representan el total del componente, se convierten a base 100. Compartir foto usa Web Share cuando está disponible, o descarga la imagen. La app no reconoce comidas ni estima grasa corporal por sí sola.
 
-La pestaña **Analizar comida** prepara el análisis integrado de foto + descripción, cantidades, cocción y marcas mediante Groq Free y un Worker de Cloudflare. Requiere activar el servicio personal según [worker/README.md](worker/README.md); hasta entonces muestra estado pendiente de conexión. Una consulta nunca guarda la comida. La IA puede pedir aclaraciones o proponer componentes; la persona los revisa y confirma. Cuota agotada, falta de red y errores conservan el formulario para carga manual.
+La pestaña **Analizar comida** permite analizar foto + descripción, cantidades, cocción y marcas mediante Groq Free y un Worker de Cloudflare. Requiere conectar el servicio personal según [worker/README.md](worker/README.md). El build de GitHub Pages incluye su dirección pública; sólo se ingresa el código privado de conexión. Una consulta nunca guarda la comida. La IA puede pedir aclaraciones o proponer componentes; la persona los revisa y confirma. Cuota agotada, falta de red y errores conservan el formulario para carga manual.
 
-Las fichas USDA seleccionadas aportan sodio, vitaminas y minerales disponibles, con unidades y procedencia por componente. Requieren una clave gratuita propia de FoodData Central en el servidor. Las etiquetas de OFF aportan sodio cuando existe. Los totales adicionales se muestran en el editor y Comidas, indicando cobertura parcial. No se inventan datos ausentes, y los registros guardados conservan una copia de esos valores para correcciones de gramos, recetas, backups y exportaciones. No hay objetivos ni diagnóstico por micronutrientes.
+Las fichas USDA seleccionadas aportan sodio, vitaminas y minerales disponibles, con unidades y procedencia por componente. El servicio incluye 2162 fichas oficiales de Foundation Foods (abril 2026) y FNDDS (octubre 2024), sin otra cuenta ni cuota de API. Una clave USDA propia es opcional para ampliar las búsquedas. Las etiquetas de OFF aportan sodio cuando existe. Los totales adicionales se muestran en el editor y Comidas, indicando cobertura parcial. No se inventan datos ausentes, y los registros guardados conservan una copia de esos valores para correcciones de gramos, recetas, backups y exportaciones. No hay objetivos ni diagnóstico por micronutrientes.
 
 ## Cloud opcional
 

@@ -1,6 +1,6 @@
 # Servicio gratuito de NutriDuo
 
-La web sigue en GitHub Pages. Este Worker sólo recibe la foto y descripción que la persona decide analizar. No recibe PIN, perfil, peso, objetivos ni historial. No almacena fotos, prompts ni respuestas y tiene logs desactivados. Groq procesa el análisis; USDA recibe únicamente el término de búsqueda de un alimento.
+La web sigue en GitHub Pages. Este Worker sólo recibe la foto y descripción que la persona decide analizar. No recibe PIN, perfil, peso, objetivos ni historial. No almacena fotos, prompts ni respuestas y tiene logs desactivados. Groq procesa el análisis. La búsqueda nutricional usa un catálogo oficial incluido; si se configura una clave USDA opcional, ese servicio recibe únicamente el término de búsqueda de un alimento.
 
 ## Activación
 
@@ -8,7 +8,7 @@ La web sigue en GitHub Pages. Este Worker sólo recibe la foto y descripción qu
 2. Cuenta **Cloudflare Workers Free**. El servicio no usa Workers AI ni servicios pagos. Publicar con `npx wrangler deploy --config worker/wrangler.jsonc`. La cuenta configurada es la indicada por el usuario; el proyecto usa un único Worker `nutriduo-ai`. Si se usa OAuth de Wrangler, el usuario debe aprobar el acceso en su navegador.
 3. Guardar `GROQ_API_KEY` como **Secret** en Cloudflare, nunca en Vite, GitHub, el navegador de NutriDuo ni el chat. Puede usarse el panel de Cloudflare o `npx wrangler secret put GROQ_API_KEY --config worker/wrangler.jsonc`, que pide el valor por stdin.
 4. Generar un código aleatorio de al menos 32 caracteres y guardarlo como Secret `NUTRIDUO_ACCESS_TOKEN`. Este código sólo autoriza consultas al servicio personal; no es la clave de Groq ni el PIN de un perfil. Compartirlo únicamente con Luca y Ari.
-5. Opcional para fichas y micronutrientes genéricos: obtener una clave gratuita propia de [FoodData Central](https://fdc.nal.usda.gov/api-key-signup/) y guardarla como Secret `USDA_API_KEY`. No se utiliza DEMO_KEY en producción. Sin esta clave, la IA funciona para estimaciones de macros y las etiquetas de Open Food Facts pueden aportar sodio, pero la búsqueda USDA queda desactivada.
+5. Ya se incluyen 2162 fichas oficiales de alimentos comunes en `nutrition-catalog.json`. Se derivaron de [descargas USDA](https://fdc.nal.usda.gov/download-datasets/) Foundation Foods (abril 2026) y FNDDS (octubre 2024), CC0; el script `scripts/build-nutrition-catalog.mjs` reproduce el catálogo sin credenciales. Esta búsqueda no consume una cuota de API ni requiere otra cuenta. Opcional para un catálogo más amplio: obtener una clave gratuita propia de [FoodData Central](https://fdc.nal.usda.gov/api-key-signup/) y guardarla como Secret `USDA_API_KEY`. No se utiliza DEMO_KEY en producción.
 6. NutriDuo → Más → Análisis de comidas → ingresar URL HTTPS del Worker y código de conexión. La URL se recuerda; el código queda en memoria, salvo que la persona elija **Recordar conexión en este dispositivo**. No se exportan credenciales en backups.
 
 Los comandos de configuración solicitan secretos interactivamente. No ponerlos como argumentos, valores VITE_, archivos versionados ni mensajes. Las pruebas usan credenciales ficticias; no necesitan una cuenta.

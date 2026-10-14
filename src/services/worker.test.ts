@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { createHandler, mapUSDA, type Env } from "../../worker";
+import { createHandler, mapUSDA, searchCatalog, type Env } from "../../worker";
+import catalog from "../../worker/nutrition-catalog.json";
+import { nutrientFoodSchema } from "./aiContract";
 const secret = "fixture-connection-code-at-least-32-characters";
 const env: Env = {
   ALLOWED_ORIGINS: "https://lurighe2000.github.io",
@@ -45,6 +47,27 @@ function request(
   });
 }
 describe("servicio de IA", () => {
+  it("el catálogo oficial valida todos los registros y permite buscar sin otra clave ni consultas externas", async () => {
+    expect(catalog.foods.length).toBeGreaterThan(1000);
+    for (const food of catalog.foods)
+      expect(nutrientFoodSchema.safeParse(food).success).toBe(true);
+    const results = searchCatalog("rice cooked");
+    expect(searchCatalog("banana raw edible portion").length).toBeGreaterThan(0);
+    expect(results.length).toBeGreaterThan(0);
+    expect(
+      results.every(
+        (food) => /rice/i.test(food.name) && /cooked/i.test(food.name),
+      ),
+    ).toBe(true);
+    const upstream = vi.fn();
+    const response = await createHandler(upstream)(
+      request("/nutrition/search", { query: "rice cooked" }),
+      { ...env, USDA_API_KEY: undefined },
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).foods.length).toBeGreaterThan(0);
+    expect(upstream).not.toHaveBeenCalled();
+  });
   it("bloquea origen y código antes de llamar a Groq", async () => {
     const upstream = vi.fn();
     const handle = createHandler(upstream);
