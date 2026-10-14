@@ -14,6 +14,8 @@ import {
   Empty,
 } from "../../components/ui";
 import { niceDate } from "../../utils/date";
+import RunningLog from "./RunningLog";
+import HomeRoutine from "./HomeRoutine";
 export default function Workouts() {
   const { profile: p, data, date, repo, run, notify } = useApp();
   const plan = data.plans[0];
@@ -23,6 +25,8 @@ export default function Workouts() {
     [editPlan, setEditPlan] = useState<Records["plans"]>(),
     [notes, setNotes] = useState(""),
     [activity, setActivity] = useState(false),
+    [runningLog, setRunningLog] = useState(false),
+    [homeRoutine, setHomeRoutine] = useState(false),
     [steps, setSteps] = useState(
       data.activity.find((a) => a.date === date)?.steps ?? 0,
     ),
@@ -42,7 +46,7 @@ export default function Workouts() {
             exerciseName: ex.name,
             kg: old?.kg ?? 0,
             reps: old?.reps ?? ex.minReps,
-            rir: 2,
+            rir: plan?.name.startsWith("Fuerza en casa") ? 3 : 2,
             notes: "",
           };
         }),
@@ -78,8 +82,22 @@ export default function Workouts() {
           <Button secondary onClick={() => setEditPlan(plan)}>
             Editar rutina
           </Button>
-          <Button secondary onClick={() => setActivity(true)}>
+          <Button
+            secondary
+            onClick={() => {
+              const old = data.activity.find((a) => a.date === date);
+              setSteps(old?.steps ?? 0);
+              setPadel(old?.padel ?? false);
+              setActivity(true);
+            }}
+          >
             Pasos y pádel
+          </Button>
+          <Button secondary onClick={() => setRunningLog(true)}>
+            Caminata y trote
+          </Button>
+          <Button secondary onClick={() => setHomeRoutine(true)}>
+            Rutina en casa
           </Button>
         </div>
       </div>
@@ -161,6 +179,14 @@ export default function Workouts() {
             ))
         )}
       </section>
+      {homeRoutine && (
+        <HomeRoutine
+          onClose={() => {
+            setHomeRoutine(false);
+            setSelected(0);
+          }}
+        />
+      )}
       {logging && day && (
         <Modal title={day.name} onClose={() => setLogging(false)}>
           <form
@@ -441,6 +467,12 @@ export default function Workouts() {
             <Button type="submit">Guardar actividad</Button>
           </form>
         </Modal>
+      )}
+      {runningLog && (
+        <RunningLog
+          key={`${p.id}-${date}`}
+          onClose={() => setRunningLog(false)}
+        />
       )}
     </>
   );

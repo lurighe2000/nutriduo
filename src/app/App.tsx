@@ -383,7 +383,7 @@ function Shell({
                 )}
               </Suspense>
               <footer className="app-footer">
-                Guardado en este dispositivo <span>NutriDuo · 1.1</span>
+                Guardado en este dispositivo <span>NutriDuo · 1.2</span>
               </footer>
             </main>
           </div>

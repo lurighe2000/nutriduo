@@ -46,6 +46,325 @@ async function manualMeal(page: Page) {
   await page.getByRole("button", { name: "Confirmar y registrar" }).click();
   await expect(page.locator("dialog")).toHaveCount(0);
 }
+function syntheticFemmtoPDF() {
+  const lines = [
+    "ID Altura Edad Genero Fecha / hora",
+    "Luca Demo 170 cm 30 Masculino 2026-09-17 10:00",
+    "Analisis de Masa muscular",
+    "Peso (Kg) 35 44 53 62 71 80",
+    "70.2",
+    "Masa muscular esqueletica",
+    "35.7",
+    "Masa de grasa corporal (Kg) 1 5 9 13 17",
+    "9.8",
+    "IMC",
+    "(Kg/m2)",
+    "11 15 19 23 27 31",
+    "Indice de masa corporal",
+    "24.3",
+    "PGC (%)",
+    "0 7 14 21 28",
+    "Porcentaje de grasa corporal",
+    "14.05",
+  ];
+  const stream = lines
+    .map(
+      (line, i) =>
+        `BT /F1 10 Tf 30 ${800 - i * 25} Td (${line.replace(/[\\()]/g, (c) => "\\" + c)}) Tj ET`,
+    )
+    .join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  for (let i = 0; i < objects.length; i++) {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const xref = pdf.length;
+  pdf +=
+    `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n` +
+    offsets
+      .slice(1)
+      .map((n) => `${String(n).padStart(10, "0")} 00000 n \n`)
+      .join("") +
+    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(pdf);
+}
+test("conexión recordada se comprueba al entrar y no pide nuevamente el código", async ({
+  page,
+}) => {
+  let checks = 0;
+  await page.route("https://fixture.workers.dev/**", async (route) => {
+    checks++;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({
+        ready: true,
+        provider: "groq",
+        nutritionDatabase: true,
+      }),
+    });
+  });
+  await setup(page);
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Análisis de comidas/ }).click();
+  await page
+    .getByLabel("Dirección del servicio NutriDuo")
+    .fill("https://fixture.workers.dev");
+  await page
+    .getByLabel("Código de conexión NutriDuo")
+    .fill("fixture-code-with-at-least-thirty-two-characters");
+  await page
+    .getByRole("button", { name: "Conectar análisis", exact: true })
+    .click();
+  await expect(
+    page.getByText("Ya estás conectado", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar" }).click();
+  const previous = checks;
+  await page.getByRole("button", { name: /Análisis de comidas/ }).click();
+  await expect(
+    page.getByText("Ya estás conectado", { exact: true }),
+  ).toBeVisible();
+  expect(checks).toBeGreaterThan(previous);
+  await expect(page.getByLabel("Código de conexión NutriDuo")).toHaveCount(0);
+  await page.getByRole("button", { name: "Cerrar" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await page.getByLabel("PIN", { exact: true }).fill("1234");
+  await page
+    .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+    .click();
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Análisis de comidas/ }).click();
+  await expect(
+    page.getByText("Ya estás conectado", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar" }).click();
+  await page.context().setOffline(true);
+  await page.getByRole("button", { name: /Análisis de comidas/ }).click();
+  await expect(
+    page.getByText("Conexión guardada · verificación pendiente", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      Boolean(localStorage.getItem("nutriduo-ai-service")),
+    ),
+  ).toBe(true);
+});
+test("recordatorios configuran suscripción, preferencias, prueba y desactivación", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const serialized = {
+      endpoint: "https://fcm.googleapis.com/fcm/send/fixture-browser",
+      keys: { p256dh: "fixture-public-key", auth: "fixture-auth" },
+    };
+    let active: object | null = null;
+    const subscription = {
+      toJSON: () => serialized,
+      unsubscribe: async () => {
+        active = null;
+        return true;
+      },
+    };
+    Object.defineProperty(Notification, "requestPermission", {
+      value: async () => "granted",
+    });
+    Object.defineProperty(navigator.serviceWorker, "getRegistration", {
+      value: async () => ({
+        active: {},
+        pushManager: {
+          getSubscription: async () => active,
+          subscribe: async () => {
+            active = subscription;
+            return subscription;
+          },
+        },
+      }),
+    });
+    localStorage.setItem(
+      "nutriduo-ai-service",
+      JSON.stringify({
+        endpoint: "https://fixture.workers.dev",
+        accessCode: "fixture-code-at-least-thirty-two-characters",
+        nutritionDatabase: true,
+      }),
+    );
+  });
+  const requests: string[] = [];
+  await page.route("https://fixture.workers.dev/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    requests.push(path);
+    const response = path.endsWith("config")
+      ? { publicKey: "B".repeat(87) }
+      : path.endsWith("test")
+        ? { sent: true }
+        : path.endsWith("unsubscribe")
+          ? { enabled: false }
+          : { enabled: true };
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(response),
+    });
+  });
+  await setup(page);
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Recordatorios/ }).click();
+  await page.getByLabel("Pesaje por la mañana · opcional").uncheck();
+  await page
+    .getByRole("button", { name: "Activar recordatorios en este celular" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Enviar aviso de prueba" }),
+  ).toBeVisible();
+  expect(requests).toContain("/notifications/subscribe");
+  await page.getByRole("button", { name: "Enviar aviso de prueba" }).click();
+  await expect(
+    page
+      .locator("dialog")
+      .getByText("Aviso de prueba enviado.", { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Desactivar en este dispositivo" })
+    .click();
+  await expect(
+    page.getByText("Recordatorios desactivados en este dispositivo.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(requests).toContain("/notifications/unsubscribe");
+});
+test("menú semanal persiste, comparte compras y registra sólo al confirmar", async ({
+  page,
+}) => {
+  await setup(page);
+  await navigate(page, "Comidas");
+  await page.getByRole("button", { name: "Menú semanal", exact: true }).click();
+  await page.getByRole("button", { name: "Preparar mi menú semanal" }).click();
+  await page.getByRole("button", { name: "Lunes", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Avena con leche, banana y maní" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Revisar y registrar esta comida" })
+    .first()
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(1);
+  await expect(
+    page.getByRole("button", { name: "Confirmar y registrar" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Confirmar y registrar" }).click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await page
+    .locator(".tabs")
+    .getByRole("button", { name: "Hoy", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Avena con leche, banana y maní" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Menú semanal", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Lista de compras", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Compras para siete días · Luca" }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await page.getByLabel("PIN", { exact: true }).fill("1234");
+  await page
+    .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+    .click();
+  await navigate(page, "Comidas");
+  await page.getByRole("button", { name: "Menú semanal", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Generar de nuevo esta semana" }),
+  ).toBeVisible();
+});
+test("PDF Femmto se lee localmente, revisa fecha y conserva unidades y devolución", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  await setup(page);
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Progreso", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Informe Femmto", exact: true })
+    .click();
+  await page.getByLabel("Subir PDF de Femmto").setInputFiles({
+    name: "informe-generado-hoy.pdf",
+    mimeType: "application/pdf",
+    buffer: syntheticFemmtoPDF(),
+  });
+  await expect(page.getByLabel("Fecha de la medición del informe")).toHaveValue(
+    "2026-09-17",
+  );
+  await expect(page.getByLabel("Grasa corporal (%)")).toHaveValue("14.05");
+  await expect(
+    page.getByRole("button", { name: "Confirmar informe" }),
+  ).toBeDisabled();
+  await page
+    .getByLabel("Revisé el perfil, la fecha y los valores del PDF.")
+    .check();
+  await page.getByRole("button", { name: "Confirmar informe" }).click();
+  await expect(
+    page.getByText("Este informe es una referencia inicial", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Balanza", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Músculo esquelético", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    ),
+  ).toBe(false);
+  await page.screenshot({
+    path: "test-results/balanza-mobile.png",
+    fullPage: true,
+  });
+});
+test("guarda salida sin inventar pulso y adopta fuerza en casa", async ({
+  page,
+}) => {
+  await setup(page);
+  await navigate(page, "Entreno");
+  await page
+    .getByRole("button", { name: "Caminata y trote", exact: true })
+    .click();
+  await page.getByLabel("Distancia (km)").fill("3,2");
+  await page.getByLabel("Duración (hh:mm:ss)").fill("00:30:00");
+  await page.getByRole("button", { name: "Guardar salida" }).click();
+  await expect(page.getByText("6.4 km/h", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar" }).click();
+  await page
+    .getByRole("button", { name: "Rutina en casa", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Usar esta rutina de dos días" })
+    .click();
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Fuerza en casa · 2 días", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Casa A · Cuerpo completo" }),
+  ).toBeVisible();
+});
 
 test("una actualización pide confirmación y conserva PIN y comidas guardadas", async ({
   page,
@@ -415,7 +734,7 @@ test("perfil, comida, edición de gramos, peso, PIN y aislamiento", async ({
     .getByRole("button", { name: "Registrar peso", exact: true })
     .click();
   await page.getByLabel("Peso (kg)", { exact: true }).fill("61.2");
-  await page.getByRole("button", { name: "Guardar registro" }).click();
+  await page.getByRole("button", { name: "Guardar pesaje" }).click();
   await expect(page.locator(".metric").first()).toContainText("61.2");
   await page
     .getByRole("button", { name: "Cambiar perfil", exact: true })

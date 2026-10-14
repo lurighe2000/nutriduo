@@ -113,6 +113,27 @@ export const recipeSchema = baseSchema.extend({
 export const weightSchema = baseSchema.extend({
   date: dateSchema,
   kg: z.number().finite().min(25).max(350),
+  composition: z
+    .object({
+      source: z.string().max(80),
+      notes: z.string().max(500).default(""),
+      reportFile: z.string().max(200).optional(),
+      metrics: z
+        .array(
+          z
+            .object({
+              name: z.string().trim().min(1).max(80),
+              value: z.number().finite().nonnegative().max(10000),
+              unit: z.enum(["%", "kg", "L", "kcal/día", "índice", "años"]),
+            })
+            .refine(
+              (m) => m.unit !== "%" || m.value <= 100,
+              "Un porcentaje debe estar entre 0 y 100",
+            ),
+        )
+        .max(20),
+    })
+    .optional(),
 });
 export const measurementSchema = baseSchema.extend({
   date: dateSchema,
@@ -187,6 +208,23 @@ export const activitySchema = baseSchema.extend({
   date: dateSchema,
   steps: z.number().int().min(0).max(100000),
   padel: z.boolean().default(false),
+  runs: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        kind: z.enum(["Caminata", "Caminata y trote", "Carrera"]),
+        distanceKm: z.number().finite().positive().max(200),
+        durationSeconds: z.number().int().positive().max(86400),
+        calories: nonnegative.optional(),
+        maxSpeed: z.number().finite().nonnegative().max(100).optional(),
+        elevation: nonnegative.optional(),
+        heartRate: z.number().int().min(30).max(240).optional(),
+        source: z.string().max(80).default("Manual"),
+        notes: z.string().max(1000).default(""),
+      }),
+    )
+    .max(20)
+    .optional(),
 });
 export const adjustmentSchema = baseSchema.extend({
   date: dateSchema,
@@ -219,6 +257,71 @@ export const profileSchema = z.object({
   goal: z.enum(["gain", "loss"]),
   excluded: z.array(z.string()),
   targets: goalSchema.optional(),
+  weeklyBudget: z.number().finite().nonnegative().max(10000000).optional(),
+  weeklyMenu: z
+    .object({
+      week: dateSchema,
+      targets: goalSchema,
+      meals: z
+        .array(
+          z.object({
+            day: z.number().int().min(0).max(6),
+            slot: z.enum(["Desayuno", "Almuerzo", "Merienda", "Cena"]),
+            recipe: z.enum([
+              "oats",
+              "yogurt",
+              "toast",
+              "cream",
+              "chickenRice",
+              "beefPotato",
+              "lentils",
+              "milanesa",
+              "tuna",
+              "chickenPotato",
+              "beefRice",
+            ]),
+            portions: z.record(
+              z
+                .string()
+                .refine(
+                  (key) =>
+                    [
+                      "oats",
+                      "milk",
+                      "yogurt",
+                      "bread",
+                      "rice",
+                      "brownRice",
+                      "chicken",
+                      "beef",
+                      "egg",
+                      "lentils",
+                      "banana",
+                      "apple",
+                      "tomato",
+                      "carrot",
+                      "potato",
+                      "lettuce",
+                      "peanuts",
+                      "tuna",
+                      "creamCheese",
+                      "riceCake",
+                      "oil",
+                    ].includes(key),
+                  "Alimento desconocido en el menú",
+                ),
+              z.number().finite().positive().max(10000),
+            ),
+          }),
+        )
+        .length(28)
+        .refine(
+          (meals) =>
+            new Set(meals.map((m) => `${m.day}:${m.slot}`)).size === 28,
+          "El menú debe tener cuatro comidas distintas por día",
+        ),
+    })
+    .optional(),
   onboarded: z.boolean().default(false),
   dark: z.boolean().default(false),
   reminders: z.boolean().default(true),

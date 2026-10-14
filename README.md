@@ -4,7 +4,7 @@ Nutrición, entrenamiento y progreso para Luca y Ari. Aplicación mobile-first, 
 
 ## Arranque
 
-Requiere Node.js 22.12+ y npm.
+Requiere Node.js 22.13+ y npm.
 
 ```sh
 npm ci
@@ -35,7 +35,12 @@ Abrí la URL que imprime Vite. En el primer ingreso completá peso, altura, naci
 - Coach basado en reglas, check-in y ajustes pequeños que requieren confirmación; calendario, resumen e hitos de constancia.
 - Barcode mediante cámara ZXing y entrada manual. Open Food Facts API v2, caché por perfil, timeout y corrección.
 - Prompt de análisis para ChatGPT con JSON Schema completo, importación Zod, reparación sintáctica y revisión antes de guardar.
-- XLSX con 13 hojas, CSV de comidas y JSON completo por perfil con fotos. Restauración validada, confirmada y transaccional.
+- XLSX con tablas de alimentos, balanza y salidas, CSV de comidas y JSON completo por perfil con fotos. Restauración validada, confirmada y transaccional.
+- Menú semanal de 28 comidas, ingredientes y preparación, porciones ajustadas localmente a los objetivos, reemplazo de platos y compras por perfil. Las fichas USDA genéricas son orientativas; marcas, fibra y micronutrientes requieren revisión. El menú no cuenta como consumo hasta confirmar una comida.
+- Rutina opcional de dos días en casa y propuesta progresiva de salidas diarias. Registro manual de caminata/trote con distancia, duración y métricas disponibles, sin aumentar calorías objetivo automáticamente.
+- Datos de Femmto con unidades separadas y lectura local de PDF mediante PDF.js. Se revisan perfil, fecha de medición y valores antes de guardar. No se conserva ni transmite el PDF; la devolución compara estimaciones de informes separados por siete días, sin diagnosticar ni ajustar calorías automáticamente.
+- Configuraciones de objetivos importables para el perfil activo, con revisión antes de confirmar. Las configuraciones personales se distribuyen en archivos privados, nunca como datos predeterminados del repositorio.
+- Notificaciones Web Push opcionales por dispositivo: comidas, movimiento, fuerza, pesaje e informe del domingo. Requieren permiso desde un botón y, en iPhone, una app agregada a Inicio. Cloudflare KV guarda únicamente suscripciones y preferencias, sin registros de salud. Ver la configuración en [worker/README.md](worker/README.md).
 - Manifest, iconos, shell offline y fuentes locales; sin analytics. El análisis de IA sólo se solicita desde su formulario.
 
 ## Arquitectura y datos

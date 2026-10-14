@@ -13,9 +13,18 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ["public/push-handler.js"],
+    languageOptions: { globals: { self: "readonly", URL: "readonly" } },
+  },
+  {
     files: ["scripts/*.mjs"],
     languageOptions: {
-      globals: { process: "readonly", console: "readonly", fetch: "readonly", AbortSignal: "readonly" },
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        AbortSignal: "readonly",
+      },
     },
   },
   {

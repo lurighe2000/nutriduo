@@ -2,6 +2,8 @@ import { createBackup, download } from "./backup";
 import { itemTotal, dailyTotals } from "../nutrition/formulas";
 import { micronutrientExport } from "../nutrition/micronutrients";
 import { type ProfileId, type Backup } from "../schemas";
+import { menuFoods, menuRecipes } from "../nutrition/weeklyMenu";
+import { shiftDate } from "../utils/date";
 type Cell = string | number | boolean | null | undefined;
 type Row = Record<string, Cell>;
 export function exportRows(b: Backup): Record<string, Row[]> {
@@ -64,6 +66,20 @@ export function exportRows(b: Backup): Record<string, Row[]> {
       ),
     })),
     Peso: d.weights.map((w) => ({ Fecha: w.date, Perfil: p.name, Kg: w.kg })),
+    Balanza: d.weights.flatMap((w) =>
+      (w.composition?.metrics ?? []).map((m) => ({
+        Fecha: w.date,
+        Perfil: p.name,
+        Peso_kg: w.kg,
+        Dato: m.name,
+        Valor: m.value,
+        Unidad: m.unit,
+        Fuente: w.composition?.source,
+        Informe: w.composition?.reportFile,
+        Notas: w.composition?.notes,
+        Tipo: "Estimación de la balanza",
+      })),
+    ),
     Medidas: d.measurements.map((m) => ({
       Fecha: m.date,
       Perfil: p.name,
@@ -91,6 +107,17 @@ export function exportRows(b: Backup): Record<string, Row[]> {
       ID: ph.id,
     })),
     Objetivos: [{ Perfil: p.name, Objetivo: p.goal, ...p.targets }],
+    Menú_semanal: (p.weeklyMenu?.meals ?? []).flatMap((m) =>
+      Object.entries(m.portions).map(([key, g]) => ({
+        Fecha: shiftDate(p.weeklyMenu!.week, m.day),
+        Perfil: p.name,
+        Momento: m.slot,
+        Plato: menuRecipes.find((r) => r.id === m.recipe)?.name,
+        Ingrediente: menuFoods.find((f) => f.key === key)?.name,
+        Gramos: g,
+        Estado_pesado: menuFoods.find((f) => f.key === key)?.weighing,
+      })),
+    ),
     Checkins: d.checkins.map((c) => ({
       Fecha: c.date,
       Perfil: p.name,
@@ -123,6 +150,23 @@ export function exportRows(b: Backup): Record<string, Row[]> {
       Pasos: a.steps,
       Pádel: a.padel,
     })),
+    Salidas: d.activity.flatMap((a) =>
+      (a.runs ?? []).map((r) => ({
+        Fecha: a.date,
+        Perfil: p.name,
+        Tipo: r.kind,
+        Distancia_km: r.distanceKm,
+        Duración_segundos: r.durationSeconds,
+        Ritmo_segundos_km: r.durationSeconds / r.distanceKm,
+        Velocidad_media_kmh: (r.distanceKm * 3600) / r.durationSeconds,
+        Kcal_estimadas: r.calories,
+        Velocidad_máxima_kmh: r.maxSpeed,
+        Desnivel_m: r.elevation,
+        Pulso_medio: r.heartRate,
+        Fuente: r.source,
+        Notas: r.notes,
+      })),
+    ),
     Ajustes: d.adjustments.map((a) => ({
       Fecha: a.date,
       Perfil: p.name,

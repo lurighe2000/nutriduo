@@ -29,8 +29,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: [`${process.env.VITE_BASE_PATH || "/"}push-handler.js`],
         clientsClaim: true,
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        globPatterns: ["**/*.{js,mjs,css,html,svg,png,woff2}"],
         navigateFallback: `${process.env.VITE_BASE_PATH || "/"}index.html`,
         maximumFileSizeToCacheInBytes: 4000000,
       },

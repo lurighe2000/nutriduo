@@ -18,15 +18,13 @@ import { adaptiveCoach } from "../../nutrition/adaptive";
 import { compressPhoto } from "../../services/photos";
 import { niceDate, shiftDate, today } from "../../utils/date";
 import type { Records } from "../../schemas";
+import WeightEntry from "./WeightEntry";
+import FemmtoReports from "./FemmtoReports";
 export default function Progress() {
   const { profile: p, data, date, repo, run, notify } = useApp();
   const [tab, setTab] = useHistoryChoice<string>("progress.tab", "Peso");
   const [days, setDays] = useHistoryChoice<string>("progress.days", "30");
   const [form, setForm] = useState(""),
-    [kg, setKg] = useState(
-      [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0]?.kg ??
-        p.initialWeight,
-    ),
     [cm, setCm] = useState(80),
     [measure, setMeasure] = useState("Cintura"),
     [custom, setCustom] = useState(""),
@@ -69,10 +67,7 @@ export default function Progress() {
   )[0];
   async function save() {
     await run(async () => {
-      if (form === "peso") {
-        const old = data.weights.find((w) => w.date === date);
-        await repo.save("weights", { ...(old ?? meta(p.id)), date, kg });
-      } else if (form === "medida") {
+      if (form === "medida") {
         const label = measure === "Personalizada" ? custom : measure;
         const old = data.measurements.find(
           (m) => m.date === date && m.name === label,
@@ -112,7 +107,14 @@ export default function Progress() {
         Las tendencias cuentan una historia. Un día solo, no.
       </p>
       <div className="tabs">
-        {["Peso", "Medidas", "Fotos", "Mi análisis"].map((t) => (
+        {[
+          "Peso",
+          "Balanza",
+          "Informe Femmto",
+          "Medidas",
+          "Fotos",
+          "Mi análisis",
+        ].map((t) => (
           <button
             key={t}
             className={tab === t ? "active" : ""}
@@ -201,6 +203,70 @@ export default function Progress() {
                 </div>
               ))}
           </div>
+        </>
+      ) : tab === "Informe Femmto" ? (
+        <FemmtoReports key={p.id} />
+      ) : tab === "Balanza" ? (
+        <>
+          <Button secondary onClick={() => setForm("peso")}>
+            Registrar datos de la balanza
+          </Button>
+          <p className="muted">
+            Peso y estimaciones de Femmto, guardados sólo para {p.name}. Los
+            datos ausentes quedan sin completar.
+          </p>
+          {!sorted.some((w) => w.composition?.metrics.length) && (
+            <Empty
+              title="Tus mediciones, con sus unidades"
+              detail="Agregá grasa, músculo u otros datos al registrar el pesaje. Copiá exactamente la unidad de la app de la balanza."
+            />
+          )}
+          <div className="record-grid">
+            {[
+              ...new Set(
+                sorted.flatMap(
+                  (w) =>
+                    w.composition?.metrics.map((m) => `${m.name}|${m.unit}`) ??
+                    [],
+                ),
+              ),
+            ].map((key) => {
+              const [name, unit] = key.split("|");
+              const rows = sorted.flatMap((w) => {
+                const m = w.composition?.metrics.find(
+                  (x) => x.name === name && x.unit === unit,
+                );
+                return m ? [{ date: w.date, value: m.value }] : [];
+              });
+              return (
+                <section className="card" key={key}>
+                  <h2>{name}</h2>
+                  <strong className="calorie-label">
+                    {rows.at(-1)?.value} <small>{unit}</small>
+                  </strong>
+                  {rows.length > 1 && <LineChart rows={rows} unit={unit} />}
+                  <p className="muted small">
+                    Estimación de la balanza · no equivale a un diagnóstico.
+                  </p>
+                  {rows
+                    .slice(-7)
+                    .reverse()
+                    .map((r) => (
+                      <div className="history-row" key={r.date}>
+                        <span>{niceDate(r.date, true)}</span>
+                        <strong>
+                          {r.value} {unit}
+                        </strong>
+                      </div>
+                    ))}
+                </section>
+              );
+            })}
+          </div>
+          <p className="muted small">
+            La masa ósea estimada no mide densidad ósea. El metabolismo basal
+            informado no equivale a tus calorías diarias objetivo.
+          </p>
         </>
       ) : tab === "Medidas" ? (
         <>
@@ -424,7 +490,10 @@ export default function Progress() {
           </div>
         </>
       )}
-      {form && (
+      {form === "peso" && (
+        <WeightEntry key={`${p.id}:${date}`} onClose={() => setForm("")} />
+      )}
+      {form && form !== "peso" && (
         <Modal
           title={
             form === "peso"
@@ -444,20 +513,7 @@ export default function Progress() {
             }}
           >
             <p className="muted">{niceDate(date)}</p>
-            {form === "peso" ? (
-              <>
-                <NumberField
-                  label="Peso (kg)"
-                  value={kg}
-                  min={25}
-                  max={350}
-                  onChange={setKg}
-                />
-                <p className="muted small">
-                  Si ya hay un registro en esta fecha, se actualizará.
-                </p>
-              </>
-            ) : form === "medida" ? (
+            {form === "medida" ? (
               <>
                 <Select
                   label="Medida"

@@ -20,6 +20,7 @@ import { type Meal, type Recipe, type Food } from "../../schemas";
 import { SOURCE_LABELS } from "../../nutrition/constants";
 import MealEditor, { ItemFields } from "./MealEditor";
 import Micronutrients from "../../components/Micronutrients";
+import WeeklyMenu from "./WeeklyMenu";
 export default function Meals() {
   const { data, profile: p, date, repo, run, addMeal } = useApp();
   const [tab, setTab] = useHistoryChoice<string>("meals.tab", "Hoy");
@@ -56,15 +57,17 @@ export default function Meals() {
         Guardá lo habitual. Disfrutá lo que comés.
       </p>
       <div className="tabs">
-        {["Hoy", "Recientes", "Recetas", "Alimentos"].map((t) => (
-          <button
-            key={t}
-            className={tab === t ? "active" : ""}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
-        ))}
+        {["Hoy", "Menú semanal", "Recientes", "Recetas", "Alimentos"].map(
+          (t) => (
+            <button
+              key={t}
+              className={tab === t ? "active" : ""}
+              onClick={() => setTab(t)}
+            >
+              {t}
+            </button>
+          ),
+        )}
       </div>
       {["Hoy", "Recientes"].includes(tab) ? (
         <>
@@ -153,6 +156,8 @@ export default function Meals() {
             </div>
           )}
         </>
+      ) : tab === "Menú semanal" ? (
+        <WeeklyMenu key={p.id} />
       ) : tab === "Recetas" ? (
         <>
           <Button secondary onClick={() => setRecipe(null)}>

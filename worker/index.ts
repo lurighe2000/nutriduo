@@ -8,6 +8,7 @@ import {
 } from "../src/services/aiContract";
 import type { Micronutrients } from "../src/schemas";
 import catalog from "./nutrition-catalog.json";
+import { pushRoute, sendReminders, type PushEnv } from "./notifications";
 const normalize = (text: string) =>
   text
     .toLowerCase()
@@ -20,7 +21,9 @@ const catalogIndex = (catalog.foods as NutrientFood[]).map((food) => ({
 export function searchCatalog(query: string): NutrientFood[] {
   const words = normalize(query)
     .split(" ")
-    .filter((word) => word && !["edible", "portion", "food", "foods"].includes(word));
+    .filter(
+      (word) => word && !["edible", "portion", "food", "foods"].includes(word),
+    );
   if (!words.length) return [];
   return catalogIndex
     .filter((entry) => words.every((word) => entry.text.includes(word)))
@@ -29,7 +32,7 @@ export function searchCatalog(query: string): NutrientFood[] {
     .map((entry) => entry.food);
 }
 
-export interface Env {
+export interface Env extends PushEnv {
   GROQ_API_KEY?: string;
   NUTRIDUO_ACCESS_TOKEN?: string;
   USDA_API_KEY?: string;
@@ -206,6 +209,43 @@ export function createHandler(upstream: typeof fetch = fetch) {
         model: "qwen/qwen3.8-27b",
         nutritionDatabase: true,
       });
+    if (path.startsWith("/notifications/") && request.method === "POST") {
+      if (
+        ![
+          "/notifications/config",
+          "/notifications/status",
+          "/notifications/subscribe",
+          "/notifications/unsubscribe",
+          "/notifications/test",
+        ].includes(path)
+      )
+        return reply({ error: "Ruta no disponible" }, 404);
+      const limited = await env.REQUEST_LIMITER.limit({ key: path });
+      if (!limited.success)
+        return reply(
+          { error: "Esperá un minuto antes de cambiar los recordatorios." },
+          429,
+        );
+      if (!request.headers.get("content-type")?.startsWith("application/json"))
+        return reply({ error: "Se espera JSON" }, 415);
+      try {
+        return reply(
+          await pushRoute(path, await readBody(request), env, upstream),
+        );
+      } catch (error) {
+        return reply(
+          {
+            error:
+              error instanceof z.ZodError
+                ? "Suscripción de notificaciones inválida."
+                : error instanceof Error
+                  ? error.message
+                  : "No se pudo configurar.",
+          },
+          400,
+        );
+      }
+    }
     if (
       request.method !== "POST" ||
       !["/analyze", "/nutrition/search"].includes(path)
@@ -237,7 +277,8 @@ export function createHandler(upstream: typeof fetch = fetch) {
           .safeParse(body);
         if (!input.success)
           return reply({ error: "Ingresá un alimento para buscar." }, 400);
-        if (!env.USDA_API_KEY) return reply({ foods: searchCatalog(input.data.query) });
+        if (!env.USDA_API_KEY)
+          return reply({ foods: searchCatalog(input.data.query) });
         const response = await upstream(
           "https://api.nal.usda.gov/fdc/v1/foods/search",
           {
@@ -349,4 +390,8 @@ export function createHandler(upstream: typeof fetch = fetch) {
     }
   };
 }
-export default { fetch: createHandler() };
+export default {
+  fetch: createHandler(),
+  scheduled: (event: { scheduledTime: number }, env: Env) =>
+    sendReminders(event.scheduledTime, env),
+};

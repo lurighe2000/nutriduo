@@ -62,3 +62,33 @@ export function progression(ex: Exercise, sessions: Records["sessions"][]) {
     )
   );
 }
+export function homePlan(p: Profile): Records["plans"] {
+  return {
+    ...meta(p.id),
+    name: "Fuerza en casa · 2 días",
+    days: [
+      {
+        id: crypto.randomUUID(),
+        name: "Casa A · Cuerpo completo",
+        exercises: [
+          "Sentarse y levantarse de una silla estable",
+          "Flexiones contra pared o apoyo alto estable",
+          "Remo con mochila liviana · por lado",
+          "Puente de glúteos",
+          "Bird-dog · por lado",
+        ].map((name) => ({ ...exercise(name), sets: 2 })),
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Casa B · Cuerpo completo",
+        exercises: [
+          "Sentadilla a silla estable",
+          "Flexiones contra pared o apoyo alto estable",
+          "Remo con mochila liviana · por lado",
+          "Elevaciones de talones con apoyo",
+          "Dead bug · por lado",
+        ].map((name) => ({ ...exercise(name), sets: 2 })),
+      },
+    ],
+  };
+}

@@ -18,6 +18,48 @@ beforeEach(async () => {
 afterAll(async () => {
   await db.delete();
 });
+it("respalda balanza, informes y salidas sin perder datos anteriores ni mezclar perfiles", async () => {
+  const repo = repository("luca");
+  const weight = {
+    ...meta("luca"),
+    date: "2026-09-17",
+    kg: 70,
+    composition: {
+      source: "Femmto",
+      reportFile: "fixture.pdf",
+      notes: "",
+      metrics: [{ name: "Grasa corporal", unit: "%" as const, value: 18.5 }],
+    },
+  };
+  await repo.save("weights", weight);
+  await repo.save("activity", {
+    ...meta("luca"),
+    date: "2026-09-17",
+    steps: 4100,
+    padel: false,
+    runs: [
+      {
+        id: "fixture-run",
+        kind: "Caminata y trote",
+        distanceKm: 3.2,
+        durationSeconds: 1800,
+        source: "Manual",
+        notes: "",
+      },
+    ],
+  });
+  const b = parseBackup(JSON.stringify(await createBackup("luca")), "luca");
+  await restoreBackup(b, "luca");
+  expect((await repo.list("weights"))[0].composition?.metrics).toEqual(
+    weight.composition.metrics,
+  );
+  expect((await repo.list("activity"))[0].runs?.[0].calories).toBeUndefined();
+  expect(await repository("ari").list("weights")).toHaveLength(0);
+  const old = structuredClone(b);
+  delete old.data.weights[0].composition;
+  delete old.data.activity[0].runs;
+  expect(parseBackup(JSON.stringify(old), "luca").data.weights[0].kg).toBe(70);
+});
 it("separa lecturas y bloquea writes cruzados", async () => {
   const luca = repository("luca"),
     ari = repository("ari");

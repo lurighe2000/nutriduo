@@ -21,6 +21,9 @@ import {
 import { setPin } from "../../services/pin";
 import AIConnectionForm from "../meals/AIConnectionForm";
 import UsageGuide from "./UsageGuide";
+import WeeklyMenu from "../meals/WeeklyMenu";
+import { importGoals } from "../../services/goalImport";
+import PushSettings from "./PushSettings";
 import {
   createBackup,
   parseBackup,
@@ -67,6 +70,8 @@ export default function More() {
     [install, setInstall] = useState<InstallEvent>(),
     [ml, setMl] = useState(300),
     [busy, setBusy] = useState(false);
+  const [goalText, setGoalText] = useState(""),
+    [assessmentNote, setAssessmentNote] = useState("");
   useEffect(() => {
     const fn = (e: Event) => {
       e.preventDefault();
@@ -112,6 +117,18 @@ export default function More() {
     setBusy(false);
   }
   const cards = [
+    {
+      id: "recordatorios",
+      icon: Smartphone,
+      title: "Recordatorios",
+      text: "Comidas, movimiento y el informe de Femmto del domingo.",
+    },
+    {
+      id: "menu",
+      icon: CalendarDays,
+      title: "Menú semanal",
+      text: "Platos de cada día, porciones y lista de compras.",
+    },
     {
       id: "ia",
       icon: BookOpen,
@@ -174,6 +191,8 @@ export default function More() {
             className="card settings-card"
             onClick={() => {
               setDraft(p);
+              setGoalText("");
+              setAssessmentNote("");
               setPanel(c.id);
             }}
           >
@@ -238,6 +257,16 @@ export default function More() {
           <UsageGuide />
         </Modal>
       )}
+      {panel === "menu" && (
+        <Modal title="Menú semanal" onClose={() => setPanel("")}>
+          <WeeklyMenu key={p.id} />
+        </Modal>
+      )}
+      {panel === "recordatorios" && (
+        <Modal title="Recordatorios en tu celular" onClose={() => setPanel("")}>
+          <PushSettings />
+        </Modal>
+      )}
       {panel === "perfil" && (
         <Modal title="Tu perfil y objetivos" onClose={() => setPanel("")}>
           <form
@@ -246,7 +275,10 @@ export default function More() {
               void run(async () => {
                 const valid = profileSchema.parse(draft);
                 const g = goalSchema.parse(draft.targets);
-                if (g.calories < Math.max(1400, bmr(p, p.initialWeight) * 0.95))
+                if (
+                  g.calories <
+                  Math.max(1400, bmr(valid, valid.initialWeight) * 0.95)
+                )
                   throw new Error(
                     "Este objetivo es demasiado bajo para el ajuste orientativo de la app. Revisalo con un profesional.",
                   );
@@ -255,6 +287,54 @@ export default function More() {
               }, "Preferencias guardadas");
             }}
           >
+            <details>
+              <summary>Cargar objetivos preparados para este perfil</summary>
+              <p className="muted small">
+                Elegí el archivo privado o pegá su contenido. Primero se
+                completa este formulario; los objetivos cambian sólo cuando los
+                confirmás. Tu fecha de nacimiento, PIN e historial se conservan.
+              </p>
+              <Field
+                label="Archivo de objetivos NutriDuo"
+                type="file"
+                accept=".json,application/json"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file)
+                    void run(async () => {
+                      if (file.size > 30000) throw new Error("Máximo 30 KB");
+                      const imported = importGoals(await file.text(), p);
+                      setDraft(imported.profile);
+                      setAssessmentNote(
+                        `Edad informada: ${imported.assessmentAge} años. Revisá tu fecha de nacimiento. ${imported.notes ?? ""}`,
+                      );
+                    }, "Objetivos cargados para revisar");
+                }}
+              />
+              <label className="field">
+                <span>Contenido JSON de objetivos</span>
+                <textarea
+                  rows={4}
+                  value={goalText}
+                  onChange={(e) => setGoalText(e.target.value)}
+                />
+              </label>
+              <Button
+                secondary
+                onClick={() =>
+                  void run(async () => {
+                    const imported = importGoals(goalText, p);
+                    setDraft(imported.profile);
+                    setAssessmentNote(
+                      `Edad informada: ${imported.assessmentAge} años. Revisá tu fecha de nacimiento. ${imported.notes ?? ""}`,
+                    );
+                  }, "Objetivos cargados para revisar")
+                }
+              >
+                Revisar objetivos pegados
+              </Button>
+            </details>
+            {assessmentNote && <p className="notice">{assessmentNote}</p>}
             <div className="form-grid">
               <Field
                 label="Nombre"
@@ -278,6 +358,13 @@ export default function More() {
                 max={230}
                 value={draft.height}
                 onChange={(n) => setDraft({ ...draft, height: n })}
+              />
+              <NumberField
+                label="Peso de referencia (kg)"
+                min={25}
+                max={350}
+                value={draft.initialWeight}
+                onChange={(n) => setDraft({ ...draft, initialWeight: n })}
               />
               <NumberField
                 label="Días de fuerza por semana"
@@ -377,6 +464,18 @@ export default function More() {
                     .split(",")
                     .map((v) => v.trim())
                     .filter(Boolean),
+                })
+              }
+            />
+            <NumberField
+              label="Presupuesto semanal de compras de este perfil (ARS)"
+              max={10000000}
+              required={false}
+              value={draft.weeklyBudget ?? 0}
+              onChange={(n) =>
+                setDraft({
+                  ...draft,
+                  weeklyBudget: Number.isNaN(n) ? undefined : n,
                 })
               }
             />
@@ -541,8 +640,16 @@ export default function More() {
       {panel === "instalar" && (
         <Modal title="NutriDuo, siempre a mano" onClose={() => setPanel("")}>
           <p>
-            La instalación y la cámara necesitan una dirección HTTPS (o
-            localhost en tu computadora).
+            NutriDuo se instala desde el navegador y se abre desde su ícono. Usá
+            la{" "}
+            <a
+              href="https://lurighe2000.github.io/nutriduo/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              dirección publicada de NutriDuo
+            </a>{" "}
+            en tu celular.
           </p>
           {install && (
             <Button
@@ -557,21 +664,46 @@ export default function More() {
               Instalar NutriDuo
             </Button>
           )}
-          <h3>Android · Chrome</h3>
+          <h3>Samsung S23 Ultra · Android con Chrome</h3>
           <p>
-            Abrí el menú ⋮ y elegí “Instalar aplicación” o “Agregar a la
-            pantalla principal”.
+            Abrí la dirección en Chrome, tocá el menú ⋮ → Instalar y crear
+            acceso directo → Instalar. Según la versión puede aparecer “Agregar
+            a la pantalla principal” o “Instalar aplicación”. Confirmá y abrí
+            NutriDuo desde el ícono.
           </p>
-          <h3>iPhone · Safari</h3>
+          <h3>iPhone 17 Pro Max · Safari</h3>
           <p>
-            Abrí Compartir y elegí “Agregar a pantalla de inicio”. Después entrá
-            desde ese ícono.
+            Abrí la dirección en Safari, tocá Compartir → Agregar a pantalla de
+            inicio. Si aparece “Abrir como app web”, dejalo activado. Tocá
+            Agregar y entrá desde el ícono de NutriDuo.
+          </p>
+          <p className="muted small">
+            Si Safari no muestra Agregar a Inicio, buscá Editar acciones al
+            final de Compartir y agregá esa opción.{" "}
+            <a
+              href="https://support.apple.com/es-lamr/guide/iphone/iphea86e5236/ios"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Guía de Apple
+            </a>{" "}
+            ·{" "}
+            <a
+              href="https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DAndroid&hl=es"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Guía de Chrome
+            </a>
+            .
           </p>
           <div className="notice">
             Después de la primera carga, las funciones principales pueden usarse
             sin conexión. La búsqueda de productos necesita internet. Los datos
             son propios de este navegador y dispositivo: no se sincronizan entre
-            celulares.
+            celulares. Si la app instalada no muestra los registros del
+            navegador, restaurá un backup de ese perfil. Hacé el backup antes de
+            cambiar de navegador o borrar datos.
           </div>
           <Button
             secondary
@@ -593,9 +725,12 @@ export default function More() {
       {panel === "privacidad" && (
         <Modal title="Privacidad y acceso" onClose={() => setPanel("")}>
           <p>
-            Sin publicidad, analytics ni envío de fotos. Comidas, peso y
-            progreso se guardan en este dispositivo. Sólo consultamos Open Food
-            Facts cuando vos buscás un código.
+            Sin publicidad ni analytics. Comidas, peso, balanza y progreso se
+            guardan en este dispositivo. Analizar envía la foto y descripción de
+            esa consulta a tu servicio de Cloudflare y Groq. La búsqueda
+            nutricional consulta USDA a través de tu servicio; los códigos de
+            barras consultan Open Food Facts. El menú semanal se calcula
+            localmente.
           </p>
           <p>
             El PIN evita entrar por error a otro perfil. No cifra IndexedDB ni
@@ -636,10 +771,11 @@ export default function More() {
             />
             <Button type="submit">Cambiar PIN</Button>
           </form>
-          <h3>Cloud</h3>
+          <h3>Sincronización de registros</h3>
           <p>
-            Desactivado. Esta versión usa almacenamiento local. Una futura
-            sincronización requerirá configuración y consentimiento explícitos.
+            Los registros de salud se guardan localmente, sin sincronización
+            automática entre dispositivos. Los recordatorios guardan sólo
+            suscripciones y preferencias de avisos en Cloudflare.
           </p>
         </Modal>
       )}

@@ -35,7 +35,7 @@ const sections = [
     title: "Conectar el análisis y otras formas de cargar",
     steps: [
       "Más → Análisis de comidas: ingresá el código privado de conexión y tocá Conectar análisis. La dirección del servicio viene cargada en la versión publicada.",
-      "Recordar conexión en este dispositivo conserva el acceso para ese perfil. Configurala en cada perfil y celular que vaya a usarla. El código no es tu PIN ni la clave de Groq.",
+      "Recordar conexión en este dispositivo viene activado y conserva el acceso para ambos perfiles en ese celular. Al abrir la sección se comprueba automáticamente y aparece Ya estás conectado. Configurala una vez en cada celular. Si no hay red, se conserva el acceso y la verificación queda pendiente.",
       "Componentes: cargá alimentos, cantidades y valores de la etiqueta manualmente.",
       "Mis alimentos: reutilizá la biblioteca personal y una porción de tus recetas.",
       "Código de barras: escribí el código o usá la cámara para buscar un producto. Verificá la ficha con su etiqueta; si no aparece, cargala en Componentes.",
@@ -61,6 +61,9 @@ const sections = [
       "Duplicar comidas de ayer copia los registros al día seleccionado después de confirmar.",
       "Recetas: cargá ingredientes y cuántas porciones rinde la preparación. Cargar 1 porción abre el formulario para revisarla y registrarla.",
       "Alimentos: tu biblioteca personal, con valores corregibles y favoritos. Guardar alimentos nuevos para la próxima vez permite reutilizar los componentes de una comida.",
+      "Menú semanal, también disponible en Más: prepará siete días con cuatro comidas y porciones para tus objetivos guardados. Cambiar plato actualiza las cantidades y la lista de compras. Revisá las recetas y el estado de pesado: seco, crudo o listo para consumir.",
+      "El menú no cuenta como comida consumida. Revisar y registrar esta comida abre el formulario; corregí la porción real y confirmá. Los valores son de fichas USDA genéricas: verificá marcas, aceite, rebozado y agregados.",
+      "Lista de compras suma ingredientes de la semana. Compartir compras de este perfil descarga un archivo de cantidades; importá la lista del otro perfil para sumar a los dos. El precio se ingresa manualmente y la app no garantiza un costo sin esos datos.",
     ],
   },
   {
@@ -71,12 +74,17 @@ const sections = [
       "La app puede sugerir revisar la carga cuando completaste el rango superior en dos sesiones con margen. La técnica y cómo te sentís siguen siendo parte de la decisión.",
       "Editar rutina permite cambiar ejercicios, series y rangos de repeticiones.",
       "Pasos y pádel se cargan manualmente. Registrar actividad no aumenta automáticamente tus calorías disponibles.",
+      "Caminata y trote: cargá distancia, duración y los datos que muestre Adidas Running. Ritmo y velocidad media se calculan; calorías, pulso y desnivel ausentes quedan sin completar. Guardá la salida en cada perfil que la haya hecho.",
+      "Rutina en casa muestra dos sesiones iniciales de fuerza y una propuesta de salidas diarias. Confirmar la rutina reemplaza el plan activo de ese perfil y conserva las sesiones anteriores. Alterná trote suave con caminatas para progresar de a poco.",
     ],
   },
   {
     title: "Progreso y Mi análisis",
     steps: [
       "Peso: último registro, promedio de siete días, cambio semanal y gráficos de 30 días, 90 días o todo el historial.",
+      "Registrar peso también permite agregar datos de Femmto. Elegí la misma unidad: IMC como índice, grasa y tejido magro en % si así aparecen; no confundas kilos y porcentajes. Balanza muestra cada serie por separado.",
+      "Informe Femmto: subí el PDF semanal, revisá perfil, fecha del pesaje y valores detectados y confirmá. La fecha de generación del archivo puede ser distinta de la medición. No enviamos el PDF a la IA; guardamos sólo los datos revisados, sin conservar el archivo.",
+      "Tu devolución compara informes separados por al menos siete días. Un primer informe sirve de referencia y no demuestra cambios de músculo o grasa. Las estimaciones de bioimpedancia pueden variar por hidratación y no ajustan tus objetivos automáticamente.",
       "Medidas: cintura y otras medidas, incluidas medidas personalizadas. Fotos: guardá vistas y compará dos fechas; no se calcula grasa corporal desde imágenes.",
       "Mi análisis reúne la observación general y el cumplimiento de energía, proteína y fuerza.",
       "El seguimiento requiere dos semanas, al menos cuatro pesajes por semana y doce días de alimentación marcados como completos. Al principio puede indicar que faltan datos.",
@@ -89,8 +97,9 @@ const sections = [
     steps: [
       "Más → Tu perfil y objetivos permite editar datos, metas diarias, actividad, alimentos excluidos y preferencias.",
       "Cambiar la actividad no recalcula las metas automáticamente: revisá los valores y tocá Confirmar objetivos y preferencias.",
+      "Cargar objetivos preparados permite elegir un archivo privado o pegar JSON. Se completa el formulario del perfil activo; revisá tu cumpleaños, peso de referencia y metas y confirmá. No crea pesajes ni cambia el PIN o el historial.",
       "En Inicio podés sumar agua de a 250 o 500 ml. Más → Un vaso a tu medida permite cargar otra cantidad y deshacer registros.",
-      "Claro y Oscuro están en el encabezado. Los recordatorios son avisos dentro de la app.",
+      "Claro y Oscuro están en el encabezado. Los avisos dentro de la app se pueden activar en el perfil. Más → Recordatorios permite activar por separado notificaciones del celular para comidas, movimiento, fuerza, pesaje e informe del domingo.",
       "Volver y Atrás del navegador recorren las pantallas anteriores; desde Inicio se vuelve a elegir perfil.",
     ],
   },
@@ -109,6 +118,7 @@ const sections = [
     title: "Instalar, usar sin internet y actualizar",
     steps: [
       "Android con Chrome: menú del navegador → Instalar aplicación. iPhone con Safari: Compartir → Agregar a pantalla de inicio. Más → Instalar NutriDuo muestra las instrucciones.",
+      "Para avisos con la app cerrada, entrá en Más → Recordatorios y aceptá el permiso desde ese celular. En iPhone primero agregá NutriDuo a Inicio, dejá Abrir como app web activado y abrila desde el ícono. La entrega puede demorarse por conexión, batería o concentración.",
       "Después de la primera carga, podés consultar y guardar registros sin internet. La IA y la búsqueda de productos nuevos requieren conexión.",
       "Cuando aparece Hay una nueva versión de NutriDuo, guardá lo que estés cargando y tocá Actualizar ahora, o elegí Después.",
       "En versiones antiguas sin aviso, recargá con internet, esperá a que descargue la actualización, cerrá la app y todas sus pestañas y volvé a abrirla.",

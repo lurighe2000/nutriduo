@@ -179,11 +179,13 @@ export default function MealEditor({
   existing,
   recipe,
   recipeMode = false,
+  planned = false,
 }: {
   onClose: () => void;
   existing?: Meal;
   recipe?: Recipe;
   recipeMode?: boolean;
+  planned?: boolean;
 }) {
   const { profile: p, data, date, repo, run, notify } = useApp();
   const [name, setName] = useState(existing?.name ?? recipe?.name ?? ""),
@@ -361,7 +363,7 @@ export default function MealEditor({
       title={
         recipeMode
           ? "Tu receta casera"
-          : existing
+          : existing && !planned
             ? "Editar comida"
             : "Registrar comida"
       }
@@ -725,7 +727,7 @@ export default function MealEditor({
               ? "Guardando…"
               : recipeMode
                 ? "Guardar receta"
-                : existing
+                : existing && !planned
                   ? "Guardar cambios"
                   : "Confirmar y registrar"}
           </Button>

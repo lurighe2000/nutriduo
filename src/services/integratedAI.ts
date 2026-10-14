@@ -11,6 +11,7 @@ export interface AIConnection {
   nutritionDatabase: boolean;
 }
 const connections = new Map<ProfileId, AIConnection>();
+const sharedConnectionKey = "nutriduo-ai-service";
 export function serviceEndpoint(value: string) {
   const url = new URL(value.trim());
   if (
@@ -40,7 +41,12 @@ export function currentAIConnection(id: ProfileId) {
       })
       .parse(
         JSON.parse(
-          localStorage.getItem(`nutriduo-ai-connection:${id}`) ?? "null",
+          localStorage.getItem(sharedConnectionKey) ??
+            localStorage.getItem(`nutriduo-ai-connection:${id}`) ??
+            localStorage.getItem(
+              `nutriduo-ai-connection:${id === "luca" ? "ari" : "luca"}`,
+            ) ??
+            "null",
         ),
       );
     value.endpoint = serviceEndpoint(value.endpoint);
@@ -53,6 +59,7 @@ export function currentAIConnection(id: ProfileId) {
 }
 export function savedAIEndpoint(id: ProfileId) {
   return (
+    currentAIConnection(id)?.endpoint ??
     localStorage.getItem(`nutriduo-ai-endpoint:${id}`) ??
     import.meta.env.VITE_AI_ENDPOINT ??
     ""
@@ -60,6 +67,41 @@ export function savedAIEndpoint(id: ProfileId) {
 }
 export function forgetAIConnections() {
   connections.clear();
+}
+export function disconnectAI() {
+  connections.clear();
+  localStorage.removeItem(sharedConnectionKey);
+  for (const id of ["luca", "ari"])
+    localStorage.removeItem(`nutriduo-ai-connection:${id}`);
+}
+const healthSchema = z.object({
+  ready: z.literal(true),
+  provider: z.literal("groq"),
+  nutritionDatabase: z.boolean(),
+});
+export async function verifyAIConnection(id: ProfileId, signal?: AbortSignal) {
+  const connection = currentAIConnection(id);
+  if (!connection)
+    throw new Error("Conectá el servicio una vez en este dispositivo.");
+  const health = healthSchema.parse(
+    await request(connection, "/health", undefined, signal),
+  );
+  if (signal?.aborted || currentAIConnection(id) !== connection)
+    throw new Error("La comprobación fue cancelada.");
+  connection.nutritionDatabase = health.nutritionDatabase;
+  connections.set(id, connection);
+  if (
+    localStorage.getItem(sharedConnectionKey) ||
+    localStorage.getItem(`nutriduo-ai-connection:${id}`) ||
+    localStorage.getItem(
+      `nutriduo-ai-connection:${id === "luca" ? "ari" : "luca"}`,
+    )
+  ) {
+    localStorage.setItem(sharedConnectionKey, JSON.stringify(connection));
+    for (const profile of ["luca", "ari"])
+      localStorage.removeItem(`nutriduo-ai-connection:${profile}`);
+  }
+  return connection;
 }
 async function request(
   connection: AIConnection,
@@ -105,7 +147,7 @@ export async function connectAI(
   id: ProfileId,
   endpoint: string,
   accessCode: string,
-  remember = false,
+  remember = true,
 ) {
   if (
     accessCode.trim().length < 32 ||
@@ -120,22 +162,16 @@ export async function connectAI(
     accessCode: accessCode.trim(),
     nutritionDatabase: false,
   };
-  const health = z
-    .object({
-      ready: z.literal(true),
-      provider: z.literal("groq"),
-      nutritionDatabase: z.boolean(),
-    })
-    .parse(await request(connection, "/health"));
+  const health = healthSchema.parse(await request(connection, "/health"));
   connection.nutritionDatabase = health.nutritionDatabase;
+  connections.clear();
   connections.set(id, connection);
   localStorage.setItem(`nutriduo-ai-endpoint:${id}`, connection.endpoint);
+  for (const profile of ["luca", "ari"])
+    localStorage.removeItem(`nutriduo-ai-connection:${profile}`);
   if (remember)
-    localStorage.setItem(
-      `nutriduo-ai-connection:${id}`,
-      JSON.stringify(connection),
-    );
-  else localStorage.removeItem(`nutriduo-ai-connection:${id}`);
+    localStorage.setItem(sharedConnectionKey, JSON.stringify(connection));
+  else localStorage.removeItem(sharedConnectionKey);
   return connection;
 }
 export async function analyzeMeal(
@@ -163,4 +199,21 @@ export async function searchNutrition(
   return nutrientSearchSchema.parse(
     await request(connection, "/nutrition/search", { query }, signal),
   ).foods;
+}
+export async function notificationRequest(
+  id: ProfileId,
+  path: "config" | "status" | "subscribe" | "unsubscribe" | "test",
+  body: unknown = {},
+) {
+  const connection = currentAIConnection(id);
+  if (!connection)
+    throw new Error(
+      "Conectá NutriDuo en Más → Análisis de comidas antes de activar recordatorios.",
+    );
+  return request(
+    connection,
+    `/notifications/${path}`,
+    body,
+    AbortSignal.timeout(15000),
+  );
 }
