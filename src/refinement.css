@@ -490,3 +490,18 @@ h3 {
 .ai-analyzer textarea {
   min-height: 130px;
 }
+.app-update {
+  position: fixed;
+  z-index: 220;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 24px));
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 12px 36px #0003;
+}
+.app-update p { margin: 8px 0 14px; font-size: 14px; }

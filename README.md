@@ -54,7 +54,7 @@ Más → Tus datos van con vos → Backup completo JSON. Incluye el perfil desbl
 
 ## PWA y offline
 
-El service worker de Workbox precachea el shell, vistas, fuentes WOFF2 e iconos. Se activa en build de producción, no durante desarrollo. Tras la primera carga, comidas, fotos, entrenamiento y progreso funcionan offline. OFF necesita red para un producto no almacenado. Actualizaciones quedan esperando una recarga/cierre de sesiones para no interrumpir una carga de datos.
+El service worker de Workbox precachea el shell, vistas, fuentes WOFF2 e iconos. Se activa en build de producción, no durante desarrollo. Tras la primera carga, comidas, fotos, entrenamiento y progreso funcionan offline. OFF necesita red para un producto no almacenado. Una actualización disponible muestra **Actualizar ahora / Después**. La persona guarda sus borradores antes de aceptar la recarga; IndexedDB y el PIN se conservan. Se comprueban novedades al abrir la app, al volver a ella con conexión y cada hora mientras está visible. Las versiones anteriores sin aviso pueden requerir cerrar todas las ventanas/pestañas de NutriDuo y volver a abrir para activar la actualización pendiente, sin borrar los datos del sitio.
 
 Android: menú Chrome → Instalar aplicación. iPhone: Safari → Compartir → Agregar a pantalla de inicio. HTTPS es necesario para cámara, Web Crypto, service worker e instalación; localhost es una excepción de desarrollo. Un enlace HTTP de la red local no equivale a HTTPS. El navegador puede desalojar almacenamiento local: la app solicita persistencia y los backups siguen siendo importantes.
 

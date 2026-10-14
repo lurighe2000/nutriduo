@@ -1,7 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-async function setup(page: Page, name = "Luca") {
-  await page.goto("/");
+import { createServer } from "node:http";
+import { resolve, extname } from "node:path";
+async function setup(page: Page, name = "Luca", url = "/") {
+  await page.goto(url);
   await page
     .getByRole("button", {
       name: new RegExp(name + " Construir|" + name + " Sentirte"),
@@ -44,6 +46,103 @@ async function manualMeal(page: Page) {
   await page.getByRole("button", { name: "Confirmar y registrar" }).click();
   await expect(page.locator("dialog")).toHaveCount(0);
 }
+
+test("una actualización pide confirmación y conserva PIN y comidas guardadas", async ({
+  page,
+}) => {
+  let servePreviousWorker = true;
+  const root = resolve("dist");
+  const server = createServer(async (request, response) => {
+    const path = new URL(request.url!, "http://localhost").pathname;
+    response.setHeader("Cache-Control", "no-store");
+    if (path === "/sw.js" && servePreviousWorker) {
+      response.setHeader("Content-Type", "application/javascript");
+      response.end(`self.addEventListener('install', () => self.skipWaiting());
+        self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));`);
+      return;
+    }
+    const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
+    if (!file.startsWith(root + "\\") && !file.startsWith(root + "/")) {
+      response.writeHead(404).end();
+      return;
+    }
+    try {
+      const mime: Record<string, string> = {
+        ".html": "text/html",
+        ".js": "application/javascript",
+        ".css": "text/css",
+        ".svg": "image/svg+xml",
+        ".png": "image/png",
+        ".woff2": "font/woff2",
+        ".webmanifest": "application/manifest+json",
+      };
+      response.setHeader(
+        "Content-Type",
+        mime[extname(file)] ?? "application/octet-stream",
+      );
+      response.end(await readFile(file));
+    } catch {
+      response.writeHead(404).end();
+    }
+  });
+  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+  const address = server.address();
+  if (!address || typeof address === "string")
+    throw new Error("Test server unavailable");
+  try {
+    await page.setViewportSize({ width: 393, height: 851 });
+    await setup(page, "Luca", `http://127.0.0.1:${address.port}`);
+    await manualMeal(page);
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    servePreviousWorker = false;
+    await page.evaluate(async () => {
+      await (await navigator.serviceWorker.ready).update();
+    });
+    const banner = page.getByRole("status", {
+      name: "Actualización disponible",
+    });
+    await expect(banner).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Hoy, Luca" }),
+    ).toBeVisible();
+    await page.screenshot({ path: "test-results/update-mobile.png" });
+    await page
+      .getByRole("button", { name: "Actualizar ahora", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Elegí tu perfil" }),
+    ).toBeVisible();
+    await expect(banner).toHaveCount(0);
+    await page.getByRole("button", { name: /Luca Construir/ }).click();
+    await page.getByLabel("PIN", { exact: true }).fill("1234");
+    await page
+      .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Hoy, Luca" }),
+    ).toBeVisible();
+    await page
+      .locator(".bottom-nav")
+      .getByRole("button", { name: "Comidas", exact: true })
+      .click();
+    await expect(
+      page.getByText("Almuerzo de prueba", { exact: true }),
+    ).toBeVisible();
+    await page
+      .locator(".bottom-nav")
+      .getByRole("button", { name: "Más", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: /Análisis de comidas/ }),
+    ).toBeVisible();
+    await page.screenshot({ path: "test-results/more-ai-mobile.png" });
+  } finally {
+    await page.close();
+    await new Promise<void>((done) => server.close(() => done()));
+  }
+});
 test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo al confirmar", async ({
   page,
 }) => {
