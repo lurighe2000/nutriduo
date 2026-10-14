@@ -5,6 +5,8 @@ import {
   menuItems,
   shoppingList,
   menuRecipes,
+  generateMenuForGoals,
+  combinedShoppingList,
 } from "./weeklyMenu";
 import { mealTotal } from "./formulas";
 import { profileSchema } from "../schemas";
@@ -58,6 +60,43 @@ it("genera 28 comidas, ajusta porciones y conserva compras y nutrientes", () => 
     menu.meals.map((m) => m.recipe),
   );
   expect(higher.meals[0].portions).not.toEqual(menu.meals[0].portions);
+});
+it("comparte los 28 platos, respeta exclusiones de ambos y suma las compras con porciones individuales", () => {
+  const base = {
+    calories: 2200,
+    protein: 115,
+    carbs: 285,
+    fat: 65,
+    fiber: 30,
+    water: 2500,
+    steps: 4500,
+  };
+  const excluded = ["pollo", "atún"];
+  const luca = generateMenuForGoals(base, excluded, "2026-10-14");
+  const ari = generateMenuForGoals(
+    { ...base, calories: 1700, protein: 100, fat: 55 },
+    excluded,
+    "2026-10-14",
+    luca.meals,
+  );
+  expect(ari.meals.map((m) => [m.day, m.slot, m.recipe])).toEqual(
+    luca.meals.map((m) => [m.day, m.slot, m.recipe]),
+  );
+  expect(ari.meals.map((m) => m.portions)).not.toEqual(
+    luca.meals.map((m) => m.portions),
+  );
+  for (const meal of [...luca.meals, ...ari.meals])
+    expect(
+      Object.keys(meal.portions).some((k) => k === "chicken" || k === "tuna"),
+    ).toBe(false);
+  const shopping = combinedShoppingList([luca, ari]);
+  for (const ingredient of shopping)
+    expect(ingredient.grams).toBe(
+      [...luca.meals, ...ari.meals].reduce(
+        (sum, m) => sum + (m.portions[ingredient.key] ?? 0),
+        0,
+      ),
+    );
 });
 it("respeta exclusiones y rechaza un plan cuando no puede ofrecer platos compatibles", () => {
   const p = { ...defaults[0], excluded: ["pollo", "atun"] };

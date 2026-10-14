@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useApp } from "../../app/context";
 import { db, meta } from "../../db";
 import { profileSchema, type Meal } from "../../schemas";
@@ -12,6 +12,7 @@ import {
   menuRecipes,
   monday,
   shoppingList,
+  combinedShoppingList,
 } from "../../nutrition/weeklyMenu";
 import { mealTotal, targets } from "../../nutrition/formulas";
 import { Button, Field, NumberField, Confirm } from "../../components/ui";
@@ -19,6 +20,14 @@ import { download } from "../../services/backup";
 import { niceDate, shiftDate } from "../../utils/date";
 import MealEditor from "./MealEditor";
 import Micronutrients from "../../components/Micronutrients";
+import {
+  cloudCredentials,
+  currentHousehold,
+  loadHousehold,
+  prepareHouseholdMenu,
+  replaceHouseholdDish,
+  subscribeHousehold,
+} from "../../services/cloudBackup";
 
 const days = [
   "Lunes",
@@ -40,7 +49,43 @@ export default function WeeklyMenu() {
   const [extra, setExtra] = useState<Record<string, number>>({}),
     [cost, setCost] = useState(0),
     [busy, setBusy] = useState(false);
-  const menu = p.weeklyMenu;
+  const household = useSyncExternalStore(subscribeHousehold, currentHousehold);
+  const [sharedError, setSharedError] = useState("");
+  const connected = Boolean(cloudCredentials(p.id));
+  const sharedMenus = connected ? household?.menus : undefined;
+  const menu = sharedMenus?.[p.id] ?? p.weeklyMenu;
+  const sharing = Boolean(sharedMenus);
+  const bothReady = Boolean(household?.members.luca && household?.members.ari);
+  const sharedExcluded = sharing
+    ? [
+        ...(household?.members.luca?.excluded ?? []),
+        ...(household?.members.ari?.excluded ?? []),
+      ]
+    : p.excluded;
+  useEffect(() => {
+    if (!cloudCredentials(p.id)) return;
+    const refresh = () => {
+      if (!document.hidden && navigator.onLine)
+        void loadHousehold(p.id).then(
+          () => setSharedError(""),
+          (error) =>
+            setSharedError(
+              error instanceof Error
+                ? error.message
+                : "No pudimos actualizar el menú compartido.",
+            ),
+        );
+    };
+    refresh();
+    const timer = setInterval(refresh, 30000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("online", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("online", refresh);
+    };
+  }, [p.id]);
   const goal = p.targets ?? targets(p, p.initialWeight);
   const selected = menu?.meals.filter((m) => m.day === day) ?? [];
   const ingredients = selected.flatMap((m) => menuItems(m.portions));
@@ -48,6 +93,11 @@ export default function WeeklyMenu() {
   async function build() {
     setBusy(true);
     await run(async () => {
+      if (connected && bothReady) {
+        await prepareHouseholdMenu(p.id, date);
+        setRegenerate(false);
+        return;
+      }
       const current = await db.profiles.get(p.id);
       if (!current) throw new Error("Perfil no disponible");
       await db.profiles.put(
@@ -60,13 +110,17 @@ export default function WeeklyMenu() {
     }, "Menú semanal preparado");
     setBusy(false);
   }
-  const groceries = menu ? shoppingList(menu) : [];
+  const groceries = sharedMenus
+    ? combinedShoppingList([sharedMenus.luca, sharedMenus.ari])
+    : menu
+      ? shoppingList(menu)
+      : [];
   const combined = menuFoods
     .map((f) => ({
       ...f,
       grams:
         (groceries.find((g) => g.key === f.key)?.grams ?? 0) +
-        (extra[f.key] ?? 0),
+        (sharing ? 0 : (extra[f.key] ?? 0)),
     }))
     .filter((f) => f.grams > 0);
   const currentGoals =
@@ -75,12 +129,28 @@ export default function WeeklyMenu() {
     <div className="weekly-menu">
       <div className="card">
         <span className="eyebrow">PLANIFICÁ TUS CUATRO COMIDAS</span>
-        <h2>Menú semanal de {p.name}</h2>
+        <h2>
+          {sharing ? "Menú semanal compartido" : `Menú semanal de ${p.name}`}
+        </h2>
         <p>
-          Platos caseros y porciones para tu objetivo. Se calcula en este
-          dispositivo, sin consumir consultas de IA. Las cantidades y nutrientes
-          son orientativos.
+          {sharing
+            ? `Los mismos platos para los dos. Acá ves las porciones de ${p.name}; la lista de compras suma a Luca y Ari.`
+            : "Platos caseros y porciones para tu objetivo. Activando la cuenta de ambos podrán compartir platos y compras."}{" "}
+          Sin consumir consultas de IA. Las cantidades y nutrientes son
+          orientativos.
         </p>
+        {!bothReady && (
+          <p className="notice small">
+            Para compartir el menú y una sola lista de compras, ambos tienen que
+            activar Más → Cuenta y respaldo. Por ahora se muestra sólo este
+            perfil.
+          </p>
+        )}
+        {sharedError && (
+          <p className="notice small">
+            {sharedError} Se conserva la última copia disponible.
+          </p>
+        )}
         {menu && (
           <p>
             Semana del {niceDate(menu.week)} · objetivo usado:{" "}
@@ -102,7 +172,9 @@ export default function WeeklyMenu() {
             ? "Preparando…"
             : menu
               ? "Generar de nuevo esta semana"
-              : "Preparar mi menú semanal"}
+              : connected && bothReady
+                ? "Preparar menú para ambos"
+                : "Preparar mi menú semanal"}
         </Button>
       </div>
       {menu && (
@@ -181,6 +253,11 @@ export default function WeeklyMenu() {
                         {m.slot} · {niceDate(shiftDate(menu.week, day), true)}
                       </span>
                       <h3>{recipe.name}</h3>
+                      {sharing && (
+                        <p className="muted small">
+                          Tu plato · {p.name}. La receta es la misma para ambos.
+                        </p>
+                      )}
                       <p>
                         ≈ {Math.round(t.calories)} kcal ·{" "}
                         {Math.round(t.protein)} g proteína
@@ -198,6 +275,54 @@ export default function WeeklyMenu() {
                           );
                         })}
                       </ul>
+                      {sharedMenus && (
+                        <details>
+                          <summary>Cantidades para cocinar los dos</summary>
+                          <ul>
+                            {Object.keys(m.portions)
+                              .concat(
+                                Object.keys(
+                                  sharedMenus[
+                                    p.id === "luca" ? "ari" : "luca"
+                                  ].meals.find(
+                                    (x) => x.day === day && x.slot === m.slot,
+                                  )?.portions ?? {},
+                                ),
+                              )
+                              .filter(
+                                (key, index, all) => all.indexOf(key) === index,
+                              )
+                              .map((key) => {
+                                const other =
+                                  sharedMenus[
+                                    p.id === "luca" ? "ari" : "luca"
+                                  ].meals.find(
+                                    (x) => x.day === day && x.slot === m.slot,
+                                  )?.portions[key] ?? 0;
+                                const food = menuFoods.find(
+                                  (f) => f.key === key,
+                                )!;
+                                return (
+                                  <li key={key}>
+                                    {food.name}:{" "}
+                                    <strong>
+                                      {(m.portions[key] ?? 0) + other} g en
+                                      total
+                                    </strong>{" "}
+                                    ({food.weighing}). Tu parte:{" "}
+                                    {m.portions[key] ?? 0} g.
+                                  </li>
+                                );
+                              })}
+                          </ul>
+                          <p className="muted small">
+                            Preparen la misma base y separen las porciones según
+                            el peso crudo, seco o escurrido indicado. Pan,
+                            fruta, lácteos y otros acompañamientos se sirven por
+                            separado según cada plato.
+                          </p>
+                        </details>
+                      )}
                       <details>
                         <summary>Cómo prepararlo y nutrientes</summary>
                         <p>{recipe.preparation}</p>
@@ -211,6 +336,19 @@ export default function WeeklyMenu() {
                             const replacement = menuRecipes.find(
                               (r) => r.id === e.target.value,
                             )!;
+                            if (sharing) {
+                              void run(
+                                () =>
+                                  replaceHouseholdDish(
+                                    p.id,
+                                    day,
+                                    m.slot,
+                                    replacement.id,
+                                  ),
+                                "Plato y compras de ambos actualizados",
+                              );
+                              return;
+                            }
                             void run(async () => {
                               const current = await db.profiles.get(p.id);
                               if (!current?.weeklyMenu)
@@ -240,7 +378,7 @@ export default function WeeklyMenu() {
                             }, "Plato y compras actualizados");
                           }}
                         >
-                          {allowedRecipes(m.slot, p.excluded).map((r) => (
+                          {allowedRecipes(m.slot, sharedExcluded).map((r) => (
                             <option key={r.id} value={r.id}>
                               {r.name}
                             </option>
@@ -281,11 +419,15 @@ export default function WeeklyMenu() {
             <section className="card">
               <h3>
                 Compras para siete días
-                {Object.keys(extra).length
-                  ? " · lista combinada"
-                  : ` · ${p.name}`}
+                {sharing
+                  ? " · Luca y Ari"
+                  : Object.keys(extra).length
+                    ? " · lista combinada"
+                    : ` · ${p.name}`}
               </h3>
               <p className="muted small">
+                {sharing &&
+                  "Esta es la misma lista en ambos celulares y suma las porciones de los dos. "}
                 Totales de ingredientes según el menú, en peso comestible
                 crudo/seco o escurrido. Comprá margen para cáscaras y descartes.
                 Revisá lo que ya tenés. Las marcas y paquetes pueden variar.
@@ -318,76 +460,88 @@ export default function WeeklyMenu() {
                 >
                   Descargar lista
                 </Button>
-                <Button
-                  secondary
-                  onClick={() =>
-                    download(
-                      JSON.stringify({
-                        app: "NutriDuo-compras",
-                        week: menu.week,
-                        amounts: Object.fromEntries(
-                          groceries.map((f) => [f.key, f.grams]),
-                        ),
-                      }),
-                      `NutriDuo-compras-${p.id}.json`,
-                      "application/json",
-                    )
-                  }
-                >
-                  Compartir compras de este perfil
-                </Button>
-              </div>
-              <Field
-                label="Sumar archivo de compras del otro perfil"
-                type="file"
-                accept=".json,application/json"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file)
-                    void run(async () => {
-                      if (file.size > 100000)
-                        throw new Error("Archivo demasiado grande");
-                      const pack = groceryPackageSchema.parse(
-                        JSON.parse(await file.text()),
-                      );
-                      if (pack.week !== menu.week)
-                        throw new Error(
-                          "Las listas deben corresponder a la misma semana",
-                        );
-                      if (
-                        Object.keys(pack.amounts).some(
-                          (k) => !menuFoods.some((f) => f.key === k),
-                        )
+                {!sharing && (
+                  <Button
+                    secondary
+                    onClick={() =>
+                      download(
+                        JSON.stringify({
+                          app: "NutriDuo-compras",
+                          week: menu.week,
+                          amounts: Object.fromEntries(
+                            groceries.map((f) => [f.key, f.grams]),
+                          ),
+                        }),
+                        `NutriDuo-compras-${p.id}.json`,
+                        "application/json",
                       )
-                        throw new Error("Alimento desconocido");
-                      setExtra(pack.amounts);
-                      notify(
-                        "Compras sumadas. El archivo no contiene objetivos ni registros de salud.",
-                      );
-                    });
-                }}
-              />
-              {Object.keys(extra).length > 0 && (
-                <Button secondary onClick={() => setExtra({})}>
-                  Quitar lista sumada
-                </Button>
+                    }
+                  >
+                    Compartir compras de este perfil
+                  </Button>
+                )}
+              </div>
+              {!sharing && (
+                <>
+                  <Field
+                    label="Sumar archivo de compras del otro perfil"
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file)
+                        void run(async () => {
+                          if (file.size > 100000)
+                            throw new Error("Archivo demasiado grande");
+                          const pack = groceryPackageSchema.parse(
+                            JSON.parse(await file.text()),
+                          );
+                          if (pack.week !== menu.week)
+                            throw new Error(
+                              "Las listas deben corresponder a la misma semana",
+                            );
+                          if (
+                            Object.keys(pack.amounts).some(
+                              (k) => !menuFoods.some((f) => f.key === k),
+                            )
+                          )
+                            throw new Error("Alimento desconocido");
+                          setExtra(pack.amounts);
+                          notify(
+                            "Compras sumadas. El archivo no contiene objetivos ni registros de salud.",
+                          );
+                        });
+                    }}
+                  />
+                  {Object.keys(extra).length > 0 && (
+                    <Button secondary onClick={() => setExtra({})}>
+                      Quitar lista sumada
+                    </Button>
+                  )}
+                  <p className="muted small">
+                    Para sumar a los dos, exportá la lista desde cada perfil e
+                    importá la otra aquí. Sólo se comparten cantidades de
+                    alimentos. La lista combinada se mantiene mientras esta
+                    pantalla esté abierta.
+                  </p>
+                </>
               )}
-              <p className="muted small">
-                Para sumar a los dos, exportá la lista desde cada perfil e
-                importá la otra aquí. Sólo se comparten cantidades de alimentos.
-                La lista combinada se mantiene mientras esta pantalla esté
-                abierta.
-              </p>
               <NumberField
-                label="Costo estimado de estas compras (ARS)"
+                label={
+                  sharing
+                    ? "Costo estimado de la compra de ambos (ARS)"
+                    : "Costo estimado de estas compras (ARS)"
+                }
                 max={10000000}
                 value={cost}
                 onChange={setCost}
               />
               <p>
-                {p.weeklyBudget
-                  ? `Presupuesto semanal de este perfil: $${p.weeklyBudget.toLocaleString("es-AR")}. `
-                  : "Podés definir un presupuesto semanal en Más → Tu perfil y objetivos. "}
+                {sharing
+                  ? "Estimación manual para la compra compartida. "
+                  : p.weeklyBudget
+                    ? `Presupuesto semanal de este perfil: $${p.weeklyBudget.toLocaleString("es-AR")}. `
+                    : "Podés definir un presupuesto semanal en Más → Tu perfil y objetivos. "}
                 {cost > 0
                   ? `Costo que ingresaste: $${cost.toLocaleString("es-AR")}.`
                   : "Sin precios cargados: no estimamos el costo ni garantizamos que alcance el presupuesto."}
@@ -409,8 +563,10 @@ export default function WeeklyMenu() {
           onClose={() => setRegenerate(false)}
           onConfirm={() => void build()}
         >
-          Se reemplaza el menú planificado con tus objetivos actuales. Las
-          comidas que ya registraste se conservan.
+          {sharing
+            ? "Se reemplaza el menú compartido de ambos, con las porciones de cada uno. "
+            : "Se reemplaza el menú planificado con tus objetivos actuales. "}{" "}
+          Las comidas que ya registraste se conservan.
         </Confirm>
       )}
     </div>

@@ -5,6 +5,77 @@
   --primary: #203d5b;
   --soft: #eaf0f5;
 }
+.cloud-backup-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 4px 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  max-width: 100%;
+}
+.cloud-backup-status span {
+  overflow-wrap: anywhere;
+}
+.cloud-backup-status svg {
+  flex-shrink: 0;
+}
+.cloud-account form {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0;
+}
+.cloud-backup-prompt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.cloud-backup-prompt > div {
+  flex: 1;
+  min-width: 170px;
+}
+.cloud-backup-prompt p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.cloud-backup-prompt > svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.cloud-backup-prompt button {
+  min-height: 44px;
+}
+.cloud-account-state {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.cloud-account-state p {
+  margin: 5px 0;
+}
+.cloud-account .actions {
+  flex-wrap: wrap;
+}
+.weekly-menu .history-row > strong {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.cloud-account .field input,
+.cloud-account .field select {
+  max-width: 100%;
+}
 html[data-theme="dark"],
 .dark {
   --ink: #e8edf2;

@@ -1,0 +1,23 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "nutriduo-cloud-test",
+  "main": "index.ts",
+  "compatibility_date": "2026-10-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [{ "name": "BACKUP_VAULTS", "class_name": "BackupVault" }],
+  },
+  "migrations": [{ "tag": "test-v1", "new_sqlite_classes": ["BackupVault"] }],
+  "vars": {
+    "ALLOWED_ORIGINS": "http://localhost:4173",
+    "NUTRIDUO_ACCESS_TOKEN": "test-only-invitation-code-not-a-real-secret",
+  },
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "101311",
+      "simple": { "limit": 1000, "period": 60 },
+    },
+  ],
+  "observability": { "enabled": false },
+}

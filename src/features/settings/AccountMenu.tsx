@@ -3,6 +3,7 @@ import {
   Camera,
   UserRound,
   Settings,
+  ShieldCheck,
   Bell,
   LogOut,
   ChevronRight,
@@ -155,6 +156,17 @@ export default function AccountMenu({
           </div>
         </div>
         <div className="account-actions">
+          <button
+            className="list-button"
+            type="button"
+            onClick={() => onSettings("cuenta")}
+          >
+            <span>
+              <ShieldCheck size={19} />
+              Cuenta y respaldo<small>Conservar y recuperar mi historial</small>
+            </span>
+            <ChevronRight size={18} />
+          </button>
           <button
             className="list-button"
             type="button"

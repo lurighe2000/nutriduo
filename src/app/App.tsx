@@ -38,6 +38,10 @@ import ThemeToggle from "../components/ThemeToggle";
 import Breadcrumbs from "../components/Breadcrumbs";
 import ProfileAvatar from "../components/ProfileAvatar";
 import BrandIcon from "../components/BrandIcon";
+import CloudBackupStatus, {
+  CloudBackupPrompt,
+} from "../components/CloudBackupStatus";
+import { startCloudBackup } from "../services/cloudBackup";
 import AccountMenu from "../features/settings/AccountMenu";
 import { forgetAIConnections } from "../services/integratedAI";
 import { NavigationContext, useAppNavigation } from "./navigation";
@@ -84,6 +88,7 @@ export default function App() {
   const [active, setActive] = useState<ProfileId | null>(null),
     [initError, setInitError] = useState("");
   const profiles = useLiveQuery(() => db.profiles.toArray(), []);
+  useEffect(() => startCloudBackup(), []);
   useEffect(() => {
     void initialize().catch(() =>
       setInitError(
@@ -133,10 +138,11 @@ export default function App() {
           </div>
           <Gate
             profiles={profiles}
-            onUnlock={(id) => {
+            onUnlock={(id, appearance) => {
               setActive(id);
               const selected = profiles.find((p) => p.id === id);
-              if (selected?.onboarded) setDark(selected.dark);
+              if (appearance !== undefined) setDark(appearance);
+              else if (selected?.onboarded) setDark(selected.dark);
             }}
           />
         </div>
@@ -405,6 +411,12 @@ function Shell({
                 )}
               </div>
               <Suspense fallback={<div className="loading">Abriendo…</div>}>
+                {page === "inicio" && (
+                  <CloudBackupPrompt
+                    id={profile.id}
+                    onClick={() => openSettings("cuenta")}
+                  />
+                )}
                 <div className="section-view" key={page}>
                   {page === "inicio" ? (
                     <Dashboard />
@@ -423,7 +435,11 @@ function Shell({
                 </div>
               </Suspense>
               <footer className="app-footer">
-                Guardado en este dispositivo <span>NutriDuo · 1.7</span>
+                <CloudBackupStatus
+                  id={profile.id}
+                  onClick={() => openSettings("cuenta")}
+                />
+                <span>NutriDuo · 1.8</span>
               </footer>
             </main>
           </div>

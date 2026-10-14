@@ -5,40 +5,45 @@
   "account_id": "f58393104440faaed43dd72b4a792a60",
   "compatibility_date": "2026-10-13",
   "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "BACKUP_VAULTS", "class_name": "BackupVault" }],
+  },
+  "migrations": [{ "tag": "backup-v1", "new_sqlite_classes": ["BackupVault"] }],
   "kv_namespaces": [
     {
       "binding": "PUSH_SUBSCRIPTIONS",
-      "id": "2a0f3077dd72466997e9f01d27d9dac1"
-    }
+      "id": "2a0f3077dd72466997e9f01d27d9dac1",
+    },
   ],
   "preview_urls": false,
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
   },
   "vars": {
     "ALLOWED_ORIGINS": "https://lurighe2000.github.io,http://localhost:4173,http://localhost:5173",
     "VAPID_PUBLIC_KEY": "BLuUm1y-MgFJOWAVuqh8cAupOfo1UWXY777J4hZnIB3vwmCifT8uwDqI2RlQWd1owD4WWI3isgRzjvEHUMNnqcc",
-    "VAPID_SUBJECT": "https://github.com/lurighe2000/nutriduo/issues"
+    "VAPID_SUBJECT": "https://github.com/lurighe2000/nutriduo/issues",
   },
   "observability": {
-    "enabled": false
+    "enabled": false,
   },
   "ratelimits": [
+    {
+      "name": "CLOUD_LIMITER",
+      "namespace_id": "101312",
+      "simple": { "limit": 120, "period": 60 },
+    },
     {
       "name": "REQUEST_LIMITER",
       "namespace_id": "101310",
       "simple": {
         "limit": 20,
-        "period": 60
-      }
-    }
+        "period": 60,
+      },
+    },
   ],
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "triggers": {
-    "crons": [
-      "*/5 * * * *"
-    ]
-  }
+    "crons": ["*/5 * * * *"],
+  },
 }

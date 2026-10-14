@@ -274,16 +274,31 @@ export function monday(date: string) {
 }
 export function generateMenu(profile: Profile, date: string): WeeklyMenu {
   const goal = profile.targets ?? targets(profile, profile.initialWeight);
+  return generateMenuForGoals(goal, profile.excluded, date);
+}
+export function generateMenuForGoals(
+  goal: NutritionGoal,
+  excluded: string[],
+  date: string,
+  dishes?: Pick<WeeklyMenu["meals"][number], "day" | "slot" | "recipe">[],
+): WeeklyMenu {
   const meals: WeeklyMenu["meals"] = [];
   for (let day = 0; day < 7; day++)
     for (const slot of ["Desayuno", "Almuerzo", "Merienda", "Cena"] as Slot[]) {
-      const pool = allowedRecipes(slot, profile.excluded);
+      const pool = allowedRecipes(slot, excluded);
       if (!pool.length)
         throw new Error(
           `No hay opciones de ${slot.toLowerCase()} compatibles con tus exclusiones. Revisá las preferencias antes de generar.`,
         );
       const offset = slot === "Cena" ? 3 : slot === "Merienda" ? 2 : 0;
-      const recipe = pool[(day + offset) % pool.length];
+      const requested = dishes?.find((m) => m.day === day && m.slot === slot);
+      const recipe = requested
+        ? pool.find((r) => r.id === requested.recipe)
+        : pool[(day + offset) % pool.length];
+      if (!recipe)
+        throw new Error(
+          "El plato no respeta las preferencias compartidas. Prepará otro menú.",
+        );
       meals.push({
         day,
         slot,
@@ -294,8 +309,11 @@ export function generateMenu(profile: Profile, date: string): WeeklyMenu {
   return { week: monday(date), targets: goal, meals };
 }
 export function shoppingList(menu: WeeklyMenu) {
+  return combinedShoppingList([menu]);
+}
+export function combinedShoppingList(menus: WeeklyMenu[]) {
   const amounts: Record<string, number> = {};
-  for (const meal of menu.meals)
+  for (const meal of menus.flatMap((menu) => menu.meals))
     for (const [key, grams] of Object.entries(meal.portions))
       amounts[key] = (amounts[key] ?? 0) + grams;
   return menuFoods

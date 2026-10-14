@@ -1,6 +1,6 @@
 # NutriDuo
 
-Nutrición, entrenamiento y progreso para Luca y Ari. Aplicación mobile-first, instalable, local-first y sin API paga. Los perfiles son independientes y cada uno crea su PIN al ingresar por primera vez.
+Nutrición, entrenamiento y progreso para Luca y Ari. Aplicación mobile-first, instalable, local-first y sin API paga. Los perfiles son independientes y cada uno crea su PIN al ingresar por primera vez. Cuenta y respaldo agrega recuperación después de reinstalar, con usuario/contraseña y copias cifradas en Cloudflare.
 
 ## Arranque
 
@@ -25,6 +25,8 @@ Abrí la URL que imprime Vite. En el primer ingreso completá peso, altura, naci
 | `npm run test:e2e`                | Recorridos sobre build final en puerto 4173             |
 
 ## Lo que incluye
+
+- Cuenta independiente `luca` / `ari`, respaldo automático cifrado de todo el historial y fotos, recuperación en una instalación limpia y archivo de recuperación por si se olvida la contraseña. La activación inicial requiere el código privado del análisis; iniciar sesión después no lo necesita. Sin cuenta activada, los datos siguen siendo únicamente locales.
 
 - Dos perfiles, temas azul/dorado y rosa, modo oscuro, PIN con PBKDF2/SHA-256 (600.000 iteraciones), salt y bloqueo tras cinco fallos.
 - Menú de cuenta desde la inicial o foto: edición de nombre y foto local, acceso a configuración y recordatorios, y cambio explícito de perfil. La foto se conserva en el backup JSON. Encabezado con accesos al Inicio y a la vista principal de cada sección; transiciones breves que respetan la preferencia de movimiento reducido.
@@ -64,9 +66,23 @@ El service worker de Workbox precachea el shell, vistas, fuentes WOFF2 e iconos.
 
 El logo Conexión azul/rosa se usa dentro de la app, en el manifiesto y en el ícono de inicio de iOS. Las notificaciones usan un PNG independiente de 96 px con silueta blanca y fondo transparente, nunca el recuadro del ícono completo. Fuentes y exportación reproducible: [assets/brand](assets/brand/README.md). La versión 1.7 permite identificar esta actualización en el pie de la app.
 
+## Respaldo en la nube (1.8)
+
+Desde Más → Cuenta y respaldo, cada usuario crea una contraseña de al menos 12 caracteres. La app deriva dos claves independientes con PBKDF2-SHA256 (600.000 iteraciones): una autentica los pedidos y la otra cifra en el cliente con AES-256-GCM, IV aleatorio y contexto ligado al perfil. La contraseña y la clave de cifrado no llegan al servidor. El archivo de recuperación contiene las claves de acceso y debe conservarse en privado. Las credenciales locales no están cifradas por el PIN; siguen sujetas a la seguridad del dispositivo, como el resto de IndexedDB.
+
+El servidor guarda ciphertext en un Durable Object SQLite por perfil, incluido en Workers Free. Guarda la copia actual y la anterior. Los bloques son de 64 KiB y los cambios de cabecera se confirman atómicamente, sólo después de recibir todos los bloques; la versión esperada impide que un dispositivo atrasado pise una copia más reciente. Se comprueban checksum, autenticación AES y schemas antes de restaurar. La restauración local es una transacción de todas las tablas del perfil, conserva al otro usuario y descarga un backup previo cuando reemplaza un perfil configurado. No mezcla cambios de varios dispositivos automáticamente: ante conflicto muestra recuperación explícita.
+
+Se observan commits de IndexedDB (altas, cambios, bajas y restauraciones), se agrupan cambios cercanos y se reintenta con conexión o al volver a abrir. Un cambio durante una subida queda pendiente para el siguiente pase. El estado diferencia guardado local, pendiente, offline, error y copia al día; sólo la última permite recuperar el último registro al reinstalar. No es posible subir cambios que el sistema elimine antes de que tengan conexión o que se hayan borrado antes de activar la cuenta. No se cobra ni se habilita un plan pago: el límite actual de una copia es 100 MB sin comprimir; si se supera, se muestra error y se conservan los registros locales. La app debe estar abierta para completar el respaldo.
+
+Al reinstalar: pantalla inicial → Ya tengo cuenta · Recuperar mis registros → usuario y contraseña (o archivo de recuperación) → revisar copia → Recuperar mis registros. No hace falta completar el perfil otra vez. Se recuperan datos y PIN; los permisos y la suscripción de notificaciones deben habilitarse de nuevo en el dispositivo.
+
+`worker/wrangler.jsonc` declara `BACKUP_VAULTS` y la migración SQLite `backup-v1`. Publicar con `npx wrangler deploy --config worker/wrangler.jsonc --minify`. No se usan los namespaces KV de recordatorios para datos de salud. Las pruebas E2E ejecutan una base SQLite real local mediante `worker/wrangler.test.jsonc`, con un almacenamiento nuevo por ejecución y credenciales ficticias. Nunca usan las cuentas de producción.
+
+El menú del hogar se guarda en otro objeto de la misma clase, accesible sólo tras autenticar la cuenta de quien consulta. Se comparten exclusivamente nombres, objetivos nutricionales, exclusiones, recetas y porciones; los historiales personales permanecen en sus copias cifradas. Ambas cuentas deben estar activadas. Preparar menú para ambos fija los mismos 28 platos y ajusta sus ingredientes a cada objetivo, con las exclusiones combinadas. Una sustitución modifica el plato para ambos y recalcula una sola lista de compras de siete días, sumando las dos porciones. La descarga TXT es idéntica en los dos perfiles. La vista consulta la nube al abrir, al volver con conexión y cada 30 segundos mientras está visible; sin conexión muestra la última copia. La coordinación de versiones evita que una publicación de preferencias de un dispositivo viejo reemplace otra más nueva. No se promete cubrir todos los nutrientes: se conservan los avisos sobre aproximación, fibra y datos faltantes del generador.
+
 Android: menú Chrome → Instalar aplicación. iPhone: Safari → Compartir → Agregar a pantalla de inicio. HTTPS es necesario para cámara, Web Crypto, service worker e instalación; localhost es una excepción de desarrollo. Un enlace HTTP de la red local no equivale a HTTPS. El navegador puede desalojar almacenamiento local: la app solicita persistencia y los backups siguen siendo importantes.
 
-Cada origen y dispositivo tiene su propia base: los datos de localhost no aparecen en la versión publicada ni en otro teléfono. No hay sincronización automática.
+Cada origen y dispositivo tiene su propia base: los datos de localhost no aparecen en la versión publicada sin recuperar una copia. Con Cuenta y respaldo se suben automáticamente los cambios y se puede recuperar el historial; el menú y las compras se coordinan entre las dos cuentas. No hay mezcla automática de historiales editados simultáneamente en distintos dispositivos.
 
 ## Productos e IA
 
@@ -78,9 +94,9 @@ La pestaña **Analizar comida** permite analizar foto + descripción, cantidades
 
 Las fichas USDA seleccionadas aportan sodio, vitaminas y minerales disponibles, con unidades y procedencia por componente. El servicio incluye 2162 fichas oficiales de Foundation Foods (abril 2026) y FNDDS (octubre 2024), sin otra cuenta ni cuota de API. Una clave USDA propia es opcional para ampliar las búsquedas. Las etiquetas de OFF aportan sodio cuando existe. Los totales adicionales se muestran en el editor y Comidas, indicando cobertura parcial. No se inventan datos ausentes, y los registros guardados conservan una copia de esos valores para correcciones de gramos, recetas, backups y exportaciones. No hay objetivos ni diagnóstico por micronutrientes.
 
-## Cloud opcional
+## Adaptador local
 
-`src/services/sync.ts` define `SyncAdapter` y `LocalSyncAdapter`. No hay un cliente Supabase configurado ni una falsa sincronización. Para implementarlo: autenticación por persona, `profile_id` asociado a `auth.uid()`, RLS en cada tabla, almacenamiento privado, consentimiento por foto, cola de cambios y resolución de conflictos. No colocar una service-role key en Vite. Se pospone hasta verificar el uso real de la base local.
+`src/services/sync.ts` conserva `SyncAdapter` y `LocalSyncAdapter` para el modo local. El respaldo actual usa el protocolo cifrado de `cloudBackup.ts` y el almacenamiento privado del Worker; no depende de Supabase ni incluye claves de administración en Vite.
 
 ## Publicación
 
@@ -96,6 +112,6 @@ El botón **Volver** y Atrás del navegador recorren las secciones, pestañas y 
 
 Tests de navegador en Chromium de escritorio y viewport móvil: onboarding/PIN, comida, edición, peso, separación de perfiles, producto con respuesta controlada, IA, receta, entrenamiento, backup, XLSX y recarga offline. Los tests usan una base aislada de navegador, no los datos del usuario.
 
-Falta validación física en Galaxy S23 Ultra e iPhone, incluida cámara, instalación y compatibilidad HEIC según navegador. No se afirma que un mock de OFF verifique disponibilidad de su servicio. No hay OCR, sincronización cloud ni notificaciones push. Los recordatorios son internos. Las sugerencias de comidas son ideas cualitativas filtradas por exclusiones, sin inventar gramos/macros ni conocer la despensa. El coach no calcula gasto metabólico real ni composición corporal.
+Falta validación física de esta actualización en Galaxy S23 Ultra e iPhone. Las pruebas no sustituyen la comprobación de instalación, cámara, notificaciones y descarga de archivos en cada teléfono. No se afirma que un mock de OFF verifique disponibilidad de su servicio. La disponibilidad de los servicios gratuitos y sus cuotas puede impedir temporalmente un análisis, respaldo o aviso; la interfaz conserva los datos locales y muestra los errores. El menú usa cantidades orientativas del catálogo USDA y no conoce la despensa. El coach no calcula gasto metabólico real ni composición corporal.
 
 La interfaz soporta español argentino y unidades métricas. Fotos comparadas sin retoques ni zoom sincronizado. El backup por perfil es una decisión deliberada para no exponer el perfil bloqueado. CSV exporta comidas; XLSX y JSON cubren todas las entidades. Con bibliotecas de larga duración e historiales fotográficos extensos, se recomienda auditar cuotas y rendimiento antes de importar cientos de fotos.

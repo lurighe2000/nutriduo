@@ -9,6 +9,8 @@ import {
 import type { Micronutrients } from "../src/schemas";
 import catalog from "./nutrition-catalog.json";
 import { pushRoute, sendReminders, type PushEnv } from "./notifications";
+import { cloudRoute, type CloudEnv } from "./cloud";
+export { BackupVault } from "./cloud";
 const normalize = (text: string) =>
   text
     .toLowerCase()
@@ -32,7 +34,7 @@ export function searchCatalog(query: string): NutrientFood[] {
     .map((entry) => entry.food);
 }
 
-export interface Env extends PushEnv {
+export interface Env extends PushEnv, CloudEnv {
   GROQ_API_KEY?: string;
   NUTRIDUO_ACCESS_TOKEN?: string;
   USDA_API_KEY?: string;
@@ -216,6 +218,13 @@ export function createHandler(upstream: typeof fetch = fetch) {
           "access-control-max-age": "3600",
         },
       });
+    if (new URL(request.url).pathname.startsWith("/cloud/")) {
+      const response = await cloudRoute(request, env);
+      return new Response(response.body, {
+        status: response.status,
+        headers: { ...Object.fromEntries(response.headers), ...headers },
+      });
+    }
     if (
       !env.NUTRIDUO_ACCESS_TOKEN ||
       env.NUTRIDUO_ACCESS_TOKEN.length < 32 ||

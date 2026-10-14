@@ -24,6 +24,7 @@ import UsageGuide from "./UsageGuide";
 import WeeklyMenu from "../meals/WeeklyMenu";
 import { importGoals } from "../../services/goalImport";
 import PushSettings from "./PushSettings";
+import CloudAccount from "./CloudAccount";
 import {
   createBackup,
   parseBackup,
@@ -134,6 +135,12 @@ export default function More({
     setBusy(false);
   }
   const cards = [
+    {
+      id: "cuenta",
+      icon: ShieldCheck,
+      title: "Cuenta y respaldo",
+      text: "Respaldo automático y recuperación al reinstalar o cambiar de celular.",
+    },
     {
       id: "recordatorios",
       icon: Smartphone,
@@ -264,6 +271,19 @@ export default function More({
             </div>
           ))}
       </section>
+      {panel === "cuenta" && (
+        <Modal title="Cuenta y respaldo" onClose={() => setPanel("")}>
+          <CloudAccount
+            profileId={p.id}
+            onRestored={async () => {
+              const restored = await db.profiles.get(p.id);
+              if (restored) setAppearance(restored.dark);
+              setPanel("");
+              notify("Tus registros fueron recuperados.");
+            }}
+          />
+        </Modal>
+      )}
       {panel === "ia" && (
         <Modal title="Análisis de comidas" onClose={() => setPanel("")}>
           <AIConnectionForm />
@@ -719,10 +739,10 @@ export default function More({
           <div className="notice">
             Después de la primera carga, las funciones principales pueden usarse
             sin conexión. La búsqueda de productos necesita internet. Los datos
-            son propios de este navegador y dispositivo: no se sincronizan entre
-            celulares. Si la app instalada no muestra los registros del
-            navegador, restaurá un backup de ese perfil. Hacé el backup antes de
-            cambiar de navegador o borrar datos.
+            locales de este navegador y dispositivo. Activá Cuenta y respaldo
+            para conservar una copia cifrada en la nube y recuperarla al
+            reinstalar o cambiar de celular. Antes de desinstalar, comprobá que
+            el respaldo esté al día. Actualizar la app no requiere desinstalar.
           </div>
           <Button
             secondary
@@ -745,17 +765,20 @@ export default function More({
         <Modal title="Privacidad y acceso" onClose={() => setPanel("")}>
           <p>
             Sin publicidad ni analytics. Comidas, peso, balanza y progreso se
-            guardan en este dispositivo. Analizar envía las fotos adjuntas y
-            descripción de esa consulta a tu servicio de Cloudflare y Groq. La
-            búsqueda nutricional consulta USDA a través de tu servicio; los
-            códigos de barras consultan Open Food Facts. El menú semanal se
-            calcula localmente.
+            guardan en este dispositivo. Si activás Cuenta y respaldo, también
+            se guarda una copia cifrada en tu servicio privado de Cloudflare. La
+            contraseña se usa en el celular para derivar las claves; el servidor
+            no recibe la contraseña ni la clave de descifrado. Analizar envía
+            las fotos adjuntas y descripción de esa consulta a tu servicio de
+            Cloudflare y Groq. La búsqueda nutricional consulta USDA a través de
+            tu servicio; los códigos de barras consultan Open Food Facts. El
+            menú semanal se calcula localmente.
           </p>
           <p>
             El PIN evita entrar por error a otro perfil. No cifra IndexedDB ni
-            los backups, y puede ser eludido por alguien con acceso técnico al
-            navegador. La sesión se bloquea al recargar o tras 5 minutos en
-            segundo plano.
+            los backups JSON descargados, y puede ser eludido por alguien con
+            acceso técnico al navegador. La sesión se bloquea al recargar o tras
+            5 minutos en segundo plano.
           </p>
           <form
             onSubmit={(e) => {
@@ -792,9 +815,13 @@ export default function More({
           </form>
           <h3>Sincronización de registros</h3>
           <p>
-            Los registros de salud se guardan localmente, sin sincronización
-            automática entre dispositivos. Los recordatorios guardan sólo
-            suscripciones y preferencias de avisos en Cloudflare.
+            Cada cuenta tiene un respaldo automático cifrado e independiente.
+            Podés recuperarlo en otro dispositivo con tu usuario y contraseña o
+            archivo de recuperación. No se combinan cambios de varios celulares
+            automáticamente: una copia más nueva bloquea la subida de una vieja.
+            Los recordatorios guardan suscripciones y preferencias de avisos en
+            Cloudflare; después de reinstalar hay que aceptar nuevamente el
+            permiso de notificaciones del teléfono.
           </p>
         </Modal>
       )}

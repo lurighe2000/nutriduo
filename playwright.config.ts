@@ -10,10 +10,18 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    command: "npm run preview -- --port 4173",
-    url: "http://localhost:4173",
-    reuseExistingServer: true,
-    timeout: 30000,
-  },
+  webServer: [
+    {
+      command: "npm run preview -- --port 4173",
+      url: "http://localhost:4173",
+      reuseExistingServer: true,
+      timeout: 30000,
+    },
+    {
+      command: "node scripts/start-cloud-test.mjs",
+      url: "http://127.0.0.1:8788",
+      reuseExistingServer: !process.env.CI,
+      timeout: 60000,
+    },
+  ],
 });

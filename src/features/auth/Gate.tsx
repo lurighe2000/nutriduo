@@ -15,13 +15,14 @@ import { initialPlan } from "../../services/workouts";
 import { targets, age } from "../../nutrition/formulas";
 import { profileSchema, type Profile } from "../../schemas";
 import { today, rounded } from "../../utils/date";
-import { Button, Field, NumberField } from "../../components/ui";
+import { Button, Field, NumberField, Modal } from "../../components/ui";
+import CloudAccount from "../settings/CloudAccount";
 export default function Gate({
   profiles,
   onUnlock,
 }: {
   profiles: Profile[];
-  onUnlock: (id: Profile["id"]) => void;
+  onUnlock: (id: Profile["id"], appearance?: boolean) => void;
 }) {
   const [selected, setSelected] = useState<Profile | null>(null),
     [pin, setPinValue] = useState(""),
@@ -31,6 +32,7 @@ export default function Gate({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const p = selected;
+  const [recovering, setRecovering] = useState(false);
   const verifiedHere = useRef(false);
   useProfileBack(
     !p ? "profiles" : !verified ? "pin" : stage === 0 ? "setup" : "proposal",
@@ -156,6 +158,9 @@ export default function Gate({
             <LockKeyhole size={15} /> Un espacio para cada uno. Tus datos, en tu
             dispositivo.
           </p>
+          <Button secondary onClick={() => setRecovering(true)}>
+            Ya tengo cuenta · Recuperar mis registros
+          </Button>
         </section>
       ) : (
         <section className="gate-panel">
@@ -368,6 +373,17 @@ export default function Gate({
             </form>
           )}
         </section>
+      )}
+      {recovering && (
+        <Modal title="Recuperar mi cuenta" onClose={() => setRecovering(false)}>
+          <CloudAccount
+            onRestored={async (id) => {
+              setRecovering(false);
+              const restored = await db.profiles.get(id);
+              onUnlock(id, restored?.dark);
+            }}
+          />
+        </Modal>
       )}
       <footer>
         Nutrición + movimiento + constancia <span>Hecho para ustedes.</span>
