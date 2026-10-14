@@ -505,3 +505,12 @@ h3 {
   box-shadow: 0 12px 36px #0003;
 }
 .app-update p { margin: 8px 0 14px; font-size: 14px; }
+.usage-guide details {
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.usage-guide summary { padding: 16px; cursor: pointer; font-weight: 600; }
+.usage-guide ol { padding: 0 20px 4px 38px; }
+.usage-guide li { margin-bottom: 12px; line-height: 1.6; }

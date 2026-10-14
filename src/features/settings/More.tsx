@@ -20,6 +20,7 @@ import {
 } from "../../schemas";
 import { setPin } from "../../services/pin";
 import AIConnectionForm from "../meals/AIConnectionForm";
+import UsageGuide from "./UsageGuide";
 import {
   createBackup,
   parseBackup,
@@ -116,6 +117,12 @@ export default function More() {
       icon: BookOpen,
       title: "Análisis de comidas",
       text: "Conexión al servicio gratuito y revisión de nutrientes.",
+    },
+    {
+      id: "manual",
+      icon: BookOpen,
+      title: "Cómo usar NutriDuo",
+      text: "Tu guía para registrar, consultar resultados y seguir tu progreso.",
     },
     {
       id: "perfil",
@@ -224,6 +231,11 @@ export default function More() {
       {panel === "ia" && (
         <Modal title="Análisis de comidas" onClose={() => setPanel("")}>
           <AIConnectionForm />
+        </Modal>
+      )}
+      {panel === "manual" && (
+        <Modal title="Cómo usar NutriDuo" onClose={() => setPanel("")}>
+          <UsageGuide />
         </Modal>
       )}
       {panel === "perfil" && (
