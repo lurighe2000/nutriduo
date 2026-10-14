@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Download,
   ShieldCheck,
@@ -50,7 +50,13 @@ interface InstallEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: string }>;
 }
-export default function More() {
+export default function More({
+  request,
+  onRequestHandled,
+}: {
+  request?: { id: string; panel: string };
+  onRequestHandled?: () => void;
+}) {
   const {
     profile: p,
     setAppearance,
@@ -73,6 +79,16 @@ export default function More() {
     [busy, setBusy] = useState(false);
   const [goalText, setGoalText] = useState(""),
     [assessmentNote, setAssessmentNote] = useState("");
+  const handled = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!request || handled.current === request.id) return;
+    handled.current = request.id;
+    setDraft(p);
+    setGoalText("");
+    setAssessmentNote("");
+    setPanel(request.panel);
+    onRequestHandled?.();
+  }, [request, p, onRequestHandled]);
   useEffect(() => {
     const fn = (e: Event) => {
       e.preventDefault();

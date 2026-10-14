@@ -249,6 +249,7 @@ export const goalSchema = macrosSchema.extend({
 export const profileSchema = z.object({
   id: z.enum(["luca", "ari"]),
   name: z.string().min(1).max(50),
+  avatar: imageSchema.optional(),
   birthDate: dateSchema.or(z.literal("")),
   sex: z.enum(["male", "female"]),
   height: z.number().min(0).max(230),
@@ -370,6 +371,10 @@ export const tables = {
 };
 export type TableName = keyof typeof tables;
 export type Records = { [K in TableName]: z.infer<(typeof tables)[K]> };
+export const profileIdentitySchema = profileSchema
+  .pick({ name: true, avatar: true })
+  .extend({ name: z.string().trim().min(1, "Ingresá tu nombre.").max(50) })
+  .strict();
 export type Profile = z.infer<typeof profileSchema>;
 export type ProfileId = Profile["id"];
 export type Macros = z.infer<typeof macrosSchema>;

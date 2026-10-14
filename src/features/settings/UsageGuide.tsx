@@ -100,6 +100,8 @@ const sections = [
       "Cargar objetivos preparados permite elegir un archivo privado o pegar JSON. Se completa el formulario del perfil activo; revisá tu cumpleaños, peso de referencia y metas y confirmá. No crea pesajes ni cambia el PIN o el historial.",
       "En Inicio podés sumar agua de a 250 o 500 ml. Más → Un vaso a tu medida permite cargar otra cantidad y deshacer registros.",
       "Claro y Oscuro están en el encabezado. Los avisos dentro de la app se pueden activar en el perfil. Más → Recordatorios permite activar por separado notificaciones del celular para comidas, movimiento, fuerza, pesaje e informe del domingo.",
+      "Mi espacio en el encabezado vuelve a Inicio. El nombre de la sección abre su vista principal; Atrás permite regresar a la pestaña anterior.",
+      "Tocá tu inicial o foto arriba a la derecha para abrir Tu cuenta. Mi perfil permite cambiar nombre y foto; Configuración y Recordatorios abren sus opciones. Cambiar perfil bloquea tu espacio y permite elegir otro usuario.",
       "Volver y Atrás del navegador recorren las pantallas anteriores; desde Inicio se vuelve a elegir perfil.",
     ],
   },

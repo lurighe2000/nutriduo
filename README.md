@@ -27,6 +27,7 @@ Abrí la URL que imprime Vite. En el primer ingreso completá peso, altura, naci
 ## Lo que incluye
 
 - Dos perfiles, temas azul/dorado y rosa, modo oscuro, PIN con PBKDF2/SHA-256 (600.000 iteraciones), salt y bloqueo tras cinco fallos.
+- Menú de cuenta desde la inicial o foto: edición de nombre y foto local, acceso a configuración y recordatorios, y cambio explícito de perfil. La foto se conserva en el backup JSON. Encabezado con accesos al Inicio y a la vista principal de cada sección; transiciones breves que respetan la preferencia de movimiento reducido.
 - Objetivos iniciales confirmados, dashboard, energía, macros, fibra, hidratación y cierre explícito de días completos.
 - Comidas con componentes editables y varias fotos comprimidas del plato, productos, etiquetas y preparación. Se agregan de a una o en selección múltiple, se pueden ampliar y quitar individualmente y se conservan en edición, repetición y backups. Recientes, favoritos, repetir y duplicar ayer. Biblioteca personal sin valores inventados.
 - Recetas e ingredientes con cálculo por porción y uso en comidas.

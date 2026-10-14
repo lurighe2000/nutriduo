@@ -1461,3 +1461,236 @@ test("tema responde al tacto en modo instalado aunque el guardado esté ocupado"
     await context.close();
   }
 });
+
+async function openProfileEditor(page: Page) {
+  await page
+    .getByRole("button", { name: "Abrir menú de perfil", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Tu cuenta", exact: true })
+    .getByRole("button", { name: /Mi perfil/ })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Mi perfil", exact: true }),
+  ).toBeVisible();
+}
+
+test("encabezado abre las secciones principales y Atrás restaura la pestaña anterior", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.setViewportSize({ width: 393, height: 852 });
+  const crumbs = page.getByRole("navigation", { name: "Ubicación actual" });
+  await expect(
+    crumbs.getByRole("button", { name: "Inicio", exact: true }),
+  ).toBeVisible();
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Comidas", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Recetas", exact: true }).click();
+  await crumbs.getByRole("button", { name: "Comidas", exact: true }).click();
+  await expect(page.locator(".tabs button.active")).toHaveText("Hoy");
+  await page.goBack();
+  await expect(page.locator(".tabs button.active")).toHaveText("Recetas");
+  await crumbs.getByRole("button", { name: "Mi espacio", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".section-view")).toHaveCSS(
+    "animation-name",
+    "section-enter",
+  );
+  await page.goBack();
+  await expect(page.locator(".tabs button.active")).toHaveText("Recetas");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await crumbs.getByRole("button", { name: "Comidas", exact: true }).click();
+  await expect(page.locator(".section-view")).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+  await page.setViewportSize({ width: 320, height: 740 });
+  await expect(
+    crumbs.getByRole("button", { name: "Mi espacio", exact: true }),
+  ).toBeVisible();
+  await expect(
+    crumbs.getByRole("button", { name: "Comidas", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Abrir menú de perfil", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "test-results/header-small-mobile.png" });
+  await page
+    .getByRole("button", { name: "Abrir menú de perfil", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Tu cuenta", exact: true }),
+  ).toHaveCSS("animation-name", "none");
+});
+
+test("menú de cuenta abre datos y recordatorios sin duplicar pasos de Atrás", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.setViewportSize({ width: 412, height: 915 });
+  await openProfileEditor(page);
+  await page
+    .getByRole("button", { name: "Editar mis datos y objetivos", exact: true })
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(1);
+  await expect(
+    page.getByRole("dialog", { name: "Tu perfil y objetivos", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Ajustes", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Abrir menú de perfil", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Tu cuenta", exact: true }),
+  ).toHaveCSS("opacity", "1");
+  await page.screenshot({ path: "test-results/account-menu-mobile.png" });
+  await page
+    .getByRole("dialog", { name: "Tu cuenta", exact: true })
+    .getByRole("button", { name: /Recordatorios/ })
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(1);
+  await expect(
+    page.getByRole("dialog", {
+      name: "Recordatorios en tu celular",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
+  ).toBeVisible();
+});
+
+test("nombre y foto de perfil persisten en backup sin cambiar el PIN ni el otro usuario", async ({
+  page,
+}) => {
+  await setup(page);
+  await manualMeal(page);
+  await openProfileEditor(page);
+  await page.getByLabel("Nombre del perfil").fill("Luca Demo");
+  await page
+    .getByLabel("Elegir foto de perfil")
+    .setInputFiles("public/icon-192.png");
+  await expect(
+    page.getByAltText("Foto de perfil", { exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 393, height: 852 });
+  await expect(
+    page.getByRole("dialog", { name: "Mi perfil", exact: true }),
+  ).toHaveCSS("opacity", "1");
+  await page
+    .getByRole("dialog", { name: "Mi perfil", exact: true })
+    .screenshot({ path: "test-results/profile-editor.png" });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const first = await page
+    .getByAltText("Foto de perfil", { exact: true })
+    .getAttribute("src");
+  await page
+    .getByLabel("Elegir foto de perfil")
+    .setInputFiles("public/icon-512.png");
+  await expect(
+    page.getByRole("button", { name: "Guardar perfil", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByAltText("Foto de perfil", { exact: true }),
+  ).not.toHaveAttribute("src", first!);
+  await page
+    .getByRole("button", { name: "Quitar foto de perfil", exact: true })
+    .click();
+  await expect(
+    page.getByAltText("Foto de perfil", { exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByLabel("Elegir foto de perfil")
+    .setInputFiles("public/icon-192.png");
+  await expect(
+    page.getByRole("button", { name: "Guardar perfil", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Guardar perfil", exact: true })
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(1);
+  await expect(page.locator(".account-summary")).toContainText("Luca Demo");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(page.locator(".mini-avatar img")).toHaveAttribute("src", first!);
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca Demo", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".ring-text strong")).toHaveText("260");
+  await navigate(page, "Más");
+  await page.getByRole("button", { name: /Tus datos van con vos/ }).click();
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Backup completo JSON/ }).click();
+  const backup = JSON.parse(
+    await readFile((await (await downloaded).path())!, "utf8"),
+  );
+  expect(backup.profile.name).toBe("Luca Demo");
+  expect(backup.profile.avatar).toBe(first);
+  expect(backup.profile.pinHash).toBeUndefined();
+  expect(backup.data.meals).toHaveLength(1);
+  delete backup.profile.avatar;
+  await page.getByLabel("Elegir archivo JSON").setInputFiles({
+    name: "perfil-antiguo.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(page.locator("dialog")).toHaveCount(0);
+  await expect(page.locator(".mini-avatar img")).toHaveCount(0);
+  await openProfileEditor(page);
+  await page
+    .getByLabel("Elegir foto de perfil")
+    .setInputFiles("public/icon-192.png");
+  await expect(
+    page.getByRole("button", { name: "Guardar perfil", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Guardar perfil", exact: true })
+    .click();
+  await expect(page.locator("dialog")).toHaveCount(1);
+  await page
+    .getByRole("dialog", { name: "Tu cuenta", exact: true })
+    .getByRole("button", { name: /Cambiar perfil/ })
+    .click();
+  await setup(page, "Ari");
+  await expect(page.locator(".mini-avatar img")).toHaveCount(0);
+  await expect(page.locator(".ring-text strong")).toHaveText("0");
+  await page
+    .getByRole("button", { name: "Abrir menú de perfil", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Tu cuenta", exact: true })
+    .getByRole("button", { name: /Cambiar perfil/ })
+    .click();
+  await page.getByRole("button", { name: /Luca Demo Construir/ }).click();
+  await page.getByLabel("PIN", { exact: true }).fill("1234");
+  await page
+    .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+    .click();
+  await expect(page.locator(".mini-avatar img")).toHaveAttribute("src", first!);
+  await expect(
+    page.getByRole("heading", { name: "Hoy, Luca Demo", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".ring-text strong")).toHaveText("260");
+});

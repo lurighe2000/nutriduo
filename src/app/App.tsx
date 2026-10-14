@@ -35,6 +35,9 @@ import Dashboard from "../features/dashboard/Dashboard";
 import MealEditor from "../features/meals/MealEditor";
 import { Button } from "../components/ui";
 import ThemeToggle from "../components/ThemeToggle";
+import Breadcrumbs from "../components/Breadcrumbs";
+import ProfileAvatar from "../components/ProfileAvatar";
+import AccountMenu from "../features/settings/AccountMenu";
 import { forgetAIConnections } from "../services/integratedAI";
 import { NavigationContext, useAppNavigation } from "./navigation";
 const Meals = lazy(() => import("../features/meals/Meals"));
@@ -167,6 +170,17 @@ function Shell({
   }
   const { navigation: appNavigation, date, page } = useAppNavigation(lock);
   const { setDate, navigate } = appNavigation;
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [settingsRequest, setSettingsRequest] = useState<{
+    id: string;
+    panel: string;
+  }>();
+  function openSettings(panel = "") {
+    appNavigation.afterClosingLayers(() => {
+      appNavigation.openSection("mas");
+      setSettingsRequest({ id: crypto.randomUUID(), panel });
+    });
+  }
   const [mealOpen, setMealOpen] = useState(false),
     [notice, setNotice] = useState(""),
     [offline, setOffline] = useState(!navigator.onLine);
@@ -299,8 +313,12 @@ function Shell({
                 Guardá un backup para llevar tus registros a otro dispositivo.
               </p>
             </div>
-            <button className="profile-switch" onClick={lock}>
-              <span className="avatar">{profile.name[0]}</span>
+            <button
+              className="profile-switch"
+              aria-label="Cambiar perfil"
+              onClick={lock}
+            >
+              <ProfileAvatar profile={profile} />
               <span>
                 <strong>{profile.name}</strong>
                 <small>Cambiar perfil</small>
@@ -320,10 +338,13 @@ function Shell({
                   <ChevronLeft size={21} />
                   <span>Volver</span>
                 </button>
-                <div className="breadcrumb">
-                  Mi espacio <span>/</span>{" "}
-                  {navigation.find((n) => n.id === page)?.label}
-                </div>
+                <Breadcrumbs
+                  page={page}
+                  label={
+                    navigation.find((n) => n.id === page)?.label ?? "Inicio"
+                  }
+                  onNavigate={appNavigation.openSection}
+                />
               </div>
               <div className="topbar-right">
                 <ThemeToggle dark={dark} onChange={changeTheme} />
@@ -337,10 +358,18 @@ function Shell({
                 </span>
                 <button
                   className="mini-avatar"
-                  aria-label="Cambiar perfil"
-                  onClick={lock}
+                  aria-label="Abrir menú de perfil"
+                  aria-haspopup="dialog"
+                  aria-expanded={accountOpen}
+                  onClick={() => {
+                    setNotice("");
+                    setAccountOpen(true);
+                  }}
                 >
-                  {profile.name[0]}
+                  <ProfileAvatar
+                    profile={profile}
+                    className="header-profile-photo"
+                  />
                 </button>
               </div>
             </header>
@@ -377,20 +406,25 @@ function Shell({
                 )}
               </div>
               <Suspense fallback={<div className="loading">Abriendo…</div>}>
-                {page === "inicio" ? (
-                  <Dashboard />
-                ) : page === "comidas" ? (
-                  <Meals />
-                ) : page === "entreno" ? (
-                  <Workouts />
-                ) : page === "progreso" ? (
-                  <Progress />
-                ) : (
-                  <More />
-                )}
+                <div className="section-view" key={page}>
+                  {page === "inicio" ? (
+                    <Dashboard />
+                  ) : page === "comidas" ? (
+                    <Meals />
+                  ) : page === "entreno" ? (
+                    <Workouts />
+                  ) : page === "progreso" ? (
+                    <Progress />
+                  ) : (
+                    <More
+                      request={settingsRequest}
+                      onRequestHandled={() => setSettingsRequest(undefined)}
+                    />
+                  )}
+                </div>
               </Suspense>
               <footer className="app-footer">
-                Guardado en este dispositivo <span>NutriDuo · 1.4</span>
+                Guardado en este dispositivo <span>NutriDuo · 1.5</span>
               </footer>
             </main>
           </div>
@@ -417,6 +451,12 @@ function Shell({
             <div className="toast" role="status" onClick={() => setNotice("")}>
               {notice}
             </div>
+          )}
+          {accountOpen && (
+            <AccountMenu
+              onClose={() => setAccountOpen(false)}
+              onSettings={openSettings}
+            />
           )}
           {mealOpen && <MealEditor onClose={() => setMealOpen(false)} />}
         </div>

@@ -2,6 +2,7 @@ import {
   useEffect,
   useContext,
   useRef,
+  useId,
   type ReactNode,
   type InputHTMLAttributes,
 } from "react";
@@ -104,12 +105,15 @@ export function Modal({
   title,
   children,
   onClose,
+  className = "",
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const headingId = useId();
   const close = useDialogBack(onClose);
   const context = useContext(AppContext);
   useEffect(() => {
@@ -120,7 +124,8 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      className="modal"
+      aria-labelledby={headingId}
+      className={`modal ${className}`}
       onCancel={(e) => {
         e.preventDefault();
         close();
@@ -130,7 +135,7 @@ export function Modal({
       }}
     >
       <div className="modal-head">
-        <h2>{title}</h2>
+        <h2 id={headingId}>{title}</h2>
         <button className="icon-button" aria-label="Cerrar" onClick={close}>
           <X size={20} />
         </button>

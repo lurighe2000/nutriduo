@@ -1,3 +1,4 @@
+import ProfileAvatar from "../../components/ProfileAvatar";
 import { useState, useRef } from "react";
 import { useProfileBack } from "../../app/profileBack";
 import {
@@ -140,7 +141,7 @@ export default function Gate({
                   setRepeat("");
                 }}
               >
-                <span className="avatar">{profile.name[0]}</span>
+                <ProfileAvatar profile={profile} />
                 <span>
                   <strong>{profile.name}</strong>
                   <small>
@@ -177,7 +178,7 @@ export default function Gate({
                 void enter();
               }}
             >
-              <span className={`avatar ${p.id}`}>{p.name[0]}</span>
+              <ProfileAvatar profile={p} className={`avatar ${p.id}`} />
               <h1>
                 {p.pinHash
                   ? `Qué bueno verte, ${p.name}.`

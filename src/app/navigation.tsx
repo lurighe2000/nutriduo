@@ -20,6 +20,20 @@ interface Entry {
   index: number;
 }
 const stateKey = "nutriduoNavigation";
+const sectionPrefixes: Record<string, string> = {
+  comidas: "meals.",
+  progreso: "progress.",
+  entreno: "workouts.",
+  mas: "more.",
+};
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth",
+  });
+}
 
 // Browser history contains only opaque session/entry IDs. It never contains a PIN,
 // a profile, form contents or the data needed to restore an authenticated session.
@@ -117,7 +131,38 @@ export class AppNavigation {
     }
     if (page === this.snapshot.page) return;
     this.push({ ...this.snapshot, page, layers: [] });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToTop();
+  };
+  openSection = (page: string) => {
+    if (this.pendingPop) {
+      this.queued.push(() => this.openSection(page));
+      return;
+    }
+    const prefix = sectionPrefixes[page];
+    const choices = Object.fromEntries(
+      Object.entries(this.snapshot.choices).filter(
+        ([key]) => !prefix || !key.startsWith(prefix),
+      ),
+    );
+    if (
+      page !== this.snapshot.page ||
+      Object.keys(choices).length !== Object.keys(this.snapshot.choices).length
+    )
+      this.push({ ...this.snapshot, page, choices, layers: [] });
+    scrollToTop();
+  };
+  afterClosingLayers = (action: () => void) => {
+    if (this.pendingPop) {
+      this.queued.push(() => this.afterClosingLayers(action));
+      return;
+    }
+    if (!this.snapshot.layers.length) {
+      action();
+      return;
+    }
+    this.pendingPop = true;
+    this.queued.push(() => this.afterClosingLayers(action));
+    this.back();
   };
   setDate = (date: string) => {
     if (this.pendingPop) {
