@@ -40,6 +40,7 @@ export interface Env extends PushEnv {
   REQUEST_LIMITER: {
     limit: (options: { key: string }) => Promise<{ success: boolean }>;
   };
+  AI?: { run: (model: string, input: unknown) => Promise<unknown> };
 }
 const MAX_BODY = 2100000;
 const groqResponse = z.object({
@@ -156,6 +157,36 @@ async function readBody(request: Request, maxBody = MAX_BODY) {
   }
   return JSON.parse(text + decoder.decode());
 }
+const GROQ_MODEL = "qwen/qwen3.8-27b";
+const BACKUP_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
+const MAX_OUTPUT_TOKENS = 1400;
+const GROQ_SHORT_WAIT = 12;
+type UserContent = (
+  { type: string; text: string } | { type: string; image_url: { url: string } }
+)[];
+// Free Workers AI backup: used only when Groq is out of quota or fails.
+export async function analyzeWithWorkersAI(env: Env, content: UserContent) {
+  if (!env.AI) return undefined;
+  try {
+    const output = (await env.AI.run(BACKUP_MODEL, {
+      messages: [
+        { role: "system", content: ANALYSIS_INSTRUCTIONS },
+        { role: "user", content },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: MAX_OUTPUT_TOKENS,
+      temperature: 0.2,
+    })) as { response?: unknown };
+    const raw = output?.response;
+    const value =
+      typeof raw === "string"
+        ? JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ""))
+        : raw;
+    return analysisResponseSchema.parse(value);
+  } catch {
+    return undefined;
+  }
+}
 export function createHandler(upstream: typeof fetch = fetch) {
   return async (request: Request, env: Env): Promise<Response> => {
     const origin = request.headers.get("origin") ?? "";
@@ -206,7 +237,8 @@ export function createHandler(upstream: typeof fetch = fetch) {
       return reply({
         ready: true,
         provider: "groq",
-        model: "qwen/qwen3.8-27b",
+        model: GROQ_MODEL,
+        backup: Boolean(env.AI),
         nutritionDatabase: true,
       });
     if (path.startsWith("/notifications/") && request.method === "POST") {
@@ -316,41 +348,61 @@ export function createHandler(upstream: typeof fetch = fetch) {
           },
           400,
         );
-      const response = await upstream(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
+      const userContent = [
+        { type: "text", text: input.data.description },
+        ...input.data.photos.map((photo) => ({
+          type: "image_url",
+          image_url: { url: photo },
+        })),
+      ];
+      const askGroq = () =>
+        upstream("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: {
             "content-type": "application/json",
             authorization: `Bearer ${env.GROQ_API_KEY}`,
           },
           body: JSON.stringify({
-            model: "qwen/qwen3.8-27b",
+            model: GROQ_MODEL,
             messages: [
               { role: "system", content: ANALYSIS_INSTRUCTIONS },
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: input.data.description },
-                  ...input.data.photos.map((photo) => ({
-                    type: "image_url",
-                    image_url: { url: photo },
-                  })),
-                ],
-              },
+              { role: "user", content: userContent },
             ],
             response_format: { type: "json_object" },
-            max_completion_tokens: 2048,
+            // The free tier counts the reserved output against tokens per
+            // minute: keep it close to what a meal analysis really needs.
+            max_completion_tokens: MAX_OUTPUT_TOKENS,
           }),
           signal: AbortSignal.timeout(45000),
-        },
-      );
+        });
+      let response = await askGroq();
+      // A short per-minute wait is cheaper than giving up: retry once.
       if (response.status === 429) {
+        const wait = Number(response.headers.get("retry-after"));
+        if (wait > 0 && wait <= GROQ_SHORT_WAIT) {
+          await new Promise((resolve) => setTimeout(resolve, wait * 1000));
+          response = await askGroq();
+        }
+      }
+      if (response.ok) {
+        try {
+          const result = groqResponse.parse(await response.json()).choices[0];
+          if (result.finish_reason === "stop")
+            return reply(
+              analysisResponseSchema.parse(JSON.parse(result.message.content)),
+            );
+        } catch {
+          // Fall through to the backup model before reporting an error.
+        }
+      }
+      const backup = await analyzeWithWorkersAI(env, userContent);
+      if (backup) return reply({ ...backup, provider: "cloudflare" });
+      if ([413, 429].includes(response.status)) {
         const retry = response.headers.get("retry-after");
         return reply(
           {
             error:
-              "La cuota gratuita de IA está agotada temporalmente. Volvé a intentar cuando se renueve o cargá la comida manualmente.",
+              "Se agotó por ahora la cuota gratuita de las dos IA. Probá de nuevo en unos minutos o cargá la comida manualmente.",
           },
           429,
           retry && /^\d+(?:\.\d+)?$/.test(retry)
@@ -367,19 +419,13 @@ export function createHandler(upstream: typeof fetch = fetch) {
           },
           502,
         );
-      const result = groqResponse.parse(await response.json()).choices[0];
-      if (result.finish_reason !== "stop")
-        return reply(
-          {
-            error:
-              "El análisis quedó incompleto. Probá describir menos componentes por vez.",
-          },
-          502,
-        );
-      const valid = analysisResponseSchema.parse(
-        JSON.parse(result.message.content),
+      return reply(
+        {
+          error:
+            "La IA devolvió datos incompletos. Probá describir menos componentes por vez. No se guardó ninguna comida.",
+        },
+        502,
       );
-      return reply(valid);
     } catch (error) {
       return reply(
         {

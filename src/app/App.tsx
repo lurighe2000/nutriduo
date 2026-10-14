@@ -424,7 +424,7 @@ function Shell({
                 </div>
               </Suspense>
               <footer className="app-footer">
-                Guardado en este dispositivo <span>NutriDuo · 1.5</span>
+                Guardado en este dispositivo <span>NutriDuo · 1.6</span>
               </footer>
             </main>
           </div>

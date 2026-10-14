@@ -30,8 +30,13 @@ export const analysisResponseSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("needs_details"),
     questions: z.array(z.string().min(1).max(500)).min(1).max(8),
+    provider: z.literal("cloudflare").optional(),
   }),
-  z.object({ status: z.literal("ready"), analysis: aiSchema }),
+  z.object({
+    status: z.literal("ready"),
+    analysis: aiSchema,
+    provider: z.literal("cloudflare").optional(),
+  }),
 ]);
 export const nutrientFoodSchema = z.object({
   name: z.string().min(1).max(300),

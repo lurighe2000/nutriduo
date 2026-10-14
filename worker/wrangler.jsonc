@@ -12,6 +12,9 @@
     }
   ],
   "preview_urls": false,
+  "ai": {
+    "binding": "AI"
+  },
   "vars": {
     "ALLOWED_ORIGINS": "https://lurighe2000.github.io,http://localhost:4173,http://localhost:5173",
     "VAPID_PUBLIC_KEY": "BLuUm1y-MgFJOWAVuqh8cAupOfo1UWXY777J4hZnIB3vwmCifT8uwDqI2RlQWd1owD4WWI3isgRzjvEHUMNnqcc",
@@ -25,7 +28,7 @@
       "name": "REQUEST_LIMITER",
       "namespace_id": "101310",
       "simple": {
-        "limit": 3,
+        "limit": 20,
         "period": 60
       }
     }

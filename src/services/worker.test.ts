@@ -247,6 +247,60 @@ describe("servicio de IA", () => {
     expect(await response.text()).not.toContain(env.GROQ_API_KEY);
     expect(upstream).toHaveBeenCalledTimes(1);
   });
+  it("si Groq agota la cuota usa la IA gratuita de Cloudflare como respaldo", async () => {
+    const upstream = vi.fn(
+      async () =>
+        new Response("{}", { status: 429, headers: { "retry-after": "120" } }),
+    );
+    const run = vi.fn(async () => ({
+      response: JSON.stringify({ status: "ready", analysis }),
+    }));
+    const response = await createHandler(upstream)(request(), {
+      ...env,
+      AI: { run },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: "ready",
+      analysis,
+      provider: "cloudflare",
+    });
+    expect(upstream).toHaveBeenCalledTimes(1);
+    const [, input] = run.mock.calls[0] as unknown as [
+      string,
+      { messages: { content: unknown }[] },
+    ];
+    expect(JSON.stringify(input.messages[1].content)).toContain(photo);
+  });
+  it("si ambas IA fallan devuelve 429 sin guardar nada", async () => {
+    const upstream = vi.fn(
+      async () =>
+        new Response("{}", { status: 429, headers: { "retry-after": "90" } }),
+    );
+    const response = await createHandler(upstream)(request(), {
+      ...env,
+      AI: { run: async () => ({ response: "no es JSON" }) },
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("90");
+  });
+  it("reserva pocos tokens de respuesta para no agotar la cuota por minuto", async () => {
+    const upstream = vi.fn(async () =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: JSON.stringify({ status: "ready", analysis }) },
+          },
+        ],
+      }),
+    );
+    await createHandler(upstream)(request(), env);
+    const args = upstream.mock.calls as unknown as [string, RequestInit][];
+    expect(
+      JSON.parse(args[0][1].body as string).max_completion_tokens,
+    ).toBeLessThanOrEqual(1500);
+  });
   it("rechaza JSON inválido, macros negativos y respuestas truncadas", async () => {
     for (const [content, reason] of [
       ["no es JSON", "stop"],

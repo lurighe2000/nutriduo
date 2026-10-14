@@ -572,7 +572,7 @@ test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo 
   await page
     .getByRole("button", { name: "Conectar análisis", exact: true })
     .click();
-  await expect(page.getByText(/Groq conectado/)).toBeVisible();
+  await expect(page.getByText(/IA conectada/)).toBeVisible();
   const images = await page.evaluate(() =>
     ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"].map((color) => {
       const canvas = document.createElement("canvas");
@@ -763,7 +763,7 @@ test("cuota IA agotada conserva foto y descripción y mantiene la carga manual",
   await page
     .getByRole("button", { name: "Conectar análisis", exact: true })
     .click();
-  await expect(page.getByText(/Groq conectado/)).toBeVisible();
+  await expect(page.getByText(/IA conectada/)).toBeVisible();
   await page
     .getByLabel("Elegir foto para analizar")
     .setInputFiles("public/icon-192.png");

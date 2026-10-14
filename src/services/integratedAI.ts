@@ -126,7 +126,7 @@ async function request(
       cache: "no-store",
       credentials: "omit",
       referrerPolicy: "no-referrer",
-      signal: signal ?? AbortSignal.timeout(50000),
+      signal: signal ?? AbortSignal.timeout(120000),
     });
   } catch (error) {
     if (signal?.aborted) throw error;

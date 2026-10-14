@@ -9,3 +9,5 @@ playwright-report/
 *.tsbuildinfo
 .wrangler/
 .dev.vars*
+
+_publicar/

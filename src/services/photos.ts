@@ -25,25 +25,36 @@ function boundedJPEG(canvas: HTMLCanvasElement, initialQuality = 0.88) {
   return image;
 }
 
-// Groq accepts three images; use at most two to leave room in the free
-// token quota for the description and response. Contact sheets include every photo
+// The free AI quota is measured in tokens per minute and every image pixel
+// costs tokens. Food and labels stay readable at ~1024 px, so the analysis
+// always sends at most two small images. Contact sheets include every photo
 // in one meal request; saved originals remain separate and are never replaced.
+export const ANALYSIS_MAX_SIDE = 1024;
+const SHEET_MAX_SIDE = 1280;
+async function analysisImage(photo: string) {
+  const bitmap = await createImageBitmap(await (await fetch(photo)).blob());
+  try {
+    const ratio = Math.min(
+      1,
+      ANALYSIS_MAX_SIDE / Math.max(bitmap.width, bitmap.height),
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
+    canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No se pudo procesar la foto.");
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return boundedJPEG(canvas, 0.8);
+  } finally {
+    bitmap.close();
+  }
+}
 export async function analysisPhotos(photos: string[], signal?: AbortSignal) {
   if (photos.length <= 2) {
     const images: string[] = [];
     for (const photo of photos) {
       signal?.throwIfAborted();
-      if (photo.length <= 2000000) images.push(photo);
-      else
-        images.push(
-          (
-            await compressPhoto(
-              new File([await (await fetch(photo)).blob()], "comida.jpg", {
-                type: "image/jpeg",
-              }),
-            )
-          ).image,
-        );
+      images.push(await analysisImage(photo));
     }
     return images;
   }
@@ -53,7 +64,10 @@ export async function analysisPhotos(photos: string[], signal?: AbortSignal) {
     const count = Math.ceil((photos.length - start) / (2 - sheets.length));
     const columns = Math.ceil(Math.sqrt(count));
     const rows = Math.ceil(count / columns);
-    const tile = Math.min(1440, Math.floor(4096 / Math.max(columns, rows)));
+    const tile = Math.min(
+      ANALYSIS_MAX_SIDE,
+      Math.floor(SHEET_MAX_SIDE / Math.max(columns, rows)),
+    );
     const canvas = document.createElement("canvas");
     canvas.width = columns * tile;
     canvas.height = rows * tile;
@@ -69,7 +83,7 @@ export async function analysisPhotos(photos: string[], signal?: AbortSignal) {
       try {
         const x = (index % columns) * tile,
           y = Math.floor(index / columns) * tile;
-        const labelHeight = Math.max(28, Math.round(tile * 0.035));
+        const labelHeight = Math.max(22, Math.round(tile * 0.05));
         const ratio = Math.min(
           tile / bitmap.width,
           (tile - labelHeight) / bitmap.height,
@@ -84,13 +98,13 @@ export async function analysisPhotos(photos: string[], signal?: AbortSignal) {
           height,
         );
         ctx.fillStyle = "black";
-        ctx.font = `${Math.max(18, Math.round(labelHeight * 0.7))}px sans-serif`;
-        ctx.fillText(`Foto ${start + index + 1}`, x + 8, y + labelHeight * 0.8);
+        ctx.font = `${Math.round(labelHeight * 0.75)}px sans-serif`;
+        ctx.fillText(`Foto ${start + index + 1}`, x + 6, y + labelHeight * 0.8);
       } finally {
         bitmap.close();
       }
     }
-    sheets.push(boundedJPEG(canvas));
+    sheets.push(boundedJPEG(canvas, 0.82));
     start += count;
   }
   return sheets;

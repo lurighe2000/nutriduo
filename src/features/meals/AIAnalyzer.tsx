@@ -69,7 +69,7 @@ export default function AIAnalyzer({
       )}
       {connected && (
         <p className="muted small">
-          Groq conectado ·{" "}
+          IA conectada ·{" "}
           <button
             type="button"
             className="text-button"
@@ -108,9 +108,10 @@ export default function AIAnalyzer({
         />
       </label>
       <p className="muted small">
-        Al analizar se envían todas las fotos adjuntas y la descripción a Groq a
-        través de tu servicio. No se envían el PIN, peso, objetivos ni otros
-        registros. La comida se guarda sólo al confirmar.
+        Al analizar se envían versiones livianas de las fotos y la descripción a
+        Groq (o a la IA de respaldo de Cloudflare) a través de tu servicio. No
+        se envían el PIN, peso, objetivos ni otros registros. La comida se
+        guarda sólo al confirmar.
       </p>
       <div className="actions">
         <Button
@@ -170,8 +171,9 @@ export default function AIAnalyzer({
         <div className="card ai-result">
           <h3>{result.analysis.meal_name}</h3>
           <p className="muted small">
-            Estimación IA · confianza declarada{" "}
-            {Math.round(result.analysis.confidence * 100)}%.
+            Estimación IA
+            {result.provider === "cloudflare" ? " de respaldo" : ""} · confianza
+            declarada {Math.round(result.analysis.confidence * 100)}%.
           </p>
           {result.analysis.foods.map((f, i) => (
             <p key={i}>
