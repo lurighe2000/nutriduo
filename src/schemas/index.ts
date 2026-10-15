@@ -222,6 +222,15 @@ export const activitySchema = baseSchema.extend({
         heartRate: z.number().int().min(30).max(240).optional(),
         source: z.string().max(80).default("Manual"),
         notes: z.string().max(1000).default(""),
+        // Recorded with the in-app GPS tracker (Mis salidas).
+        route: z.string().max(80000).optional(),
+        splits: z
+          .array(z.number().int().positive().max(7200))
+          .max(300)
+          .optional(),
+        cadence: z.number().int().min(30).max(260).optional(),
+        heartRateMax: z.number().int().min(30).max(250).optional(),
+        startedAt: z.string().max(40).optional(),
       }),
     )
     .max(20)

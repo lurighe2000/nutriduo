@@ -121,6 +121,8 @@ export default function RunningLog({ onClose }: { onClose: () => void }) {
           const seconds =
             Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
           const entry = {
+            // Keep GPS route, splits and cadence when editing a tracked run.
+            ...runs.find((r) => r.id === editing),
             id: editing ?? crypto.randomUUID(),
             kind,
             distanceKm: number(distance),

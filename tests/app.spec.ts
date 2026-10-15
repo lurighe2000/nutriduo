@@ -1993,3 +1993,87 @@ test("nombre y foto de perfil persisten en backup sin cambiar el PIN ni el otro 
   ).toBeVisible();
   await expect(page.locator(".ring-text strong")).toHaveText("260");
 });
+
+test("graba una salida con GPS, la guarda y muestra el recorrido", async ({
+  page,
+  context,
+}) => {
+  await page.route(/tile\.openstreetmap\.org/, (route) => route.abort());
+  await context.grantPermissions(["geolocation"]);
+  const start = { latitude: -34.5717, longitude: -58.4176 };
+  await context.setGeolocation({ ...start, accuracy: 5 });
+  await setup(page);
+  await navigate(page, "Entreno");
+  await expect(
+    page.getByRole("heading", { name: "Mis salidas", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Salir a correr" }).click();
+  const km = page.getByTestId("run-km");
+  await expect(km).toBeVisible({ timeout: 15000 });
+  for (let i = 1; i <= 16; i++) {
+    await context.setGeolocation({
+      latitude: start.latitude + (i * 8) / 111195,
+      longitude: start.longitude,
+      accuracy: 5,
+    });
+    await page.waitForTimeout(1100);
+  }
+  await expect(km).not.toHaveText("0,00");
+  await page.getByRole("button", { name: "Pausar" }).click();
+  await page.getByRole("button", { name: "Terminar" }).click();
+  await expect(
+    page.getByRole("heading", { name: "¡Bien ahí, Luca!" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /Recorrido de la salida/ }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Para recuperar")).toContainText(
+    "g de proteína",
+  );
+  await page.getByRole("button", { name: "Volver a Mis salidas" }).click();
+  await expect(page.locator(".my-runs-item")).toHaveCount(1);
+  await page.locator(".my-runs-item").click();
+  await expect(
+    page.getByRole("dialog", { name: "Detalle de la salida" }),
+  ).toBeVisible();
+});
+
+test("importa un GPX, cambia la meta semanal y arma la imagen para compartir", async ({
+  page,
+}) => {
+  await page.route(/tile\.openstreetmap\.org/, (route) => route.abort());
+  await setup(page);
+  await navigate(page, "Entreno");
+  const start = Date.parse("2026-10-10T10:00:00Z");
+  const points = Array.from({ length: 80 }, (_, i) => {
+    const lat = (-34.5717 + (i * 30) / 111195).toFixed(6);
+    const time = new Date(start + i * 10000).toISOString();
+    return `<trkpt lat="${lat}" lon="-58.4176"><ele>10</ele><time>${time}</time></trkpt>`;
+  }).join("");
+  const gpx = `<?xml version="1.0"?><gpx version="1.1" creator="test"><trk><type>running</type><trkseg>${points}</trkseg></trk></gpx>`;
+  await page
+    .getByRole("button", { name: "Importar salidas de adidas Running o GPX" })
+    .click();
+  await page.getByLabel("Archivo de salidas").setInputFiles({
+    name: "salida.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: Buffer.from(gpx),
+  });
+  await expect(page.getByText("Importé 1 salida").first()).toBeVisible();
+  await expect(page.locator(".my-runs-item")).toHaveCount(1);
+  await expect(page.locator(".my-runs-item")).toContainText("2,37 km");
+
+  await page.getByRole("button", { name: /Meta semanal/ }).click();
+  await page.getByRole("button", { name: "Subir la meta" }).click();
+  await expect(page.locator(".my-runs-goal")).toContainText("21 km");
+
+  await page.locator(".my-runs-item").click();
+  await page.getByRole("button", { name: "Compartir", exact: true }).click();
+  await expect(
+    page.getByRole("img", { name: "Vista previa de la imagen para compartir" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sticker" }).click();
+  await expect(
+    page.getByRole("button", { name: "Guardar imagen" }),
+  ).toBeEnabled();
+});
