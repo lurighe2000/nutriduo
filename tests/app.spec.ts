@@ -1091,11 +1091,11 @@ test("herramienta de inicio no guarda y valida argumentos", async ({
 test("tema oscuro persistente en móvil y regreso a claro", async ({ page }) => {
   await setup(page);
   await page.setViewportSize({ width: 393, height: 852 });
-  await page.getByRole("button", { name: "Oscuro", exact: true }).click();
+  await page.getByRole("switch", { name: "Modo oscuro" }).click();
   await expect(page.locator(".app-shell")).toHaveClass(/dark/);
   await expect(
-    page.getByRole("button", { name: "Oscuro", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("switch", { name: "Modo oscuro" }),
+  ).toHaveAttribute("aria-checked", "true");
   await page.screenshot({
     path: "test-results/dashboard-dark-mobile.png",
     fullPage: true,
@@ -1112,7 +1112,7 @@ test("tema oscuro persistente en móvil y regreso a claro", async ({ page }) => 
   await page.getByRole("button", { name: /Tu perfil y objetivos/ }).click();
   await expect(page.locator("dialog")).toHaveCSS(
     "background-color",
-    "rgb(24, 33, 44)",
+    "rgb(15, 26, 54)",
   );
   await expect(page.getByLabel("Usar tema oscuro")).toBeChecked();
   await page.getByLabel("Usar tema oscuro").uncheck();
@@ -1121,9 +1121,9 @@ test("tema oscuro persistente en móvil y regreso a claro", async ({ page }) => 
     .click();
   await expect(page.locator("dialog")).toHaveCount(0);
   await expect(page.locator(".app-shell")).not.toHaveClass(/dark/);
-  await page.getByRole("button", { name: "Oscuro", exact: true }).click();
+  await page.getByRole("switch", { name: "Modo oscuro" }).click();
   await expect(page.locator(".app-shell")).toHaveClass(/dark/);
-  await page.getByRole("button", { name: "Claro", exact: true }).click();
+  await page.getByRole("switch", { name: "Modo oscuro" }).click();
   await expect(page.locator(".app-shell")).not.toHaveClass(/dark/);
   expect(
     await page.evaluate(
@@ -1368,9 +1368,9 @@ test("tema responde al tacto en modo instalado aunque el guardado esté ocupado"
   const page = await context.newPage();
   try {
     await page.goto("/");
-    await page.getByRole("button", { name: "Oscuro", exact: true }).tap();
+    await page.getByRole("switch", { name: "Modo oscuro" }).tap();
     await expect(page.locator(".appearance-frame")).toHaveClass(/dark/);
-    await page.getByRole("button", { name: "Claro", exact: true }).tap();
+    await page.getByRole("switch", { name: "Modo oscuro" }).tap();
     await expect(page.locator(".appearance-frame")).not.toHaveClass(/dark/);
     await setup(page);
     expect(
@@ -1406,15 +1406,15 @@ test("tema responde al tacto en modo instalado aunque el guardado esté ocupado"
         }),
     );
     try {
-      await page.getByRole("button", { name: "Oscuro", exact: true }).tap();
+      await page.getByRole("switch", { name: "Modo oscuro" }).tap();
       await expect(page.locator(".app-shell")).toHaveClass(/dark/, {
         timeout: 1000,
       });
-      await page.getByRole("button", { name: "Claro", exact: true }).tap();
+      await page.getByRole("switch", { name: "Modo oscuro" }).tap();
       await expect(page.locator(".app-shell")).not.toHaveClass(/dark/, {
         timeout: 1000,
       });
-      await page.getByRole("button", { name: "Oscuro", exact: true }).tap();
+      await page.getByRole("switch", { name: "Modo oscuro" }).tap();
       await expect(page.locator(".app-shell")).toHaveClass(/dark/, {
         timeout: 1000,
       });
@@ -1452,7 +1452,7 @@ test("tema responde al tacto en modo instalado aunque el guardado esté ocupado"
     await page.getByLabel("PIN", { exact: true }).fill("1234");
     await page.getByRole("button", { name: "Entrar a mi espacio" }).tap();
     await expect(page.locator(".app-shell")).toHaveClass(/dark/);
-    await page.getByRole("button", { name: "Claro", exact: true }).tap();
+    await page.getByRole("switch", { name: "Modo oscuro" }).tap();
     await expect(page.locator(".app-shell")).not.toHaveClass(/dark/);
     await expect(
       page.getByRole("heading", { name: "Hoy, Luca" }),
@@ -1497,9 +1497,10 @@ test("encabezado abre las secciones principales y Atrás restaura la pestaña an
   await expect(
     page.getByRole("heading", { name: "Hoy, Luca", exact: true }),
   ).toBeVisible();
+  // Going back to Inicio (left of Comidas) slides in from the left.
   await expect(page.locator(".section-view")).toHaveCSS(
     "animation-name",
-    "section-enter",
+    "duo-in-left",
   );
   await page.goBack();
   await expect(page.locator(".tabs button.active")).toHaveText("Recetas");

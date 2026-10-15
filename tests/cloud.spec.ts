@@ -102,7 +102,7 @@ test("respaldo cifrado sobre SQLite real: reinstalar, fotos, usuarios separados 
   try {
     const page = await first.newPage();
     await onboard(page, "Luca");
-    await page.getByRole("button", { name: "Oscuro", exact: true }).click();
+    await page.getByRole("switch", { name: "Modo oscuro" }).click();
     const today = await page.getByLabel("Fecha de los registros").inputValue();
     await page.getByLabel("Fecha de los registros").fill("2026-09-01");
     await meal(page, "Comida de un día anterior", true);

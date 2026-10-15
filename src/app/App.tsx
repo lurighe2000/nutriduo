@@ -35,6 +35,8 @@ import Dashboard from "../features/dashboard/Dashboard";
 import MealEditor from "../features/meals/MealEditor";
 import { Button } from "../components/ui";
 import ThemeToggle from "../components/ThemeToggle";
+import NotchNav from "../components/NotchNav";
+import { haptic } from "../components/motion";
 import Breadcrumbs from "../components/Breadcrumbs";
 import ProfileAvatar from "../components/ProfileAvatar";
 import BrandIcon from "../components/BrandIcon";
@@ -176,6 +178,18 @@ function Shell({
     void run(() => write);
   }
   const { navigation: appNavigation, date, page } = useAppNavigation(lock);
+  // Sections slide in from the side the user is heading to.
+  const pageOrder = navigation.map((n) => n.id);
+  const lastPage = useRef(page);
+  const [sectionDirection, setSectionDirection] = useState("");
+  if (lastPage.current !== page) {
+    const from = pageOrder.indexOf(lastPage.current);
+    const to = pageOrder.indexOf(page);
+    lastPage.current = page;
+    setSectionDirection(
+      from === -1 || to === -1 ? "" : to > from ? "from-right" : "from-left",
+    );
+  }
   const { setDate, navigate } = appNavigation;
   const [accountOpen, setAccountOpen] = useState(false);
   const [settingsRequest, setSettingsRequest] = useState<{
@@ -417,7 +431,7 @@ function Shell({
                     onClick={() => openSettings("cuenta")}
                   />
                 )}
-                <div className="section-view" key={page}>
+                <div className={`section-view ${sectionDirection}`} key={page}>
                   {page === "inicio" ? (
                     <Dashboard />
                   ) : page === "comidas" ? (
@@ -439,22 +453,18 @@ function Shell({
                   id={profile.id}
                   onClick={() => openSettings("cuenta")}
                 />
-                <span>NutriDuo · 1.8</span>
+                <span>NutriDuo · 1.9</span>
               </footer>
             </main>
           </div>
-          <nav className="bottom-nav">
-            {navigation.map((n) => (
-              <button
-                key={n.id}
-                className={page === n.id ? "active" : ""}
-                onClick={() => navigate(n.id)}
-              >
-                <n.icon size={21} />
-                <span>{n.label}</span>
-              </button>
-            ))}
-          </nav>
+          <NotchNav
+            items={navigation}
+            active={page}
+            onSelect={(id) => {
+              if (id !== page) haptic(8);
+              navigate(id);
+            }}
+          />
           <button
             className="mobile-add"
             aria-label="Registrar comida"

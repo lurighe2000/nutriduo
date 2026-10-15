@@ -1,4 +1,8 @@
 import { Sun, Moon } from "lucide-react";
+import SwitchBuddy from "./SwitchBuddy";
+
+// Soft "pressed" switch: the knob jumps between sun and moon while a tiny
+// buddy lives on top of it (walks, reads, trains, sleeps, uses an umbrella).
 export default function ThemeToggle({
   dark,
   onChange,
@@ -7,20 +11,25 @@ export default function ThemeToggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="theme-toggle" role="group" aria-label="Apariencia">
-      <button
-        type="button"
-        aria-label="Claro"
-        aria-pressed={!dark}
-        onClick={() => onChange(false)}
-      >
-        <Sun size={16} />
-        <span>Claro</span>
-      </button>
-      <button type="button" aria-label="Oscuro" aria-pressed={dark} onClick={() => onChange(true)}>
-        <Moon size={16} />
-        <span>Oscuro</span>
-      </button>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={dark}
+      aria-label="Modo oscuro"
+      title={dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      className={`duo-switch ${dark ? "is-dark" : ""}`}
+      onClick={() => onChange(!dark)}
+    >
+      <SwitchBuddy dark={dark} />
+      <span className="duo-switch-stars" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+      <span className="duo-switch-knob" aria-hidden="true">
+        <Sun className="sun" size={16} strokeWidth={2.2} />
+        <Moon className="moon" size={15} strokeWidth={2.2} />
+      </span>
+    </button>
   );
 }
