@@ -229,6 +229,7 @@ export const activitySchema = baseSchema.extend({
           .max(300)
           .optional(),
         cadence: z.number().int().min(30).max(260).optional(),
+        heartRateMax: z.number().int().min(30).max(250).optional(),
         startedAt: z.string().max(40).optional(),
       }),
     )

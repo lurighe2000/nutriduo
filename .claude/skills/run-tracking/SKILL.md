@@ -30,3 +30,9 @@ description: GPS run tracking in the NutriDuo PWA (Mis salidas). Use when touchi
 
 - Unit-test the pure session logic with synthetic tracks (straight line, standing jitter, a GPS jump, crossing km marks).
 - Playwright: `context.grantPermissions(["geolocation"])` and `context.setGeolocation({ latitude, longitude, accuracy })` step by step to simulate a run.
+
+## Import, heart rate and sharing
+
+- `src/services/runImport.ts` reads the adidas Running export (.zip with `Sport-sessions/*.json` and `GPS-data/*`), session JSON files and any GPX, using a small zip reader on `DecompressionStream`. Duplicates (same start within 2 min, or same day, distance and duration) are skipped; bikes and swims are ignored.
+- `src/services/heartRate.ts` connects standard BLE heart-rate monitors with Web Bluetooth (Chrome on Android/desktop only). A Galaxy Watch needs a watch app that broadcasts its pulse as a BLE heart-rate sensor.
+- `src/services/runShare.ts` draws 1080×1920 story images (photo, map, color, transparent sticker) on a canvas; OSM tiles load with CORS. Share with `navigator.share({ files })`, falling back to a download.

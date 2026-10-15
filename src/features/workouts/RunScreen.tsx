@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import {
   ChevronLeft,
   Footprints,
+  Heart,
   LocateFixed,
   MapPin,
   Pause,
@@ -32,6 +33,8 @@ import {
   type RunSnapshot,
 } from "../../services/runTracker";
 import RouteMap from "./RouteMap";
+import ShareSheet from "./ShareSheet";
+import { useHeartRate } from "../../services/heartRate";
 
 export type Run = NonNullable<Records["activity"]["runs"]>[number];
 export type DatedRun = Run & { date: string };
@@ -202,13 +205,12 @@ export function RunSummary({
   onClose: () => void;
   onDelete?: () => void;
 }) {
-  const { notify } = useApp();
+  const [sharing, setSharing] = useState(false);
   const dark = document.documentElement.dataset.theme === "dark";
   const segments = run.route ? decodeRoute(run.route) : [];
   const pace = run.durationSeconds / run.distanceKm;
   const fastest = run.splits?.length ? Math.min(...run.splits) : 0;
   const slowest = run.splits?.length ? Math.max(...run.splits) : 0;
-  const kind = run.kind as RunKind;
   const extras = [
     run.calories !== undefined && { label: "kcal", value: run.calories },
     run.elevation !== undefined && {
@@ -216,23 +218,17 @@ export function RunSummary({
       value: run.elevation,
     },
     run.cadence !== undefined && { label: "pasos/min", value: run.cadence },
+    run.heartRate !== undefined && {
+      label: run.heartRateMax
+        ? `lpm prom. · ${run.heartRateMax} máx.`
+        : "lpm prom.",
+      value: run.heartRate,
+    },
     run.maxSpeed !== undefined && {
       label: "km/h máx.",
       value: run.maxSpeed.toFixed(1).replace(".", ","),
     },
   ].filter(Boolean) as { label: string; value: string | number }[];
-  async function share() {
-    const text = `Salí a ${kindVerb[kind] ?? "correr"} con NutriDuo: ${String(run.distanceKm).replace(".", ",")} km en ${formatClock(run.durationSeconds)} (${formatPace(pace)} /km).`;
-    try {
-      if (navigator.share) await navigator.share({ title: "Mi salida", text });
-      else {
-        await navigator.clipboard.writeText(text);
-        notify("Copiado para compartir");
-      }
-    } catch {
-      // The person closed the share sheet.
-    }
-  }
   return (
     <div className="run-summary">
       <div className="run-top">
@@ -309,7 +305,7 @@ export function RunSummary({
         <button
           type="button"
           className="run-primary"
-          onClick={() => void share()}
+          onClick={() => setSharing(true)}
         >
           <Share2 size={18} /> Compartir
         </button>
@@ -319,6 +315,7 @@ export function RunSummary({
           </button>
         )}
       </div>
+      {sharing && <ShareSheet run={run} onClose={() => setSharing(false)} />}
     </div>
   );
 }
@@ -379,6 +376,16 @@ export default function RunScreen({
     resume ? RunSession.restore(resume, Date.now()) : undefined,
   );
   const cadences = useRef<number[]>([]);
+  const beats = useRef<number[]>([]);
+  const heart = useHeartRate();
+  const bpm = heart.status === "on" ? heart.bpm : undefined;
+  const bpmRef = useRef(bpm);
+  useEffect(() => {
+    bpmRef.current = bpm;
+    const s = session.current;
+    if (bpm && step === "live" && s && !s.paused && !s.autoPaused)
+      beats.current.push(bpm);
+  }, [bpm, step]);
   const tracking = step === "count" || step === "live";
   const cadence = useCadence(step === "live" && motion);
   useWakeLock(tracking);
@@ -430,7 +437,11 @@ export default function RunScreen({
           const km = s.splits.length;
           const last = s.splits[km - 1];
           setCue(`Km ${km} · ${formatPace(last)} /km`);
-          speak(`Kilómetro ${km}. ${spokenPace(last)}.`, voice);
+          const pulse = bpmRef.current;
+          speak(
+            `Kilómetro ${km}. ${spokenPace(last)}.${pulse ? ` Pulso ${pulse}.` : ""}`,
+            voice,
+          );
           haptic([30, 60, 30]);
         }
       },
@@ -533,6 +544,14 @@ export default function RunScreen({
           ? averageCadence
           : undefined,
       startedAt: new Date(s.startedAt).toISOString(),
+      heartRate: beats.current.length
+        ? Math.round(
+            beats.current.reduce((a, b) => a + b, 0) / beats.current.length,
+          )
+        : undefined,
+      heartRateMax: beats.current.length
+        ? Math.max(...beats.current)
+        : undefined,
     };
     const date = localDate(new Date(s.startedAt));
     const record = data.activity.find((a) => a.date === date);
@@ -725,7 +744,9 @@ export default function RunScreen({
               </strong>
               <span>KILÓMETROS</span>
             </div>
-            <div className={`run-metrics ${cadence ? "three" : ""}`}>
+            <div
+              className={`run-metrics ${[cadence, bpm].filter(Boolean).length === 1 ? "three" : ""}`}
+            >
               <div>
                 <strong>{formatClock(s.seconds)}</strong>
                 <span>TIEMPO</span>
@@ -740,6 +761,14 @@ export default function RunScreen({
                 <div>
                   <strong>{cadence}</strong>
                   <span>PASOS/MIN</span>
+                </div>
+              )}
+              {bpm && (
+                <div className="run-heart">
+                  <strong>
+                    <Heart size={18} fill="currentColor" /> {bpm}
+                  </strong>
+                  <span>PULSO</span>
                 </div>
               )}
             </div>

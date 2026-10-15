@@ -453,7 +453,7 @@ function Shell({
                   id={profile.id}
                   onClick={() => openSettings("cuenta")}
                 />
-                <span>NutriDuo · 1.14</span>
+                <span>NutriDuo · 1.15</span>
               </footer>
             </main>
           </div>
