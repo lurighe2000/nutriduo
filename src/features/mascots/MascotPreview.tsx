@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import type { Character, Motion, ViewAngle, createCharacter } from "./renderer";
+import { useState } from "react";
+import CartoonCharacter from "./CartoonCharacter";
+import { useCartoonMotion } from "./useCartoonMotion";
+import type { Character, Motion } from "./types";
 import "./mascots.css";
 
 const LABELS: Record<Motion, string> = {
@@ -13,60 +15,58 @@ const LABELS: Record<Motion, string> = {
   sad: "Bajar las orejas",
   dance: "Bailar",
   headstand: "Ponerse de cabeza",
-  reference: "Pose de referencia",
+  reference: "Jugar con las manos",
 };
-
+function CharacterDemo({ character }: { character: Character }) {
+  const [paused, setPaused] = useState(false);
+  const { host, pose, play, running, reduced } = useCartoonMotion(paused);
+  return (
+    <>
+      <div className="mascot-demo">
+        <span ref={host} className="mascot-stage">
+          <CartoonCharacter
+            key={pose.id}
+            character={character}
+            motion={pose.name}
+            running={running}
+          />
+        </span>
+        <div className="mascot-stage-floor" aria-hidden="true" />
+        <span className="mascot-state" role="status">
+          Dibujos animados en 2D
+        </span>
+        <button disabled={reduced} onClick={() => setPaused(!paused)}>
+          {reduced
+            ? "Movimiento reducido"
+            : paused
+              ? "Continuar movimiento"
+              : "Pausar movimiento"}
+        </button>
+      </div>
+      <div className="mascot-motion-picker" aria-label="Movimientos">
+        {(Object.entries(LABELS) as [Motion, string][])
+          .filter(([motion]) =>
+            character === "angel"
+              ? motion !== "headstand" && motion !== "nose"
+              : motion !== "reference",
+          )
+          .map(([motion, label]) => (
+            <button
+              key={motion}
+              aria-pressed={pose.name === motion}
+              disabled={paused || reduced}
+              onClick={() => play(motion)}
+            >
+              {label}
+            </button>
+          ))}
+      </div>
+    </>
+  );
+}
 export default function MascotPreview() {
   const [character, setCharacter] = useState<Character>("stitch");
   const [dark, setDark] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [status, setStatus] = useState("Cargando el personaje…");
-  const [motions, setMotions] = useState<Motion[]>([]);
-  const [selected, setSelected] = useState<Motion>("idle");
-  const [view, setView] = useState<ViewAngle>("front");
-  const stage = useRef<HTMLDivElement>(null);
-  const engine = useRef<Awaited<ReturnType<typeof createCharacter>>>(undefined);
-  useEffect(() => {
-    const host = stage.current!;
-    const abort = new AbortController();
-    const fail = () =>
-      setStatus("No se pudo iniciar el visor 3D. Probá recargar esta vista.");
-    host.addEventListener("mascot-error", fail);
-    setStatus("Cargando el personaje…");
-    setMotions([]);
-    setSelected("idle");
-    setPaused(false);
-    setView("front");
-    void import("./renderer")
-      .then(({ createCharacter }) =>
-        createCharacter(host, character, abort.signal, setSelected),
-      )
-      .then((value) => {
-        if (abort.signal.aborted) {
-          value.dispose();
-          return;
-        }
-        engine.current = value;
-        setMotions(value.motions as Motion[]);
-        setStatus(
-          value.motions.length
-            ? "Listo para moverse"
-            : "Escultura sin color ni animaciones",
-        );
-      })
-      .catch((error: unknown) => {
-        if (
-          !abort.signal.aborted &&
-          !(error instanceof DOMException && error.name === "AbortError")
-        )
-          fail();
-      });
-    return () => {
-      abort.abort();
-      host.removeEventListener("mascot-error", fail);
-      engine.current = undefined;
-    };
-  }, [character]);
   return (
     <main className={`mascot-preview ${dark ? "is-dark" : ""} ${character}`}>
       <header>
@@ -77,10 +77,10 @@ export default function MascotPreview() {
       </header>
       <section className="mascot-preview-content">
         <div className="mascot-preview-copy">
-          <h1>Un compañero con personalidad.</h1>
+          <h1>Compañeros de todos los días.</h1>
           <p>
-            Stitch acompaña a Luca y Angel a Ari. Probá sus gestos y miralos
-            desde cada ángulo. Angel conserva la escultura que elegiste.
+            Stitch con Luca y Angel con Ari. Dibujos en 2D, expresiones y
+            pequeños gestos para acompañarte.
           </p>
           <div className="mascot-profile-picker" aria-label="Personaje">
             <button
@@ -97,81 +97,16 @@ export default function MascotPreview() {
             </button>
           </div>
         </div>
-        <div className="mascot-demo">
-          <div
-            ref={stage}
-            className="mascot-stage"
-            role="img"
-            aria-label={`Vista 3D de ${character === "stitch" ? "Stitch" : "Angel"}`}
-          />
-          <div className="mascot-stage-floor" aria-hidden="true" />
-          <span className="mascot-state" role="status">
-            {status}
-          </span>
-          <div className="mascot-view-picker" aria-label="Ángulo del modelo">
-            {(
-              [
-                ["front", "Frente"],
-                ["threeQuarter", "Tres cuartos"],
-                ["side", "Perfil"],
-                ["back", "Espalda"],
-              ] as const
-            ).map(([angle, label]) => (
-              <button
-                key={angle}
-                aria-pressed={view === angle}
-                onClick={() => {
-                  engine.current?.setView(angle);
-                  setView(angle);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <button
-            disabled={!motions.length}
-            onClick={() => {
-              engine.current?.setPaused(!paused);
-              setPaused(!paused);
-            }}
-          >
-            {paused ? "Continuar movimiento" : "Pausar movimiento"}
-          </button>
-        </div>
-        <div className="mascot-motion-picker" aria-label="Movimientos">
-          {motions.map((motion) => (
-            <button
-              key={motion}
-              aria-pressed={selected === motion}
-              onClick={() => {
-                engine.current?.play(motion);
-              }}
-            >
-              {character === "angel" && motion === "nose"
-                ? "Jugar con las manos"
-                : LABELS[motion]}
-            </button>
-          ))}
-        </div>
-        {character === "angel" && (
-          <figure className="mascot-reference">
-            <img
-              src={`${import.meta.env.BASE_URL}mascots/angel-reference.jpg`}
-              alt="Única referencia visual de Angel elegida por Luca: rosa vivo, sonrisa abierta, V blanca y antenas detrás del cuerpo"
-            />
-            <figcaption>Tu referencia de Angel</figcaption>
-          </figure>
-        )}
+        <CharacterDemo key={character} character={character} />
         <p className="mascot-preview-note">
-          Los movimientos se detienen con la vista fuera de pantalla. Se respeta
-          la opción de reducir movimiento del celular.
+          Podés pausar los gestos. Se respeta el movimiento reducido de tu
+          celular.
         </p>
         <a
           className="mascot-credits"
           href={`${import.meta.env.BASE_URL}mascots/credits.json`}
         >
-          Modelos y créditos
+          Dibujos y créditos
         </a>
       </section>
     </main>

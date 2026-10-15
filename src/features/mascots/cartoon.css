@@ -1,0 +1,491 @@
+.cartoon-character {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.cartoon-character g {
+  transform-box: view-box;
+}
+.cartoon-body {
+  transform-origin: 170px 170px;
+}
+.cartoon-torso {
+  transform-origin: 170px 260px;
+  animation: cartoon-breathe 4s ease-in-out infinite;
+}
+.cartoon-head {
+  transform-origin: 170px 174px;
+  animation: cartoon-idle-head 6s ease-in-out infinite;
+}
+.arm-left {
+  transform-origin: 128px 185px;
+  animation: cartoon-idle-left 4s ease-in-out infinite;
+}
+.arm-right {
+  transform-origin: 212px 185px;
+  animation: cartoon-idle-right 4s ease-in-out infinite;
+}
+.hand-right {
+  transform-origin: 237px 235px;
+}
+.ear-left {
+  transform-origin: 111px 125px;
+  animation: cartoon-ear-left 5s ease-in-out infinite;
+}
+.ear-right {
+  transform-origin: 229px 125px;
+  animation: cartoon-ear-right 5s ease-in-out infinite;
+}
+.cartoon-eyes {
+  transform-origin: 170px 116px;
+  animation: cartoon-eyes 4.6s linear infinite;
+}
+.cartoon-blink {
+  opacity: 0;
+  animation: cartoon-blink 4.6s linear infinite;
+}
+.cartoon-lashes {
+  transform-origin: 170px 116px;
+  animation: cartoon-eyes 4.6s linear infinite;
+}
+.cartoon-grin {
+  opacity: 0;
+}
+.angel .cartoon-grin {
+  opacity: 1;
+}
+.angel .cartoon-smile {
+  opacity: 0;
+}
+.cartoon-tail {
+  transform-origin: 209px 249px;
+  animation: cartoon-tail 3s ease-in-out infinite;
+}
+.antenna-left {
+  transform-origin: 136px 84px;
+  animation: cartoon-antenna 6s ease-in-out infinite;
+}
+.antenna-right {
+  transform-origin: 204px 83px;
+  animation: cartoon-antenna 6s ease-in-out -2s infinite reverse;
+}
+.cartoon-character[data-motion="wave"] .arm-right {
+  animation: cartoon-wave var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="wave"] .hand-right {
+  animation: cartoon-wrist var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="look"] .cartoon-head {
+  animation: cartoon-look var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="scratch"] .arm-right {
+  animation: cartoon-scratch var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="nose"] .arm-right {
+  animation: cartoon-nose var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="nose"] .hand-right {
+  animation: cartoon-nose-hand var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="point"] .arm-left {
+  animation: cartoon-point var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="celebrate"] .cartoon-body {
+  animation: cartoon-celebrate var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="celebrate"] .arm-left,
+.cartoon-character[data-motion="reference"] .arm-left {
+  animation: cartoon-cheer-left var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="celebrate"] .arm-right,
+.cartoon-character[data-motion="reference"] .arm-right {
+  animation: cartoon-cheer-right var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="celebrate"] .cartoon-grin,
+.cartoon-character[data-motion="dance"] .cartoon-grin,
+.cartoon-character[data-motion="nose"] .cartoon-grin {
+  opacity: 1;
+}
+.cartoon-character[data-motion="celebrate"] .cartoon-smile,
+.cartoon-character[data-motion="dance"] .cartoon-smile,
+.cartoon-character[data-motion="nose"] .cartoon-smile {
+  opacity: 0;
+}
+.cartoon-character[data-motion="sad"] .cartoon-head {
+  animation: cartoon-support var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="sad"] .ear-left {
+  animation: cartoon-droop-left var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="sad"] .ear-right {
+  animation: cartoon-droop-right var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="dance"] .cartoon-torso {
+  animation: cartoon-dance var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="dance"] .arm-left {
+  animation: cartoon-cheer-left var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="dance"] .arm-right {
+  animation: cartoon-wave var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="headstand"] .cartoon-body {
+  animation: cartoon-headstand var(--gesture-duration)
+    cubic-bezier(0.45, 0, 0.3, 1) both;
+}
+.cartoon-character[data-motion="headstand"] .ear-left {
+  animation: cartoon-fold-left var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-motion="headstand"] .ear-right {
+  animation: cartoon-fold-right var(--gesture-duration) ease-in-out both;
+}
+.cartoon-character[data-running="false"] *,
+.cartoon-character[data-running="false"] {
+  animation-play-state: paused !important;
+}
+@keyframes cartoon-breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.018);
+  }
+}
+@keyframes cartoon-idle-head {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30% {
+    transform: rotate(-2deg);
+  }
+  70% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes cartoon-idle-left {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes cartoon-idle-right {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-3deg);
+  }
+}
+@keyframes cartoon-ear-left {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  65% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes cartoon-ear-right {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  45% {
+    transform: rotate(4deg);
+  }
+  70% {
+    transform: rotate(-2deg);
+  }
+}
+@keyframes cartoon-eyes {
+  0%,
+  42%,
+  48%,
+  100% {
+    transform: scaleY(1);
+  }
+  44%,
+  46% {
+    transform: scaleY(0.02);
+  }
+}
+@keyframes cartoon-blink {
+  0%,
+  42%,
+  48%,
+  100% {
+    opacity: 0;
+  }
+  44%,
+  46% {
+    opacity: 1;
+  }
+}
+@keyframes cartoon-tail {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+@keyframes cartoon-antenna {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes cartoon-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-132deg);
+  }
+  40% {
+    transform: rotate(-148deg);
+  }
+  55% {
+    transform: rotate(-125deg);
+  }
+  70% {
+    transform: rotate(-146deg);
+  }
+  80% {
+    transform: rotate(-132deg);
+  }
+}
+@keyframes cartoon-wrist {
+  0%,
+  20%,
+  85%,
+  100% {
+    transform: rotate(0);
+  }
+  35%,
+  65% {
+    transform: rotate(13deg);
+  }
+  50%,
+  75% {
+    transform: rotate(-12deg);
+  }
+}
+@keyframes cartoon-look {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-8deg) translateX(-2px);
+  }
+  65% {
+    transform: rotate(8deg) translateX(2px);
+  }
+}
+@keyframes cartoon-scratch {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25%,
+  80% {
+    transform: rotate(-151deg);
+  }
+  37%,
+  60% {
+    transform: rotate(-160deg);
+  }
+  48%,
+  72% {
+    transform: rotate(-146deg);
+  }
+}
+@keyframes cartoon-nose {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25%,
+  78% {
+    transform: rotate(-181deg);
+  }
+  45%,
+  65% {
+    transform: rotate(-188deg);
+  }
+}
+@keyframes cartoon-nose-hand {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25%,
+  78% {
+    transform: translateX(12px) rotate(-12deg);
+  }
+  45%,
+  65% {
+    transform: translateX(17px) rotate(-20deg);
+  }
+}
+@keyframes cartoon-point {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  28%,
+  75% {
+    transform: rotate(76deg);
+  }
+  50% {
+    transform: rotate(80deg);
+  }
+}
+@keyframes cartoon-cheer-left {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25%,
+  75% {
+    transform: rotate(130deg);
+  }
+  45%,
+  60% {
+    transform: rotate(143deg);
+  }
+}
+@keyframes cartoon-cheer-right {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25%,
+  75% {
+    transform: rotate(-130deg);
+  }
+  45%,
+  60% {
+    transform: rotate(-143deg);
+  }
+}
+@keyframes cartoon-celebrate {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  35%,
+  65% {
+    transform: translateY(-12px);
+  }
+}
+@keyframes cartoon-support {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30%,
+  70% {
+    transform: rotate(6deg) translateY(3px);
+  }
+}
+@keyframes cartoon-droop-left {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30%,
+  70% {
+    transform: rotate(-20deg);
+  }
+}
+@keyframes cartoon-droop-right {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30%,
+  70% {
+    transform: rotate(20deg);
+  }
+}
+@keyframes cartoon-dance {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(-6deg);
+  }
+  40%,
+  80% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes cartoon-headstand {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  15% {
+    transform: translateY(3px) rotate(12deg);
+  }
+  40%,
+  65% {
+    transform: translateY(-2px) rotate(-180deg);
+  }
+  88% {
+    transform: translateY(3px) rotate(-348deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-360deg);
+  }
+}
+@keyframes cartoon-fold-left {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30%,
+  75% {
+    transform: rotate(-52deg) scale(0.7);
+  }
+}
+@keyframes cartoon-fold-right {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30%,
+  75% {
+    transform: rotate(52deg) scale(0.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cartoon-character * {
+    animation: none !important;
+  }
+  .cartoon-blink {
+    opacity: 0;
+  }
+}

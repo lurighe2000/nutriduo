@@ -1,61 +1,11 @@
 {
-  "status": "Animated companions integrated in NutriDuo. Custom motions, not original film animation.",
-  "baseModel": {
-    "title": "Stitch (KH3) Rig",
-    "author": "Guilherme Navarro",
-    "source": "https://sketchfab.com/3d-models/stitch-kh3-rig-d1c674e7c0424687935d1839a2a55843",
-    "licenseAsListedByUploader": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "uploaderSourceCredit": "Model Ripped By WhiteMageSunny; Kingdom Hearts 3",
-    "characterRights": "Stitch and Angel are Disney characters. The uploader's model license does not grant ownership of these characters or establish rights to game assets.",
-    "downloaded": "2026-10-15",
-    "sourceSha256": "15d2b15060aa0d30afb71d73433d168fdba32ad008f542e3b9ec0ed3591996b4"
+  "format": "Original animated 2D vector drawings, authored in the NutriDuo source code.",
+  "source": "src/features/mascots/CartoonCharacter.tsx and cartoon.css",
+  "characters": {
+    "stitch": "Blue Stitch for Luca. Appearance guided by the user-supplied 34b7ec5240d03ce0f7c245f5621f4dde.jpg and the traditional cartoon design.",
+    "angel": "Pink Angel for Ari, with eyelashes, flower, white V and antennae behind her body. Appearance guided by the user-supplied e9d7c2032d1d829d746280cefeae2df4.jpg, reinterpreted in flat 2D."
   },
-  "adaptations": "Stitch: blasters removed and motion clips authored in Blender. The rejected Angel adaptation of Stitch is no longer loaded by the preview.",
-  "stitchRuntime": {
-    "file": "stitch.glb",
-    "sha256": "679917a923744e840999a12f87669e85f55e0a3bdf6392da75ca4c16b05ad01d",
-    "bytes": 5250740,
-    "triangles": 31774,
-    "animation": "Custom 30 Hz authored clips; 12-second seamless idle, torso/arm/ear follow-through, quintic gesture envelopes and eased runtime blending. Not original film animation."
-  },
-  "angelSculpt": {
-    "appearanceReference": "Only Luca's supplied e9d7c2032d1d829d746280cefeae2df4.jpg",
-    "referenceSha256": "0add4a29ef9c512343b447d30b45519caa12067f5ee399125f441b3874c8c575",
-    "geometryService": "Tencent Hunyuan3D-2.1 official geometry-only demo",
-    "source": "https://huggingface.co/spaces/tencent/Hunyuan3D-2.1",
-    "toolTerms": "https://huggingface.co/tencent/Hunyuan3D-2.1/blob/main/LICENSE",
-    "generated": "2026-10-15",
-    "seed": 1234,
-    "steps": 30,
-    "octreeResolution": 256,
-    "rawGeometrySha256": "0ff983a9971d4beec1f682c280bf02ea99f3a6d928ad7ba5cd407a86ce40a1f3",
-    "previewSha256": "15fd0130ceed9ee1b7d595308ea15e52ddc82204a2563ccf71ad51cc067a32f8",
-    "changes": "Uniform normalization, decimation from 415870 to 116442 triangles, neutral clay material. No rig, clips, textures or facial morphs. Source preserved separately.",
-    "outstanding": "Neutral source retained unchanged. Luca explicitly selected this sculpture on 2026-10-15; runtime derives from it.",
-    "characterRights": "Angel remains a Disney character; generation is not a grant of character rights."
-  },
-  "cost": "Free hosted geometry generation and local Blender preparation. Playback has no AI calls or paid services.",
-  "angelRuntime": {
-    "file": "angel.glb",
-    "sha256": "5c5311c4883327c01b43bf1028caa757a864746fbcd7772cbf60e2889dbd4a1f",
-    "bytes": 2372340,
-    "triangles": 56909,
-    "joints": 21,
-    "clips": [
-      "idle",
-      "wave",
-      "look",
-      "scratch",
-      "nose",
-      "point",
-      "celebrate",
-      "sad",
-      "dance",
-      "reference"
-    ],
-    "source": "angel-sculpt.glb, the image-derived sculpture explicitly chosen by Luca",
-    "changes": "Silhouette-preserving mobile decimation, pink vertex pigments, short white V, glossy eyes, skeleton and facial morphs. No recolored Stitch geometry.",
-    "animation": "Custom locally authored clips. Hidden anatomy inferred from the single reference; not Disney production assets."
-  }
+  "animation": "Locally authored articulated SVG/CSS gestures. No original film frames, 3D models, WebGL or AI calls at runtime.",
+  "characterRights": "Stitch and Angel are Disney characters. These custom drawings are not official Disney assets or an assertion of ownership of the characters.",
+  "cost": "No paid services, keys or external downloads are required for playback."
 }

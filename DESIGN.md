@@ -38,11 +38,12 @@ Fixed to the bottom (12px + safe area), height 96, bar top 31, raised circle r=2
 ## Character companions
 
 Inicio uses Stitch for Luca and Angel for Ari, inside one reserved 210px stage.
-Angel keeps the image-derived sculpture explicitly selected by Luca on 15/10.
-Load only the active GLB and lazy-load Three.js. One animation loop, paused when
-hidden, outside the viewport or paused by the user. Respect reduced motion.
-Skeletal and facial deformation happens inside WebGL; DOM motion still follows
-the transform/opacity rule above. Keep characters inside their stage and preserve
+The user replaced the 3D direction on 15/10: use original 2D vector drawings,
+flat cel colors, ink outlines and articulated parts. Stitch stays blue; Angel
+stays bright pink with long antennae behind her body, lashes, flower and white V.
+Do not reintroduce GLBs, Three.js or WebGL. Pause CSS motion when hidden,
+outside the viewport or paused by the user. Respect reduced motion.
+Animate drawn parts with transform/opacity. Keep characters inside their stage and preserve
 touch targets. Missing food entries or rest days never imply failure. Celebrate
 consistency without asking for extra food or exercise.
 

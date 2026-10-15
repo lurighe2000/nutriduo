@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 
-test("un gesto espera a que Stitch termine de bajar de la postura invertida", async ({
+test("un gesto espera la salida de la postura invertida y termina completo al salir de pausa", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 412, height: 915 });
   await page.goto("/mascots.html");
-  await expect(page.getByRole("status")).toHaveText("Listo para moverse");
+  const art = page.locator(".cartoon-character");
   const headstand = page.getByRole("button", {
     name: "Ponerse de cabeza",
     exact: true,
@@ -15,102 +15,88 @@ test("un gesto espera a que Stitch termine de bajar de la postura invertida", as
     exact: true,
   });
   await headstand.click();
-  await expect(headstand).toHaveAttribute("aria-pressed", "true");
   await nose.click();
-  await expect(headstand).toHaveAttribute("aria-pressed", "true");
-  await expect(nose).toHaveAttribute("aria-pressed", "true", {
-    timeout: 15000,
-  });
-  await expect(
-    page.getByRole("button", { name: "Respirar y parpadear" }),
-  ).toHaveAttribute("aria-pressed", "true", { timeout: 12000 });
-});
-
-test("los dos personajes cargan y los controles caben en celular, con pausa y movimiento reducido", async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  await page.setViewportSize({ width: 412, height: 915 });
-  await page.goto("/mascots.html");
-  await expect(page.getByRole("status")).toHaveText("Listo para moverse");
-  await expect(page.locator("canvas")).toHaveCount(1);
-  await expect(
-    page.getByRole("button", { name: "Travesura de la nariz", exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Travesura de la nariz", exact: true })
-    .click();
+  await expect(art).toHaveAttribute("data-motion", "headstand");
+  await page.waitForTimeout(2150);
   await page
     .getByRole("button", { name: "Pausar movimiento", exact: true })
     .click();
-  const paused = await page.locator("canvas").screenshot();
-  await page.waitForTimeout(200);
-  expect(await page.locator("canvas").screenshot()).toEqual(paused);
+  const still = await art.screenshot();
+  await page.screenshot({
+    path: test.info().outputPath("Stitch-invertido.png"),
+  });
+  await page.waitForTimeout(400);
+  expect(await art.screenshot()).toEqual(still);
   await page
     .getByRole("button", { name: "Continuar movimiento", exact: true })
     .click();
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.waitForTimeout(100);
-  const reduced = await page.locator("canvas").screenshot();
-  await page.waitForTimeout(200);
-  expect(await page.locator("canvas").screenshot()).toEqual(reduced);
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.getByRole("button", { name: "Angel · Ari", exact: true }).click();
-  await expect(
-    page
-      .getByRole("img", { name: "Vista 3D de Angel", exact: true })
-      .locator("canvas"),
-  ).toHaveCount(1);
-  await expect(
-    page.getByRole("button", { name: "Jugar con las manos", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Listo para moverse");
-  await expect(
-    page.getByRole("button", { name: "Pausar movimiento", exact: true }),
-  ).toBeEnabled();
-  await expect(page.locator(".mascot-motion-picker button")).toHaveCount(10);
-  await page
-    .getByRole("button", { name: "Pausar movimiento", exact: true })
-    .click();
-  const front = await page.locator("canvas").screenshot();
-  await page.getByRole("button", { name: "Perfil", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Perfil", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  expect(await page.locator("canvas").screenshot()).not.toEqual(front);
-  await page.getByRole("button", { name: "Frente", exact: true }).click();
-  expect(await page.locator("canvas").screenshot()).toEqual(front);
-  await expect(
-    page.getByRole("button", { name: "Travesura de la nariz", exact: true }),
-  ).toHaveCount(0);
-  await expect(page.locator(".mascot-reference img")).toHaveAttribute(
-    "src",
-    "/mascots/angel-reference.jpg",
-  );
-  for (const width of [360, 393, 412, 430, 1280]) {
-    await page.setViewportSize({ width, height: 915 });
-    for (const dark of [false, true]) {
-      const toggle = page.getByRole("button", {
-        name: dark ? "Modo oscuro" : "Modo claro",
+  await expect(art).toHaveAttribute("data-motion", "nose", { timeout: 7000 });
+  await page.waitForTimeout(700);
+  await expect(art).toHaveAttribute("data-motion", "nose");
+  await page.screenshot({ path: test.info().outputPath("Stitch-nariz.png") });
+  await expect(art).toHaveAttribute("data-motion", "idle", { timeout: 5000 });
+});
+
+test("los dos dibujos son nítidos, caben en móvil y respetan pausa y movimiento reducido", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  const models: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("request", (request) => {
+    if (/\.glb(?:\?|$)|renderer-[\w-]+\.js/.test(request.url()))
+      models.push(request.url());
+  });
+  await page.goto("/mascots.html");
+  for (const character of ["Stitch", "Angel"]) {
+    await page
+      .getByRole("button", {
+        name: character === "Stitch" ? "Stitch · Luca" : "Angel · Ari",
         exact: true,
-      });
-      if (await toggle.count()) await toggle.click();
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
-      const canvas = await page.locator("canvas").boundingBox();
-      expect(canvas?.width).toBeGreaterThan(200);
+      })
+      .click();
+    await expect(
+      page.getByRole("img", { name: `${character}, dibujo animado en 2D` }),
+    ).toBeVisible();
+    const art = page.locator(".cartoon-character");
+    await expect(page.locator("canvas")).toHaveCount(0);
+    const moving = await art.screenshot();
+    await page.waitForTimeout(350);
+    expect(await art.screenshot()).not.toEqual(moving);
+    await page.getByRole("button", { name: "Saludar", exact: true }).click();
+    await page.waitForTimeout(1000);
+    await page
+      .getByRole("button", { name: "Pausar movimiento", exact: true })
+      .click();
+    for (const width of [360, 393, 412, 430, 1280]) {
+      await page.setViewportSize({ width, height: 915 });
+      for (const dark of [false, true]) {
+        const toggle = page.getByRole("button", {
+          name: dark ? "Modo oscuro" : "Modo claro",
+          exact: true,
+        });
+        if (await toggle.count()) await toggle.click();
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        await page.screenshot({
+          path: test
+            .info()
+            .outputPath(`${character}-${dark ? "dark" : "light"}-${width}.png`),
+        });
+      }
     }
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(
+      page.getByRole("button", { name: "Movimiento reducido", exact: true }),
+    ).toBeDisabled();
+    const still = await art.screenshot();
+    await page.waitForTimeout(250);
+    expect(await art.screenshot()).toEqual(still);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
   }
-  await page.setViewportSize({ width: 412, height: 915 });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.locator("canvas").scrollIntoViewIfNeeded();
-  await page.waitForTimeout(100);
-  const still = await page.locator("canvas").screenshot();
-  await page.waitForTimeout(200);
-  expect(await page.locator("canvas").screenshot()).toEqual(still);
   expect(errors).toEqual([]);
+  expect(models).toEqual([]);
 });

@@ -1,4 +1,4 @@
-import type { Character, Motion } from "../features/mascots/renderer";
+import type { Character, Motion } from "../features/mascots/types";
 import type { CompanionMood } from "./mascotState";
 
 /** Ordinary play is available before logging food; celebrations still follow progress. */

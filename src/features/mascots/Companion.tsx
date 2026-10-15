@@ -1,16 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ArrowRight, Pause, Play } from "lucide-react";
 import { useApp } from "../../app/context";
 import { db } from "../../db";
 import { profileSchema } from "../../schemas";
-import {
-  DuoBuddy,
-  haptic,
-  prefersReducedMotion,
-} from "../../components/motion";
+import { haptic } from "../../components/motion";
 import type { companionState } from "../../services/mascotState";
 import { companionGesture } from "../../services/mascotMotion";
-import type { createCharacter } from "./renderer";
+import CartoonCharacter from "./CartoonCharacter";
+import { useCartoonMotion } from "./useCartoonMotion";
 import "./companion.css";
 
 type State = ReturnType<typeof companionState>;
@@ -24,76 +21,34 @@ export default function Companion({
   const { profile, run } = useApp();
   const character = profile.id === "ari" ? "angel" : "stitch";
   const name = character === "angel" ? "Angel" : "Stitch";
-  const host = useRef<HTMLSpanElement>(null);
-  const engine = useRef<Awaited<ReturnType<typeof createCharacter>>>(undefined);
-  const latest = useRef(state);
-  const lastMood = useRef("");
-  const gesture = useRef(0);
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [reduced, setReduced] = useState(prefersReducedMotion);
   const paused = profile.mascotPaused ?? false;
+  const { host, pose, play, running, reduced } = useCartoonMotion(paused);
+  const latest = useRef(state);
+  const gesture = useRef(0);
+  const lastMood = useRef("");
   latest.current = state;
-  const choose = () =>
-    companionGesture(character, latest.current.mood, gesture.current);
-  const chooseRef = useRef(choose);
-  chooseRef.current = choose;
   useEffect(() => {
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(media.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+    let next = performance.now() + 8000;
+    const timer = setInterval(() => {
+      if (performance.now() < next) return;
+      if (
+        play(
+          companionGesture(character, latest.current.mood, gesture.current),
+          false,
+        )
+      ) {
+        gesture.current++;
+        next = performance.now() + 8000;
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [character, play]);
   useEffect(() => {
-    const element = host.current!;
-    const abort = new AbortController();
-    let interval: ReturnType<typeof setInterval> | undefined;
-    const fail = () => {
-      setFailed(true);
-      setReady(false);
-      engine.current?.dispose();
-    };
-    setReady(false);
-    setFailed(false);
-    lastMood.current = "";
-    element.addEventListener("mascot-error", fail);
-    void import("./renderer")
-      .then(({ createCharacter }) =>
-        createCharacter(element, character, abort.signal),
-      )
-      .then((value) => {
-        if (abort.signal.aborted) {
-          value.dispose();
-          return;
-        }
-        engine.current = value;
-        setReady(true);
-        let nextGestureAt = performance.now() + 8000;
-        interval = setInterval(() => {
-          if (document.hidden || performance.now() < nextGestureAt) return;
-          if (value.play(chooseRef.current(), false)) {
-            gesture.current++;
-            nextGestureAt = performance.now() + 8000;
-          }
-        }, 1000);
-      })
-      .catch(() => {
-        if (!abort.signal.aborted) fail();
-      });
-    return () => {
-      abort.abort();
-      clearInterval(interval);
-      element.removeEventListener("mascot-error", fail);
-      engine.current = undefined;
-    };
-  }, [character]);
-  useEffect(() => {
-    if (!ready) return;
-    engine.current?.setPaused(paused);
     if (paused || reduced) return;
     const reaction = `${state.mood}:${state.focus}`;
-    if (lastMood.current !== reaction) {
-      engine.current?.play(
+    if (
+      lastMood.current !== reaction &&
+      play(
         state.mood === "celebrate"
           ? "celebrate"
           : state.mood === "support"
@@ -101,10 +56,10 @@ export default function Companion({
             : state.focus === "water" || state.focus === "protein"
               ? "point"
               : "wave",
-      );
+      )
+    )
       lastMood.current = reaction;
-    }
-  }, [ready, paused, reduced, state.mood, state.focus]);
+  }, [paused, reduced, state.mood, state.focus, play]);
   return (
     <section
       className="companion"
@@ -115,20 +70,22 @@ export default function Companion({
       <button
         className="companion-stage"
         aria-label={`Jugar con ${name}`}
-        disabled={!ready || paused || reduced}
+        disabled={paused || reduced}
         onClick={() => {
-          if (engine.current?.play(chooseRef.current())) {
+          if (play(companionGesture(character, state.mood, gesture.current))) {
             gesture.current++;
             haptic();
           }
         }}
       >
-        <span ref={host} className="companion-canvas" aria-hidden="true" />
-        {!ready && (
-          <span className="companion-placeholder">
-            <DuoBuddy size={88} label="" />
-          </span>
-        )}
+        <span ref={host} className="companion-art" data-motion={pose.name}>
+          <CartoonCharacter
+            key={pose.id}
+            character={character}
+            motion={pose.name}
+            running={running}
+          />
+        </span>
         <span className="companion-floor" aria-hidden="true" />
       </button>
       <div className="companion-toolbar">
@@ -136,7 +93,7 @@ export default function Companion({
         <button
           type="button"
           className="companion-pause"
-          disabled={reduced || failed}
+          disabled={reduced}
           aria-label={
             reduced
               ? "Movimiento reducido"
@@ -164,18 +121,13 @@ export default function Companion({
       <button
         className="text-button companion-focus"
         onClick={() => {
-          engine.current?.play("point");
+          play("point");
           onFocus();
         }}
       >
         {state.action}
         <ArrowRight size={15} />
       </button>
-      {failed && (
-        <small className="companion-fallback">
-          La vista 3D no está disponible en este navegador.
-        </small>
-      )}
     </section>
   );
 }

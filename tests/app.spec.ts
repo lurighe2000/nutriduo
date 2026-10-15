@@ -48,30 +48,36 @@ async function manualMeal(page: Page) {
 }
 
 for (const name of ["Luca", "Ari"]) {
-  test(`${name}: compañero 3D, pausa persistente y diseño móvil`, async ({
+  test(`${name}: compañero 2D, pausa persistente y diseño móvil`, async ({
     page,
   }) => {
     const errors: string[] = [];
+    const models: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    page.on("request", (request) => {
+      if (/\.glb(?:\?|$)|renderer-[\w-]+\.js/.test(request.url()))
+        models.push(request.url());
+    });
     await page.setViewportSize({ width: 412, height: 915 });
     await setup(page, name);
     const character = name === "Luca" ? "Stitch" : "Angel";
     const companion = page.getByRole("region", {
       name: `Tu compañero: ${character}`,
     });
-    await expect(companion.locator("canvas")).toHaveCount(1);
+    await expect(companion.locator(".cartoon-character")).toHaveCount(1);
+    await expect(companion.locator("canvas")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: `Jugar con ${character}` }),
     ).toBeEnabled();
     if (name === "Luca") {
       // A brand-new profile must have more personality than waving/looking.
-      await expect(companion.locator(".companion-canvas")).toHaveAttribute(
+      await expect(companion.locator(".companion-art")).toHaveAttribute(
         "data-motion",
         "scratch",
         { timeout: 15000 },
       );
       await page.getByRole("button", { name: "Jugar con Stitch" }).click();
-      await expect(companion.locator(".companion-canvas")).toHaveAttribute(
+      await expect(companion.locator(".companion-art")).toHaveAttribute(
         "data-motion",
         "look",
         { timeout: 10000 },
@@ -83,12 +89,14 @@ for (const name of ["Luca", "Ari"]) {
     await expect(
       page.getByRole("button", { name: `Activar movimiento de ${character}` }),
     ).toHaveAttribute("aria-pressed", "true");
-    const still = await companion.locator("canvas").screenshot();
+    const still = await companion.locator(".cartoon-character").screenshot();
     await page.screenshot({
       path: test.info().outputPath(`${name}-companion.png`),
     });
     await page.waitForTimeout(250);
-    expect(await companion.locator("canvas").screenshot()).toEqual(still);
+    expect(await companion.locator(".cartoon-character").screenshot()).toEqual(
+      still,
+    );
     for (const width of [360, 393, 412, 430]) {
       await page.setViewportSize({ width, height: 915 });
       for (let theme = 0; theme < 2; theme++) {
@@ -101,6 +109,15 @@ for (const name of ["Luca", "Ari"]) {
         const stage = await companion.locator(".companion-stage").boundingBox();
         expect(stage?.height).toBe(210);
         expect(stage?.width).toBeGreaterThan(180);
+        const drawing = await companion
+          .locator(".cartoon-character")
+          .boundingBox();
+        expect(drawing!.height).toBeLessThanOrEqual(stage!.height);
+        const body = await companion.locator(".cartoon-body").boundingBox();
+        expect(body!.y).toBeGreaterThanOrEqual(stage!.y);
+        expect(body!.y + body!.height).toBeLessThanOrEqual(
+          stage!.y + stage!.height,
+        );
       }
     }
     await page.reload();
@@ -116,17 +133,12 @@ for (const name of ["Luca", "Ari"]) {
     await expect(
       page.getByRole("button", { name: `Activar movimiento de ${character}` }),
     ).toHaveAttribute("aria-pressed", "true");
-    await expect(companion.locator("canvas")).toHaveCount(1);
+    await expect(companion.locator(".cartoon-character")).toHaveCount(1);
     await expect
       .poll(async () =>
         page.evaluate(async () => {
-          const cache = await caches.open("nutriduo-characters-v1");
-          const keys = await cache.keys();
-          return keys.some((key) =>
-            key.url.includes(
-              `/mascots/${document.querySelector(".companion")?.getAttribute("data-character")}.glb`,
-            ),
-          );
+          await navigator.serviceWorker.ready;
+          return !!navigator.serviceWorker.controller;
         }),
       )
       .toBe(true);
@@ -141,7 +153,7 @@ for (const name of ["Luca", "Ari"]) {
     await page
       .getByRole("button", { name: "Entrar a mi espacio", exact: true })
       .click();
-    await expect(companion.locator("canvas")).toHaveCount(1);
+    await expect(companion.locator(".cartoon-character")).toHaveCount(1);
     await page
       .getByRole("button", { name: `Activar movimiento de ${character}` })
       .click();
@@ -152,14 +164,21 @@ for (const name of ["Luca", "Ari"]) {
     await expect(
       page.getByRole("button", { name: `Jugar con ${character}` }),
     ).toBeDisabled();
-    const reduced = await companion.locator("canvas").screenshot();
+    await expect(companion.locator(".companion-art")).toHaveAttribute(
+      "data-motion",
+      "idle",
+    );
+    const reduced = await companion.locator(".cartoon-character").screenshot();
     await page.waitForTimeout(250);
-    expect(await companion.locator("canvas").screenshot()).toEqual(reduced);
+    expect(await companion.locator(".cartoon-character").screenshot()).toEqual(
+      reduced,
+    );
     await page
       .getByRole("button", { name: "Registrar una comida", exact: true })
       .click();
     await expect(page.getByLabel("Nombre de la comida")).toBeVisible();
     expect(errors).toEqual([]);
+    expect(models).toEqual([]);
   });
 }
 
