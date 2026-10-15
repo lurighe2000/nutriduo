@@ -36,6 +36,19 @@ export default defineConfig({
         ],
       },
       workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.origin === self.location.origin &&
+              /\/mascots\/(angel|stitch)\.glb$/.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "nutriduo-characters-v1",
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+        ],
         importScripts: [`${process.env.VITE_BASE_PATH || "/"}push-handler.js`],
         clientsClaim: true,
         globPatterns: ["**/*.{js,mjs,css,html,svg,png,woff2}"],
@@ -44,6 +57,9 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: { input: { app: "index.html", mascots: "mascots.html" } },
+  },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],

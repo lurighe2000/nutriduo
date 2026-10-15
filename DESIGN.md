@@ -35,6 +35,17 @@ Fixed to the bottom (12px + safe area), height 96, bar top 31, raised circle r=2
 
 `src/components/SwitchBuddy.tsx`: stick figure on the day/night switch. Random activity every 7.5s from DAY / NIGHT / RAIN pools (rain from Open-Meteo, Buenos Aires). Poses live in a 28×28 viewBox, ground at y=25, head r=3. Keep new poses inside x 0–28 so the page never gets wider.
 
+## Character companions
+
+Inicio uses Stitch for Luca and Angel for Ari, inside one reserved 210px stage.
+Angel keeps the image-derived sculpture explicitly selected by Luca on 15/10.
+Load only the active GLB and lazy-load Three.js. One animation loop, paused when
+hidden, outside the viewport or paused by the user. Respect reduced motion.
+Skeletal and facial deformation happens inside WebGL; DOM motion still follows
+the transform/opacity rule above. Keep characters inside their stage and preserve
+touch targets. Missing food entries or rest days never imply failure. Celebrate
+consistency without asking for extra food or exercise.
+
 ## Checks before shipping
 
 - 360, 393, 412, 430 px widths; light and dark; both profiles.

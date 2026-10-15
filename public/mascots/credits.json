@@ -1,5 +1,5 @@
 {
-  "status": "Development preview only. Stitch motion contacts under review; Angel is an unrigged neutral sculpt, not a finished animated character.",
+  "status": "Animated companions integrated in NutriDuo. Custom motions, not original film animation.",
   "baseModel": {
     "title": "Stitch (KH3) Rig",
     "author": "Guilherme Navarro",
@@ -25,8 +25,30 @@
     "rawGeometrySha256": "0ff983a9971d4beec1f682c280bf02ea99f3a6d928ad7ba5cd407a86ce40a1f3",
     "previewSha256": "15fd0130ceed9ee1b7d595308ea15e52ddc82204a2563ccf71ad51cc067a32f8",
     "changes": "Uniform normalization, decimation from 415870 to 116442 triangles, neutral clay material. No rig, clips, textures or facial morphs. Source preserved separately.",
-    "outstanding": "Correct the dropped ear, face proportions, limbs and contacts; then author materials, topology, rig, expressions and motions. Hidden surfaces are inferred from the single image.",
+    "outstanding": "Neutral source retained unchanged. Luca explicitly selected this sculpture on 2026-10-15; runtime derives from it.",
     "characterRights": "Angel remains a Disney character; generation is not a grant of character rights."
   },
-  "cost": "Free hosted geometry generation and local Blender preparation. Playback has no AI calls or paid services."
+  "cost": "Free hosted geometry generation and local Blender preparation. Playback has no AI calls or paid services.",
+  "angelRuntime": {
+    "file": "angel.glb",
+    "sha256": "5c5311c4883327c01b43bf1028caa757a864746fbcd7772cbf60e2889dbd4a1f",
+    "bytes": 2372340,
+    "triangles": 56909,
+    "joints": 21,
+    "clips": [
+      "idle",
+      "wave",
+      "look",
+      "scratch",
+      "nose",
+      "point",
+      "celebrate",
+      "sad",
+      "dance",
+      "reference"
+    ],
+    "source": "angel-sculpt.glb, the image-derived sculpture explicitly chosen by Luca",
+    "changes": "Silhouette-preserving mobile decimation, pink vertex pigments, short white V, glossy eyes, skeleton and facial morphs. No recolored Stitch geometry.",
+    "animation": "Custom locally authored clips. Hidden anatomy inferred from the single reference; not Disney production assets."
+  }
 }

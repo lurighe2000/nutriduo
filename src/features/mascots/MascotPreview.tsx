@@ -79,9 +79,8 @@ export default function MascotPreview() {
         <div className="mascot-preview-copy">
           <h1>Un compañero con personalidad.</h1>
           <p>
-            Vista de trabajo. Stitch permite probar gestos. Angel muestra la
-            escultura generada desde tu única imagen: todavía necesita corregir
-            orejas y cara, aplicar el color y preparar las articulaciones.
+            Stitch acompaña a Luca y Angel a Ari. Probá sus gestos y miralos
+            desde cada ángulo. Angel conserva la escultura que elegiste.
           </p>
           <div className="mascot-profile-picker" aria-label="Personaje">
             <button
@@ -149,7 +148,9 @@ export default function MascotPreview() {
                 engine.current?.play(motion);
               }}
             >
-              {LABELS[motion]}
+              {character === "angel" && motion === "nose"
+                ? "Jugar con las manos"
+                : LABELS[motion]}
             </button>
           ))}
         </div>

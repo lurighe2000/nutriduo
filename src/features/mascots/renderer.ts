@@ -1,6 +1,7 @@
 import {
   AnimationAction,
   AnimationMixer,
+  ACESFilmicToneMapping,
   AmbientLight,
   DirectionalLight,
   LoopOnce,
@@ -43,14 +44,16 @@ export async function createCharacter(
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.outputColorSpace = SRGBColorSpace;
+  renderer.toneMapping = ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
   const scene = new Scene();
-  const camera = new OrthographicCamera(-1.65, 1.65, 1.65, -1.65, 0.1, 30);
+  const camera = new OrthographicCamera(-1.4, 1.4, 1.4, -1.4, 0.1, 30);
   camera.position.set(0, 1.5, 7);
   camera.lookAt(0, 1.2, 0);
-  scene.add(new AmbientLight(0xffffff, 1.9));
-  const key = new DirectionalLight(0xfff5ee, 2.4);
+  scene.add(new AmbientLight(0xffffff, 1.15));
+  const key = new DirectionalLight(0xfff5ee, 1.65);
   key.position.set(3, 5, 5);
-  const fill = new DirectionalLight(0xd7eaff, 1.6);
+  const fill = new DirectionalLight(0xd7eaff, 0.7);
   fill.position.set(-3, 2, 2);
   scene.add(key, fill);
   let disposed = false;
@@ -82,16 +85,20 @@ export async function createCharacter(
     const width = host.clientWidth || 280;
     const height = host.clientHeight || 280;
     const aspect = width / height;
-    camera.left = -1.65 * aspect;
-    camera.right = 1.65 * aspect;
-    camera.top = 1.65;
-    camera.bottom = -1.65;
+    camera.left = -1.4 * aspect;
+    camera.right = 1.4 * aspect;
+    camera.top = 1.4;
+    camera.bottom = -1.4;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     renderer.render(scene, camera);
   };
   const play = (motion: Motion) => {
-    if ((reduced || paused) && motion !== "idle") return false;
+    if (
+      disposed ||
+      ((!visible || document.hidden || reduced || paused) && motion !== "idle")
+    )
+      return false;
     if (
       active?.getClip().name === "headstand" &&
       active.time < active.getClip().duration - 0.15
@@ -154,6 +161,11 @@ export async function createCharacter(
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
   const onMotionChange = () => {
     reduced = media.matches;
+    if (reduced) {
+      mixer?.stopAllAction();
+      active = undefined;
+      queued = undefined;
+    }
     play("idle");
     if (reduced) {
       mixer?.setTime(0);
@@ -190,8 +202,8 @@ export async function createCharacter(
   };
   signal.addEventListener("abort", dispose, { once: true });
   try {
-    const revision = import.meta.env.DEV ? Date.now() : "20261015-1";
-    const asset = character === "angel" ? "angel-sculpt" : "stitch";
+    const revision = "20261015-2";
+    const asset = character;
     const gltf = await new GLTFLoader().loadAsync(
       `${import.meta.env.BASE_URL}mascots/${asset}.glb?v=${revision}`,
     );

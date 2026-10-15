@@ -26,12 +26,9 @@ import { Button, Empty, SectionTitle } from "../../components/ui";
 import { SOURCE_LABELS } from "../../nutrition/constants";
 import RunToday from "../workouts/RunToday";
 import { useEffect, useState } from "react";
-import {
-  Celebration,
-  DuoBuddy,
-  haptic,
-  useCountUp,
-} from "../../components/motion";
+import { Celebration, haptic, useCountUp } from "../../components/motion";
+import Companion from "../mascots/Companion";
+import { companionState } from "../../services/mascotState";
 const WEEKDAY = ["D", "L", "M", "M", "J", "V", "S"];
 function greetingFor(date: string) {
   if (date !== today()) return "TU REGISTRO";
@@ -103,6 +100,17 @@ export default function Dashboard() {
   const proteinRatio = Math.min(1, total.protein / Math.max(1, goal.protein));
   const waterRatio = Math.min(1, water / Math.max(1, goal.water));
   const fiberRatio = Math.min(1, total.fiber / Math.max(1, goal.fiber));
+  const companion = companionState({
+    meals: meals.length,
+    protein: total.protein / Math.max(1, goal.protein),
+    water: water / Math.max(1, goal.water),
+    calories: total.calories / Math.max(1, goal.calories),
+    complete: completed?.complete ?? false,
+    currentDay: date === today(),
+    trained:
+      data.sessions.some((s) => s.date === date) ||
+      !!data.activity.find((a) => a.date === date)?.runs?.length,
+  });
   const headline = !meals.length
     ? `Arranquemos, ${p.name}.`
     : remaining.protein > 0
@@ -133,7 +141,24 @@ export default function Dashboard() {
             <h2>{headline}</h2>
             <p>{message}</p>
           </div>
-          <DuoBuddy />
+          <Companion
+            state={companion}
+            onFocus={() => {
+              if (companion.focus === "water") {
+                const section = document.getElementById("daily-hydration");
+                section?.scrollIntoView({ behavior: "auto", block: "center" });
+                section?.focus({ preventScroll: true });
+              } else if (companion.focus === "meal") addMeal();
+              else
+                navigate(
+                  companion.focus === "protein"
+                    ? "comidas"
+                    : companion.focus === "training"
+                      ? "entreno"
+                      : "progreso",
+                );
+            }}
+          />
         </section>
         <section className="duo-rings-card">
           <svg
@@ -307,7 +332,11 @@ export default function Dashboard() {
           </div>
         </section>
         <RunToday />
-        <section className="card hydration-card">
+        <section
+          className="card hydration-card"
+          id="daily-hydration"
+          tabIndex={-1}
+        >
           <div className="card-heading">
             <h2>
               <Droplets size={19} /> Hidratación

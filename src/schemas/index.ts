@@ -335,6 +335,7 @@ export const profileSchema = z.object({
     .optional(),
   onboarded: z.boolean().default(false),
   dark: z.boolean().default(false),
+  mascotPaused: z.boolean().optional(),
   reminders: z.boolean().default(true),
   pinHash: z.string().optional(),
   pinSalt: z.string().optional(),

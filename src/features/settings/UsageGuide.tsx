@@ -1,5 +1,14 @@
 const sections = [
   {
+    title: "Stitch y Angel, tus compañeros",
+    steps: [
+      "En Inicio, Luca tiene a Stitch y Ari a Angel. Tocá el personaje para ver distintos gestos y usá el botón de pausa si preferís que quede quieto.",
+      "Las reacciones acompañan tus registros de comidas y agua. El botón debajo te lleva al área que podés revisar. No registrar una comida no se interpreta como haber fallado.",
+      "Cuando cerrás el día, pueden celebrar tus objetivos o acompañarte si quedó algo pendiente. No necesitás exceder calorías ni entrenar de más para recibir una celebración.",
+      "La pausa se guarda para cada perfil. Si tu celular tiene activado Reducir movimiento, el personaje queda quieto automáticamente. La primera descarga requiere internet; después puede abrir desde la copia guardada.",
+    ],
+  },
+  {
     title: "Tu recorrido de cada día",
     steps: [
       "Elegí Luca o Ari e ingresá tu PIN. Cada perfil tiene sus propios objetivos y registros.",

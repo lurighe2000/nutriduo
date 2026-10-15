@@ -36,13 +36,17 @@ test("los dos personajes cargan y los controles caben en celular, con pausa y mo
       .getByRole("img", { name: "Vista 3D de Angel", exact: true })
       .locator("canvas"),
   ).toHaveCount(1);
-  await expect(page.getByRole("status")).toHaveText(
-    "Escultura sin color ni animaciones",
-  );
+  await expect(
+    page.getByRole("button", { name: "Jugar con las manos", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Listo para moverse");
   await expect(
     page.getByRole("button", { name: "Pausar movimiento", exact: true }),
-  ).toBeDisabled();
-  await expect(page.locator(".mascot-motion-picker button")).toHaveCount(0);
+  ).toBeEnabled();
+  await expect(page.locator(".mascot-motion-picker button")).toHaveCount(10);
+  await page
+    .getByRole("button", { name: "Pausar movimiento", exact: true })
+    .click();
   const front = await page.locator("canvas").screenshot();
   await page.getByRole("button", { name: "Perfil", exact: true }).click();
   await expect(

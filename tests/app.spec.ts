@@ -47,6 +47,108 @@ async function manualMeal(page: Page) {
   await expect(page.locator("dialog")).toHaveCount(0);
 }
 
+for (const name of ["Luca", "Ari"]) {
+  test(`${name}: compañero 3D, pausa persistente y diseño móvil`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 412, height: 915 });
+    await setup(page, name);
+    const character = name === "Luca" ? "Stitch" : "Angel";
+    const companion = page.getByRole("region", {
+      name: `Tu compañero: ${character}`,
+    });
+    await expect(companion.locator("canvas")).toHaveCount(1);
+    await expect(
+      page.getByRole("button", { name: `Jugar con ${character}` }),
+    ).toBeEnabled();
+    await page
+      .getByRole("button", { name: `Pausar movimiento de ${character}` })
+      .click();
+    await expect(
+      page.getByRole("button", { name: `Activar movimiento de ${character}` }),
+    ).toHaveAttribute("aria-pressed", "true");
+    const still = await companion.locator("canvas").screenshot();
+    await page.screenshot({
+      path: test.info().outputPath(`${name}-companion.png`),
+    });
+    await page.waitForTimeout(250);
+    expect(await companion.locator("canvas").screenshot()).toEqual(still);
+    for (const width of [360, 393, 412, 430]) {
+      await page.setViewportSize({ width, height: 915 });
+      for (let theme = 0; theme < 2; theme++) {
+        await page.getByRole("switch", { name: "Modo oscuro" }).click();
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        const stage = await companion.locator(".companion-stage").boundingBox();
+        expect(stage?.height).toBe(210);
+        expect(stage?.width).toBeGreaterThan(180);
+      }
+    }
+    await page.reload();
+    await page
+      .getByRole("button", {
+        name: new RegExp(name + " Construir|" + name + " Sentirte"),
+      })
+      .click();
+    await page.getByLabel("PIN", { exact: true }).fill("1234");
+    await page
+      .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: `Activar movimiento de ${character}` }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(companion.locator("canvas")).toHaveCount(1);
+    await expect
+      .poll(async () =>
+        page.evaluate(async () => {
+          const cache = await caches.open("nutriduo-characters-v1");
+          const keys = await cache.keys();
+          return keys.some((key) =>
+            key.url.includes(
+              `/mascots/${document.querySelector(".companion")?.getAttribute("data-character")}.glb`,
+            ),
+          );
+        }),
+      )
+      .toBe(true);
+    await page.context().setOffline(true);
+    await page.reload();
+    await page
+      .getByRole("button", {
+        name: new RegExp(name + " Construir|" + name + " Sentirte"),
+      })
+      .click();
+    await page.getByLabel("PIN", { exact: true }).fill("1234");
+    await page
+      .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+      .click();
+    await expect(companion.locator("canvas")).toHaveCount(1);
+    await page
+      .getByRole("button", { name: `Activar movimiento de ${character}` })
+      .click();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(
+      page.getByRole("button", { name: "Movimiento reducido", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: `Jugar con ${character}` }),
+    ).toBeDisabled();
+    const reduced = await companion.locator("canvas").screenshot();
+    await page.waitForTimeout(250);
+    expect(await companion.locator("canvas").screenshot()).toEqual(reduced);
+    await page
+      .getByRole("button", { name: "Registrar una comida", exact: true })
+      .click();
+    await expect(page.getByLabel("Nombre de la comida")).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+}
+
 test("agua suma al instante y conserva el total por fecha después de volver a entrar", async ({
   page,
 }) => {

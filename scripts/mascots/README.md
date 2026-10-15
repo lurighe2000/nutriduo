@@ -1,96 +1,70 @@
-# Mascotas: estado de trabajo
+# Mascotas de NutriDuo
 
-Este trabajo vive en `codex/mascotas-3d`, separado de los cambios de Claude.
-La app publicada no integra todavía estos modelos. `mascots.html` es una
-entrada de desarrollo; no está incluida como página en el build de producción.
-La rama incorporó la principal 1.16 (`72a5f0b`) con el merge `a64714c`.
-Revisar nuevamente la principal antes de cualquier futura integración para
-preservar avances posteriores de Claude; no desplegar esta rama encima.
+Stitch acompaña a Luca y Angel a Ari en Inicio. El visor de gestos está en
+`mascots.html` y se incluye en la publicación de producción.
 
-## Qué existe
+## Diseño elegido
 
-- Stitch: modelo descargado por el canal oficial de Sketchfab, con esqueleto
-  facial y corporal; diez clips propios exportados desde Blender. Faltan revisar
-  contactos y deformaciones en todos los clips y medir los celulares reales.
-- Angel: escultura obtenida únicamente desde la imagen elegida por Luca, con
-  la demo oficial gratuita de Hunyuan3D-2.1. El original tiene 415.870 triángulos;
-  la vista de volumen tiene 116.442 y pesa 2.097.864 bytes. **No tiene esqueleto,
-  expresiones, color ni animaciones.** La oreja caída y la cara necesitan trabajo.
-- La anterior Angel recoloreada desde Stitch fue retirada del visor. Una prueba
-  de proyección de color sobre la escultura también fue descartada: estiraba
-  labios, brazos y costados. No usar esos experimentos como activos finales.
-- Hay un nuevo estudio manual independiente, creado con `author_angel_study.py`:
-  cuerpo continuo, materiales rosados, V blanca corta, orejas redondeadas,
-  antenas detrás del cuerpo, flor, esqueleto y ensayos de ocho movimientos.
-  **Es un estudio de anatomía y rig, no un modelo aprobado.** La cara, las
-  manos, los hombros y las rodillas aún no cumplen el parecido y la deformación
-  buscados. No está exportado al visor ni incorporado a la app.
-- Visor con frente, tres cuartos, perfil y espalda; pausa, movimiento reducido,
-  suspensión fuera de pantalla y liberación de recursos WebGL.
+Luca seleccionó explícitamente el 15/10/2026 la escultura gris obtenida de su
+imagen de Angel (captura `1001232848.jpg`). `build_angel.py` conserva esa forma:
+reduce la malla para celular, aplica rosa, vientre claro, V blanca y flor, y agrega
+esqueleto, ojos y gestos. No usa el ensayo de Angel recoloreado desde Stitch ni
+el estudio paramétrico independiente de `author_angel_study.py`.
 
-## Referencia y archivos fuente locales
+Referencia de apariencia única: `e9d7c2032d1d829d746280cefeae2df4.jpg`.
+Origen, licencias, hashes y métricas: `public/mascots/credits.json`.
+Las animaciones son propias; no son capturas de movimiento ni archivos de la
+película, y no se afirma una reproducción cinematográfica exacta.
 
-Única imagen que decide la apariencia de Angel:
-`C:/Users/lucar/Downloads/e9d7c2032d1d829d746280cefeae2df4.jpg`.
-El análisis detallado está en `angel-reference.md`.
+## Comportamiento
 
-Los archivos de trabajo pesados quedan fuera del sitio público:
+- Una escena WebGL y sólo el GLB del perfil activo, con carga diferida de Three.js.
+- Respiración, parpadeo, saludos, miradas, manos, señal, baile y celebración.
+  Stitch también tiene una entrada y salida completas de la postura invertida.
+- Reacciones a comidas, proteína, agua, cierre del día y entrenamiento o salida
+  guardados. Sin registros no se interpreta un fracaso; descansar no se penaliza.
+- El botón de atención abre comidas, entrenamiento o progreso, o enfoca el agua.
+- La pausa se guarda en el perfil con un campo opcional compatible con respaldos
+  anteriores. Se respeta movimiento reducido y se suspende fuera de pantalla.
+- Se liberan escenas, texturas y recursos GPU al cambiar de vista. Ante un error
+  WebGL se mantiene una alternativa utilizable. La primera descarga necesita red;
+  el service worker guarda cada modelo solicitado para próximos usos sin red.
 
-- Original generado: `C:/Users/lucar/.codex/tools/mascot-3d/angel-from-reference.glb`.
-- Estudio editable: `C:/Users/lucar/.codex/tools/mascot-3d/sources/angel-reference-study.blend`.
-- Stitch editable: `C:/Users/lucar/.codex/tools/mascot-3d/sources/stitch.blend`.
-- Ensayos descartados: `C:/Users/lucar/.codex/tools/mascot-3d/reference-work/`.
-- Nuevo estudio manual editable:
-  `C:/Users/lucar/.codex/tools/mascot-3d/manual-angel/angel-authored-study.blend`.
-- Revisión de servicios y revocación: `generation-review.md`.
+## Fuentes reproducibles
 
-Origen, hash y límites de cada archivo público: `public/mascots/credits.json`.
-
-## Reconstrucción con textura y costo
-
-Luca inició sesión y autorizó una clave temporal de permisos mínimos para usar
-los demos gratuitos. No se activaron planes, facturación ni servicios pagos.
-Hunyuan3D-2 siguió fallando con `NameError`. TRELLIS.2 generó un panel plano;
-TRELLIS clásico entregó un GLB con textura, pero su vista de perfil y espalda
-mostró un relieve doble con un fondo rectangular. Ambos resultados se
-descartaron: no sirven para un personaje articulado. No repetir tareas idénticas
-ni presentar estos archivos como modelos válidos por tener extensión GLB.
-
-La clave `NutriDuo-modelos3D-temporal` quedó **revocada** el 15/10/2026 a las
-06:54 UTC por el endpoint oficial de revocación. La autenticación posterior
-devolvió HTTP 401 y la página de claves mostró `Invalidated`. Se eliminó su
-archivo temporal local. No reutilizarla ni crear otra sin nueva autorización.
-El siguiente trabajo es local en Blender, sin dependencia de una API de IA.
-
-## Reproducir la vista de volumen
-
-Blender oficial instalado en
+Blender oficial 4.5.9 LTS:
 `C:/Users/lucar/.codex/tools/blender/blender-4.5.9-windows-x64/blender.exe`.
-Ejecutar con `--background --factory-startup --disable-autoexec
---python-exit-code 1 --python scripts/mascots/prepare_sculpt.py -- INPUT.glb
-OUTPUT.glb SOURCE.blend`. Conservar el original y comprobar el código de salida.
+Usar `--background --factory-startup --disable-autoexec --python-exit-code 1`.
 
-`build.py` exporta únicamente Stitch; el código del viejo ensayo Angel no debe
-reactivarse. Para el visor: `npm run dev -- --port 5175 --strictPort`, luego
-`http://localhost:5175/mascots.html`.
+- Stitch: `--python scripts/mascots/build.py -- SOURCE.glb OUTPUT SOURCES`.
+  Origen descargado por el canal habilitado de Sketchfab, con crédito en JSON.
+- Angel: `--python scripts/mascots/build_angel.py -- public/mascots/angel-sculpt.glb OUTPUT`.
+  Genera un `.blend` editable, render y GLB; conservar OUTPUT fuera del sitio.
+- Revisión de clips exportados: `--python scripts/mascots/review_clips.py -- CHARACTER.glb OUTPUT`.
+  Renderiza cada clip y registra límites. Los límites de una muestra no acreditan
+  contactos de todos los fotogramas; el visor permite revisar las transiciones.
 
-Para reproducir el estudio manual, usar Blender con `--background
---factory-startup --disable-autoexec --python-exit-code 1 --python
-scripts/mascots/author_angel_study.py -- OUTPUT_DIRECTORY`, eligiendo una carpeta
-fuera del repositorio. Genera un `.blend` editable y vistas frontal, lateral y
-posterior. No exporta ni reemplaza los activos públicos. Los huesos y los
-ensayos de clips no prueban por sí solos que una animación sea aceptable.
+Proyectos editables locales:
+`C:/Users/lucar/.codex/tools/mascot-3d/sources/stitch.blend` y
+`C:/Users/lucar/.codex/tools/mascot-3d/approved-angel/angel.blend`.
+El original aprobado se conserva como `angel-sculpt.glb`; el original de alta
+resolución permanece en `C:/Users/lucar/.codex/tools/mascot-3d/angel-from-reference.glb`.
 
-Prueba específica: `npx playwright test --config scripts/mascots/playwright.config.ts`.
-Las pruebas del visor no prueban parecido, calidad de movimientos ni rendimiento
-real en Samsung/iPhone. No publicar los modelos como terminados antes de esa revisión.
+## Verificación
 
-Verificado antes del merge de 1.16: TypeScript, ESLint de los archivos nuevos, formato,
-51 pruebas unitarias, build de producción y prueba Playwright específica del
-visor (360/393/412/430/1280 px, claro/oscuro, pausa, movimiento reducido, ángulos
-y ausencia de animaciones ficticias en la escultura). No se ejecutó la suite
-e2e completa de la app: todavía no hubo integración ni publicación.
+TypeScript, ESLint, formato, pruebas unitarias y build. La suite de la app incluye
+ambos perfiles, 360/393/412/430 px, claro/oscuro, pausa persistente, reducción de
+movimiento, acceso a registrar comida y reapertura del modelo sin conexión.
+El visor tiene una prueba separada con ángulos, pausa y cambio de personaje.
+Se revisaron renders de los clips y reproducción real en Chromium.
 
-En la sesión posterior se ejecutó el nuevo estudio completo con Blender 4.5.9,
-salida 0, y se inspeccionaron sus tres vistas. Se detectaron los problemas
-indicados arriba; la revisión visual no está aprobada para publicar.
+La emulación de pantallas no equivale a medir FPS en el Samsung y el iPhone
+físicos. El parecido queda basado en la escultura elegida y su única foto;
+las superficies ocultas son inferidas.
+
+## Costo y credenciales
+
+La reproducción es local y no llama a IA. No se activaron servicios pagos.
+La clave temporal de Hugging Face se revocó y se eliminó de la PC: HTTP 401 al
+comprobarla y estado `Invalidated` en la cuenta. No hay claves en el repositorio.
+Los ensayos externos descartados se documentan en `generation-review.md`.
