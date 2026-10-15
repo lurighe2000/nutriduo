@@ -74,6 +74,11 @@
 }
 
 /* ---------- Day / night switch ---------- */
+.theme-control {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding-top: 36px;
+}
 .duo-switch {
   --sw-track: #e6eaf3;
   --sw-track-shadow: inset 4px 4px 8px #c5ccdb, inset -4px -4px 8px #ffffff;
@@ -83,7 +88,8 @@
   position: relative;
   flex-shrink: 0;
   width: 76px;
-  height: 38px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -140,10 +146,11 @@
 }
 .duo-switch-knob {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 30px;
-  height: 30px;
+  top: 50%;
+  left: 5px;
+  width: 34px;
+  height: 34px;
+  transform: translateY(-50%);
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -155,7 +162,7 @@
     box-shadow 0.5s ease;
 }
 .duo-switch.is-dark .duo-switch-knob {
-  transform: translateX(38px);
+  transform: translate(32px, -50%);
 }
 .duo-switch-knob svg {
   grid-area: 1 / 1;
@@ -208,6 +215,12 @@
 }
 .duo-switch.is-dark .duo-switch-stars i {
   opacity: 0.9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-control * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 /* ---------- Notch navigation bar (phones) ---------- */
 @media (max-width: 650px) {
@@ -728,7 +741,7 @@
 
 /* ---------- The buddy living on the switch ---------- */
 .duo-switch {
-  margin-top: 14px;
+  margin-top: 0;
 }
 .duo-switch-buddy {
   position: absolute;
@@ -1027,6 +1040,16 @@
 .app-shell .topbar {
   background: transparent;
   border-bottom-color: transparent;
+  height: auto;
+  min-height: 104px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.app-shell .topbar-right {
+  align-items: flex-end;
+}
+.app-shell .topbar-left {
+  align-self: flex-end;
 }
 .app-shell .day-complete {
   border-radius: 999px;
@@ -1101,8 +1124,12 @@
   --surface: var(--neo-bg);
   --soft: color-mix(in srgb, var(--neo-lo) 35%, var(--neo-bg));
   --border: transparent;
-  --neo-out: 9px 9px 20px var(--neo-lo), -9px -9px 20px var(--neo-hi);
-  --neo-out-sm: 5px 5px 12px var(--neo-lo), -5px -5px 12px var(--neo-hi);
+  --neo-out:
+    5px 6px 14px color-mix(in srgb, var(--neo-lo) 70%, transparent),
+    -4px -4px 12px color-mix(in srgb, var(--neo-hi) 60%, transparent);
+  --neo-out-sm:
+    3px 3px 8px color-mix(in srgb, var(--neo-lo) 70%, transparent),
+    -2px -2px 7px color-mix(in srgb, var(--neo-hi) 55%, transparent);
   --neo-in:
     inset 5px 5px 10px var(--neo-lo), inset -5px -5px 10px var(--neo-hi);
   background: var(--neo-bg);
@@ -1221,6 +1248,42 @@
   box-shadow: var(--neo-in);
   border-radius: 16px;
 }
+.app-shell .suggestions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.app-shell .suggestion.card {
+  padding: 20px;
+  margin: 0;
+  min-width: 0;
+  align-items: center;
+  border-radius: 24px;
+}
+.app-shell .suggestion > div,
+.app-shell .coach-note > div {
+  min-width: 0;
+}
+.app-shell .suggestion p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.app-shell .coach-note {
+  padding: 22px;
+  align-items: flex-start;
+}
+.app-shell .coach-note .eyebrow {
+  display: block;
+  line-height: 1.5;
+}
+@media (max-width: 900px) {
+  .app-shell .suggestions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .app-shell .mobile-add {
   box-shadow:
     var(--neo-out-sm),
@@ -1239,8 +1302,9 @@
 }
 @media (max-width: 650px) {
   .app-shell .topbar {
-    height: 84px;
-    padding-top: 14px;
+    height: auto;
+    min-height: 108px;
+    padding: 12px 18px;
   }
   .app-shell .notch-nav-bar {
     fill: var(--neo-bg);
@@ -1269,4 +1333,62 @@ body {
 }
 .notch-nav-shape {
   max-width: 100%;
+}
+
+/* Meal choices share the app's palette instead of opening an Android select. */
+.choice-field {
+  margin: 16px 0;
+}
+.choice-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.choice-trigger,
+.choice-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  text-align: left;
+  line-height: 1.5;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--muted) 20%, transparent);
+  border-radius: 16px;
+}
+.choice-trigger {
+  box-shadow: var(--neo-in);
+}
+.choice-trigger > span,
+.choice-option > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.choice-trigger > svg {
+  flex-shrink: 0;
+}
+.choice-options {
+  display: grid;
+  gap: 10px;
+}
+.choice-option[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+}
+.choice-check {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+}
+.choice-option[aria-pressed="true"] .choice-check {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--bg);
 }

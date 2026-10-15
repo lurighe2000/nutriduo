@@ -46,6 +46,133 @@ async function manualMeal(page: Page) {
   await page.getByRole("button", { name: "Confirmar y registrar" }).click();
   await expect(page.locator("dialog")).toHaveCount(0);
 }
+
+test("agua suma al instante y conserva el total por fecha después de volver a entrar", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await setup(page);
+  await page.getByRole("button", { name: "250 ml", exact: true }).click();
+  await expect(page.locator(".water-number")).toContainText("0,25");
+  await page.getByRole("button", { name: "500 ml", exact: true }).click();
+  await expect(page.locator(".water-number")).toContainText("0,75");
+  await expect(page.getByText("750 ml registrados en este día.")).toBeVisible();
+  await page.getByRole("button", { name: "Día anterior", exact: true }).click();
+  await expect(page.locator(".water-glasses")).toHaveAttribute(
+    "aria-label",
+    /^0 de /,
+  );
+  await page
+    .getByRole("button", { name: "Día siguiente", exact: true })
+    .click();
+  await expect(page.locator(".water-number")).toContainText("0,75");
+  await page.reload();
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await page.getByLabel("PIN", { exact: true }).fill("1234");
+  await page
+    .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+    .click();
+  await expect(page.locator(".water-number")).toContainText("0,75");
+});
+
+test("controles y tarjetas caben en celular y el selector de platos respeta el tema y volver", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await setup(page);
+  for (const width of [360, 412, 430, 1280]) {
+    await page.setViewportSize({ width, height: 915 });
+    for (const dark of [false, true]) {
+      if (
+        (await page
+          .getByRole("switch", { name: "Modo oscuro" })
+          .getAttribute("aria-checked")) !== String(dark)
+      )
+        await page.getByRole("switch", { name: "Modo oscuro" }).click();
+      const geometry = await page.locator(".duo-switch").evaluate((button) => {
+        const track = button.getBoundingClientRect();
+        const knob = button
+          .querySelector(".duo-switch-knob")!
+          .getBoundingClientRect();
+        const buddy = button
+          .querySelector(".duo-switch-buddy svg")!
+          .getBoundingClientRect();
+        return {
+          centerOffset: Math.abs(
+            track.y + track.height / 2 - knob.y - knob.height / 2,
+          ),
+          left: knob.left - track.left,
+          right: track.right - knob.right,
+          buddyTop: buddy.top,
+          viewport: innerWidth,
+          pageWidth: document.documentElement.scrollWidth,
+        };
+      });
+      expect(geometry.centerOffset).toBeLessThan(1);
+      expect(dark ? geometry.right : geometry.left).toBeCloseTo(5, 0);
+      expect(geometry.buddyTop).toBeGreaterThanOrEqual(0);
+      expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewport);
+    }
+  }
+  await page.setViewportSize({ width: 412, height: 915 });
+  const insets = await page
+    .locator(".suggestion > div, .coach-note > div")
+    .evaluateAll((contents) =>
+      contents.map((content) => {
+        const inner = content.getBoundingClientRect(),
+          outer = content.parentElement!.getBoundingClientRect();
+        return {
+          left: inner.left - outer.left,
+          right: outer.right - inner.right,
+        };
+      }),
+    );
+  for (const inset of insets) {
+    expect(inset.left).toBeGreaterThanOrEqual(18);
+    expect(inset.right).toBeGreaterThanOrEqual(18);
+  }
+  await page.screenshot({
+    path: "test-results/mobile-spacing-dark.png",
+    fullPage: true,
+  });
+  await page.getByRole("switch", { name: "Modo oscuro" }).click();
+  await page.screenshot({
+    path: "test-results/mobile-spacing-light.png",
+    fullPage: true,
+  });
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Comidas", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Menú semanal", exact: true }).click();
+  await page.getByRole("button", { name: "Preparar mi menú semanal" }).click();
+  const trigger = page.getByRole("button", {
+    name: /^Cambiar plato de Desayuno:/,
+  });
+  const previous = await trigger.innerText();
+  await trigger.click();
+  await expect(
+    page.getByRole("dialog", { name: "Cambiar plato de Desayuno" }),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/meal-choice-mobile.png" });
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(trigger).toHaveText(previous);
+  await trigger.click();
+  const alternative = page
+    .getByRole("dialog")
+    .locator('.choice-option[aria-pressed="false"]')
+    .first();
+  const selected = await alternative.innerText();
+  await alternative.click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(trigger).toHaveText(selected);
+  await expect(page.locator(".record-grid .card h3").first()).toHaveText(
+    selected,
+  );
+});
 function syntheticFemmtoPDF() {
   const lines = [
     "ID Altura Edad Genero Fecha / hora",

@@ -86,7 +86,7 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, [party]);
   const shownCalories = useCountUp(total.calories);
-  const shownWater = useCountUp(water);
+  const [savingWater, setSavingWater] = useState(false);
   const isComplete = (d: string) =>
     data.settings.some((s) => s.date === d && s.complete);
   let streak = 0;
@@ -178,7 +178,7 @@ export default function Dashboard() {
             <div>
               <dt className="r2">AGUA</dt>
               <dd>
-                {(Math.round(shownWater / 50) / 20).toLocaleString("es-AR")}
+                {(water / 1000).toLocaleString("es-AR")}
                 <small> / {goal.water / 1000} L</small>
               </dd>
             </div>
@@ -312,8 +312,13 @@ export default function Dashboard() {
             </h2>
             <span className="muted small">HOY</span>
           </div>
-          <div className="water-number">
-            {(Math.round(shownWater / 10) / 100).toLocaleString("es-AR")}{" "}
+          <div
+            className="water-number"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {(water / 1000).toLocaleString("es-AR")}{" "}
             <small>/ {goal.water / 1000} L</small>
           </div>
           <div
@@ -329,18 +334,25 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <p className="muted small">Una pausa. Un vaso de agua.</p>
+          <p className="muted small">
+            {water
+              ? `${water.toLocaleString("es-AR")} ml registrados en este día.`
+              : "Una pausa. Un vaso de agua."}
+          </p>
           <div className="water-actions">
             {[250, 500].map((ml) => (
               <Button
                 secondary
                 key={ml}
+                disabled={savingWater}
                 onClick={() => {
+                  if (savingWater) return;
+                  setSavingWater(true);
                   haptic(12);
                   void run(
                     () => repo.save("hydration", { ...meta(p.id), date, ml }),
                     "Agua registrada",
-                  );
+                  ).finally(() => setSavingWater(false));
                 }}
               >
                 <Plus size={14} />

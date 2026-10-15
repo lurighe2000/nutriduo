@@ -20,6 +20,7 @@ import { download } from "../../services/backup";
 import { niceDate, shiftDate } from "../../utils/date";
 import MealEditor from "./MealEditor";
 import Micronutrients from "../../components/Micronutrients";
+import ChoicePicker from "../../components/ChoicePicker";
 import {
   cloudCredentials,
   currentHousehold,
@@ -328,63 +329,57 @@ export default function WeeklyMenu() {
                         <p>{recipe.preparation}</p>
                         <Micronutrients items={items} />
                       </details>
-                      <label className="field">
-                        <span>Cambiar plato de {m.slot}</span>
-                        <select
-                          value={m.recipe}
-                          onChange={(e) => {
-                            const replacement = menuRecipes.find(
-                              (r) => r.id === e.target.value,
-                            )!;
-                            if (sharing) {
-                              void run(
-                                () =>
-                                  replaceHouseholdDish(
-                                    p.id,
-                                    day,
-                                    m.slot,
-                                    replacement.id,
-                                  ),
-                                "Plato y compras de ambos actualizados",
-                              );
-                              return;
-                            }
-                            void run(async () => {
-                              const current = await db.profiles.get(p.id);
-                              if (!current?.weeklyMenu)
-                                throw new Error("Volvé a generar el menú");
-                              const updated = {
-                                ...current.weeklyMenu,
-                                meals: current.weeklyMenu.meals.map((x) =>
-                                  x.day === day && x.slot === m.slot
-                                    ? {
-                                        ...x,
-                                        recipe: replacement.id,
-                                        portions: fitPortions(
-                                          replacement,
-                                          current.weeklyMenu!.targets,
-                                          m.slot,
-                                        ),
-                                      }
-                                    : x,
+                      <ChoicePicker
+                        label={`Cambiar plato de ${m.slot}`}
+                        value={m.recipe}
+                        options={allowedRecipes(m.slot, sharedExcluded).map(
+                          (r) => ({ value: r.id, label: r.name }),
+                        )}
+                        onChange={(recipeId) => {
+                          const replacement = menuRecipes.find(
+                            (r) => r.id === recipeId,
+                          )!;
+                          if (sharing) {
+                            return run(
+                              () =>
+                                replaceHouseholdDish(
+                                  p.id,
+                                  day,
+                                  m.slot,
+                                  replacement.id,
                                 ),
-                              };
-                              await db.profiles.put(
-                                profileSchema.parse({
-                                  ...current,
-                                  weeklyMenu: updated,
-                                }),
-                              );
-                            }, "Plato y compras actualizados");
-                          }}
-                        >
-                          {allowedRecipes(m.slot, sharedExcluded).map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                              "Plato y compras de ambos actualizados",
+                            );
+                          }
+                          return run(async () => {
+                            const current = await db.profiles.get(p.id);
+                            if (!current?.weeklyMenu)
+                              throw new Error("Volvé a generar el menú");
+                            const updated = {
+                              ...current.weeklyMenu,
+                              meals: current.weeklyMenu.meals.map((x) =>
+                                x.day === day && x.slot === m.slot
+                                  ? {
+                                      ...x,
+                                      recipe: replacement.id,
+                                      portions: fitPortions(
+                                        replacement,
+                                        current.weeklyMenu!.targets,
+                                        m.slot,
+                                      ),
+                                    }
+                                  : x,
+                              ),
+                            };
+                            await db.profiles.put(
+                              profileSchema.parse({
+                                ...current,
+                                weeklyMenu: updated,
+                              }),
+                            );
+                          }, "Plato y compras actualizados");
+                        }}
+                      />
                       <Button
                         secondary
                         onClick={() => {

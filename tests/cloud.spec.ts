@@ -347,13 +347,16 @@ test("respaldo cifrado sobre SQLite real: reinstalar, fotos, usuarios separados 
       path: "test-results/shared-groceries-mobile.png",
     });
     await third.getByRole("button", { name: "Platos", exact: true }).click();
-    const breakfastSelect = third.getByLabel("Cambiar plato de Desayuno");
-    const nextBreakfast =
-      (await breakfastSelect.inputValue()) === "toast" ? "oats" : "toast";
-    const nextBreakfastName = await breakfastSelect
-      .locator(`option[value="${nextBreakfast}"]`)
-      .innerText();
-    await breakfastSelect.selectOption(nextBreakfast);
+    await third
+      .getByRole("button", { name: /^Cambiar plato de Desayuno:/ })
+      .click();
+    const nextBreakfast = third
+      .getByRole("dialog")
+      .locator('.choice-option[aria-pressed="false"]')
+      .first();
+    const nextBreakfastName = await nextBreakfast.innerText();
+    await nextBreakfast.click();
+    await expect(third.getByRole("dialog")).toHaveCount(0);
     await expect(third.locator(".record-grid .card h3").first()).toHaveText(
       nextBreakfastName,
     );
