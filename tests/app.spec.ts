@@ -2027,6 +2027,9 @@ test("graba una salida con GPS, la guarda y muestra el recorrido", async ({
   await expect(
     page.getByRole("img", { name: /Recorrido de la salida/ }),
   ).toBeVisible();
+  await expect(page.getByLabel("Para recuperar")).toContainText(
+    "g de proteína",
+  );
   await page.getByRole("button", { name: "Volver a Mis salidas" }).click();
   await expect(page.locator(".my-runs-item")).toHaveCount(1);
   await page.locator(".my-runs-item").click();

@@ -1,29 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  ChevronLeft,
-  Footprints,
-  Heart,
-  LocateFixed,
-  MapPin,
-  Pause,
-  Play,
-  Share2,
-  Smartphone,
-  Square,
-  Volume2,
-} from "lucide-react";
+import { Footprints, Heart, Pause, Play, Square, Volume2 } from "lucide-react";
 import { useApp } from "../../app/context";
 import { useDialogBack } from "../../app/navigation";
 import { meta } from "../../db";
-import { activitySchema, type Records } from "../../schemas";
-import { Celebration, haptic } from "../../components/motion";
+import { activitySchema } from "../../schemas";
+import { haptic } from "../../components/motion";
 import { localDate, niceDate } from "../../utils/date";
 import {
   RunSession,
   calories,
-  decodeRoute,
-  distance,
   encodeRoute,
   formatClock,
   formatKm,
@@ -32,323 +18,27 @@ import {
   type RunKind,
   type RunSnapshot,
 } from "../../services/runTracker";
-import RouteMap from "./RouteMap";
-import ShareSheet from "./ShareSheet";
 import { useHeartRate } from "../../services/heartRate";
+import RouteMap from "./RouteMap";
+import RunPermission from "./RunPermission";
+import { RunSummary } from "./RunSummary";
+import {
+  askMotionPermission,
+  speak,
+  spokenPace,
+  useCadence,
+  useWakeLock,
+} from "./runDevice";
+import {
+  clearSnapshot,
+  kindVerb,
+  latestWeight,
+  writeSnapshot,
+  type DatedRun,
+  type Run,
+} from "./runShared";
 
-export type Run = NonNullable<Records["activity"]["runs"]>[number];
-export type DatedRun = Run & { date: string };
 type Step = "perm" | "denied" | "count" | "live" | "short" | "summary";
-
-const SNAPSHOT_TTL = 6 * 60 * 60 * 1000;
-const snapshotKey = (profileId: string) => `nutriduo-run-${profileId}`;
-
-export function readSnapshot(profileId: string): RunSnapshot | undefined {
-  try {
-    const value = JSON.parse(
-      localStorage.getItem(snapshotKey(profileId)) ?? "null",
-    ) as RunSnapshot | null;
-    if (value && Date.now() - value.savedAt < SNAPSHOT_TTL) return value;
-  } catch {
-    // Storage unavailable or corrupt: nothing to resume.
-  }
-  return undefined;
-}
-export function clearSnapshot(profileId: string) {
-  try {
-    localStorage.removeItem(snapshotKey(profileId));
-  } catch {
-    // Ignore.
-  }
-}
-function writeSnapshot(profileId: string, snapshot: RunSnapshot) {
-  try {
-    localStorage.setItem(snapshotKey(profileId), JSON.stringify(snapshot));
-  } catch {
-    // Ignore: the run still works, it just cannot be resumed after a reload.
-  }
-}
-
-export const kindVerb: Record<RunKind, string> = {
-  Carrera: "correr",
-  "Caminata y trote": "trotar",
-  Caminata: "caminar",
-};
-
-function speak(text: string, enabled: boolean) {
-  if (!enabled || !("speechSynthesis" in window)) return;
-  try {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "es-AR";
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  } catch {
-    // Voice is a nicety.
-  }
-}
-
-function spokenPace(seconds: number) {
-  const s = Math.round(seconds);
-  return `${Math.floor(s / 60)} minutos ${s % 60} segundos por kilómetro`;
-}
-
-function useWakeLock(active: boolean) {
-  useEffect(() => {
-    if (!active || !("wakeLock" in navigator)) return;
-    let lock: WakeLockSentinel | undefined;
-    let alive = true;
-    const acquire = async () => {
-      try {
-        const next = await navigator.wakeLock.request("screen");
-        if (alive) lock = next;
-        else void next.release();
-      } catch {
-        // Battery saver or unsupported: the screen may turn off.
-      }
-    };
-    void acquire();
-    const visible = () => {
-      if (document.visibilityState === "visible") void acquire();
-    };
-    document.addEventListener("visibilitychange", visible);
-    return () => {
-      alive = false;
-      document.removeEventListener("visibilitychange", visible);
-      void lock?.release().catch(() => {});
-    };
-  }, [active]);
-}
-
-/** Steps per minute from the phone's accelerometer (no extra permission on Android). */
-function useCadence(active: boolean) {
-  const [cadence, setCadence] = useState<number>();
-  useEffect(() => {
-    if (!active || !("DeviceMotionEvent" in window)) return;
-    const steps: number[] = [];
-    let average = 9.8;
-    let above = false;
-    let lastStep = 0;
-    const onMotion = (event: DeviceMotionEvent) => {
-      const a = event.accelerationIncludingGravity;
-      if (!a || a.x == null || a.y == null || a.z == null) return;
-      const magnitude = Math.hypot(a.x, a.y, a.z);
-      average = average * 0.95 + magnitude * 0.05;
-      const now = performance.now();
-      if (!above && magnitude > average + 1.6 && now - lastStep > 250) {
-        above = true;
-        lastStep = now;
-        steps.push(now);
-      } else if (above && magnitude < average) above = false;
-    };
-    const timer = window.setInterval(() => {
-      const now = performance.now();
-      while (steps.length && now - steps[0] > 15_000) steps.shift();
-      setCadence(steps.length >= 20 ? steps.length * 4 : undefined);
-    }, 3000);
-    window.addEventListener("devicemotion", onMotion);
-    return () => {
-      window.removeEventListener("devicemotion", onMotion);
-      window.clearInterval(timer);
-    };
-  }, [active]);
-  return cadence;
-}
-
-type MotionPermission = { requestPermission?: () => Promise<string> };
-/** iPhone asks for motion access; it must be called from a tap. */
-export function askMotionPermission() {
-  const request = (
-    window.DeviceMotionEvent as unknown as MotionPermission | undefined
-  )?.requestPermission;
-  if (typeof request === "function") void request().catch(() => {});
-}
-
-function latestWeight(weights: Records["weights"][]) {
-  return [...weights].sort((a, b) => b.date.localeCompare(a.date))[0]?.kg;
-}
-
-function paceColors(segments: [number, number][][], splits?: number[]) {
-  if (!splits || splits.length < 2) return undefined;
-  const sorted = [...splits].sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)];
-  let walked = 0;
-  return segments.map((segment) =>
-    segment.map((p, i) => {
-      if (i > 0)
-        walked += distance(
-          { lat: segment[i - 1][0], lng: segment[i - 1][1] },
-          { lat: p[0], lng: p[1] },
-        );
-      const pace =
-        splits[Math.min(splits.length - 1, Math.floor(walked / 1000))];
-      return pace < median * 0.97
-        ? "var(--duo-1)"
-        : pace > median * 1.03
-          ? "var(--duo-3)"
-          : "var(--duo-2)";
-    }),
-  );
-}
-
-export function RunSummary({
-  run,
-  title,
-  subtitle,
-  celebrate = false,
-  onClose,
-  onDelete,
-}: {
-  run: DatedRun;
-  title: string;
-  subtitle: string;
-  celebrate?: boolean;
-  onClose: () => void;
-  onDelete?: () => void;
-}) {
-  const [sharing, setSharing] = useState(false);
-  const dark = document.documentElement.dataset.theme === "dark";
-  const segments = run.route ? decodeRoute(run.route) : [];
-  const pace = run.durationSeconds / run.distanceKm;
-  const fastest = run.splits?.length ? Math.min(...run.splits) : 0;
-  const slowest = run.splits?.length ? Math.max(...run.splits) : 0;
-  const extras = [
-    run.calories !== undefined && { label: "kcal", value: run.calories },
-    run.elevation !== undefined && {
-      label: "m de desnivel",
-      value: run.elevation,
-    },
-    run.cadence !== undefined && { label: "pasos/min", value: run.cadence },
-    run.heartRate !== undefined && {
-      label: run.heartRateMax
-        ? `lpm prom. · ${run.heartRateMax} máx.`
-        : "lpm prom.",
-      value: run.heartRate,
-    },
-    run.maxSpeed !== undefined && {
-      label: "km/h máx.",
-      value: run.maxSpeed.toFixed(1).replace(".", ","),
-    },
-  ].filter(Boolean) as { label: string; value: string | number }[];
-  return (
-    <div className="run-summary">
-      <div className="run-top">
-        <button
-          type="button"
-          className="run-round small"
-          aria-label="Volver a Mis salidas"
-          onClick={onClose}
-        >
-          <ChevronLeft size={22} />
-        </button>
-        <span className="run-muted">{subtitle}</span>
-        <span className="run-top-spacer" />
-      </div>
-      <div className="duo-burst-anchor run-summary-head">
-        <h2>{title}</h2>
-        <Celebration show={celebrate} />
-      </div>
-      {segments.length > 0 ? (
-        <RouteMap
-          className="run-summary-map"
-          segments={segments}
-          colors={paceColors(segments, run.splits)}
-          dark={dark}
-          label="Recorrido de la salida coloreado por ritmo"
-        />
-      ) : (
-        <p className="run-muted">Salida cargada a mano, sin recorrido.</p>
-      )}
-      <div className="run-stats">
-        <div>
-          <strong>{String(run.distanceKm.toFixed(2)).replace(".", ",")}</strong>
-          <span>KM</span>
-        </div>
-        <div>
-          <strong>{formatClock(run.durationSeconds)}</strong>
-          <span>TIEMPO</span>
-        </div>
-        <div>
-          <strong>{formatPace(pace)}</strong>
-          <span>RITMO</span>
-        </div>
-      </div>
-      {extras.length > 0 && (
-        <p className="run-extras">
-          {extras.map((e) => (
-            <span key={e.label}>
-              <b>{e.value}</b> {e.label}
-            </span>
-          ))}
-        </p>
-      )}
-      {run.splits && run.splits.length > 0 && (
-        <div className="run-splits">
-          <span className="run-label">PARCIALES</span>
-          {run.splits.map((s, i) => (
-            <div className="run-split" key={i}>
-              <span>Km {i + 1}</span>
-              <span className="run-split-track">
-                <i
-                  className={s === fastest ? "fast" : ""}
-                  style={{
-                    width: `${slowest === fastest ? 80 : 45 + ((slowest - s) / (slowest - fastest)) * 55}%`,
-                    animationDelay: `${0.3 + i * 0.08}s`,
-                  }}
-                />
-              </span>
-              <span>{formatPace(s)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="run-summary-actions">
-        <button
-          type="button"
-          className="run-primary"
-          onClick={() => setSharing(true)}
-        >
-          <Share2 size={18} /> Compartir
-        </button>
-        {onDelete && (
-          <button type="button" className="run-text" onClick={onDelete}>
-            Eliminar salida
-          </button>
-        )}
-      </div>
-      {sharing && <ShareSheet run={run} onClose={() => setSharing(false)} />}
-    </div>
-  );
-}
-
-/** A saved run, full screen, with back-button support. */
-export function RunDetail({
-  run,
-  onClose,
-  onDelete,
-}: {
-  run: DatedRun;
-  onClose: () => void;
-  onDelete: () => void;
-}) {
-  const close = useDialogBack(onClose);
-  return createPortal(
-    <div
-      className="run-screen run-step-summary"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Detalle de la salida"
-    >
-      <RunSummary
-        run={run}
-        title={`${run.distanceKm.toFixed(2).replace(".", ",")} km`}
-        subtitle={niceDate(run.date)}
-        onClose={close}
-        onDelete={onDelete}
-      />
-    </div>,
-    document.querySelector(".app-shell") ?? document.body,
-  );
-}
 
 export default function RunScreen({
   kind,
@@ -602,89 +292,15 @@ export default function RunScreen({
       aria-modal="true"
       aria-label="Salida con GPS"
     >
-      {step === "perm" && (
-        <div className="run-perm">
-          <div className="run-orb">
-            <span className="run-pulse" aria-hidden="true" />
-            <span className="run-orb-core">
-              <MapPin size={44} />
-            </span>
-          </div>
-          <h2>Activá la ubicación precisa</h2>
-          <p className="run-muted">
-            Así medimos cada metro: distancia, ritmo, velocidad y tu recorrido
-            en el mapa. Solo mientras salís, y queda en tu celular.
-          </p>
-          <div className="run-options">
-            <div className="run-option">
-              <LocateFixed size={22} />
-              <div>
-                <strong>Ubicación precisa</strong>
-                <span>GPS de alta precisión · necesario</span>
-              </div>
-            </div>
-            <div className="run-option">
-              <Footprints size={22} />
-              <div>
-                <strong>Movimiento del celular</strong>
-                <span>Cuenta tus pasos por minuto · opcional</span>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={motion}
-                aria-label="Movimiento del celular"
-                className="run-toggle"
-                onClick={() => setMotion((m) => !m)}
-              >
-                <i />
-              </button>
-            </div>
-            <div className="run-option">
-              <Smartphone size={22} />
-              <div>
-                <strong>Pantalla encendida</strong>
-                <span>Dejala prendida para no perder la señal</span>
-              </div>
-            </div>
-          </div>
-          <p className="run-muted small">
-            En iPhone elegí «Permitir al usar la app» con «Ubicación exacta»
-            activada.
-          </p>
-          <div className="run-grow" />
-          <button type="button" className="run-primary" onClick={allow}>
-            Permitir y empezar
-          </button>
-          <button type="button" className="run-text" onClick={close}>
-            Ahora no
-          </button>
-        </div>
+      {(step === "perm" || step === "denied") && (
+        <RunPermission
+          denied={step === "denied"}
+          motion={motion}
+          onToggleMotion={() => setMotion((m) => !m)}
+          onAllow={allow}
+          onClose={close}
+        />
       )}
-
-      {step === "denied" && (
-        <div className="run-perm">
-          <div className="run-orb">
-            <span className="run-orb-core">
-              <MapPin size={44} />
-            </span>
-          </div>
-          <h2>Necesitamos tu ubicación</h2>
-          <p className="run-muted">
-            La ubicación está bloqueada para NutriDuo. Activala en los ajustes
-            del navegador (Ubicación → Permitir, con ubicación exacta) y volvé a
-            intentar.
-          </p>
-          <div className="run-grow" />
-          <button type="button" className="run-primary" onClick={allow}>
-            Volver a intentar
-          </button>
-          <button type="button" className="run-text" onClick={close}>
-            Cerrar
-          </button>
-        </div>
-      )}
-
       {step === "count" && (
         <div className="run-count">
           <Footprints size={52} className="run-runner" />

@@ -13,7 +13,7 @@ import {
   renderShareCard,
   type ShareTemplate,
 } from "../../services/runShare";
-import type { DatedRun } from "./RunScreen";
+import type { DatedRun } from "./runShared";
 
 const LABELS: Record<string, string> = {
   Carrera: "Corrida",

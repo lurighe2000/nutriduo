@@ -24,6 +24,7 @@ import { rounded, rangeDates, today } from "../../utils/date";
 import { meta } from "../../db";
 import { Button, Empty, SectionTitle } from "../../components/ui";
 import { SOURCE_LABELS } from "../../nutrition/constants";
+import RunToday from "../workouts/RunToday";
 import { useEffect, useState } from "react";
 import {
   Celebration,
@@ -305,6 +306,7 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
+        <RunToday />
         <section className="card hydration-card">
           <div className="card-heading">
             <h2>
