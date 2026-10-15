@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
 export const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
@@ -71,18 +71,27 @@ export function Celebration({ show }: { show: boolean }) {
 }
 
 /** Duo, the round NutriDuo buddy in the profile's colors. */
-export function DuoBuddy({ size = 76 }: { size?: number }) {
+export function DuoBuddy({
+  size = 76,
+  className = "",
+  label = "Duo, la mascota de NutriDuo, sonriendo",
+}: {
+  size?: number;
+  className?: string;
+  label?: string;
+}) {
+  const fill = `duoBuddy${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <svg
-      className="duo-buddy"
+      className={`duo-buddy ${className}`}
       width={size}
       height={size}
       viewBox="0 0 84 84"
       role="img"
-      aria-label="Duo, la mascota de NutriDuo, sonriendo"
+      aria-label={label}
     >
       <defs>
-        <linearGradient id="duoBuddyFill" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={fill} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="var(--duo-3)" />
           <stop offset="1" stopColor="var(--duo-1)" />
         </linearGradient>
@@ -90,7 +99,7 @@ export function DuoBuddy({ size = 76 }: { size?: number }) {
       <ellipse cx="42" cy="78" rx="22" ry="4" className="duo-buddy-shadow" />
       <path
         d="M42 8 C58 8 72 24 72 44 C72 62 59 72 42 72 C25 72 12 62 12 44 C12 24 26 8 42 8 Z"
-        fill="url(#duoBuddyFill)"
+        fill={`url(#${fill})`}
       />
       <ellipse cx="33" cy="22" rx="8" ry="5" fill="#fff" opacity=".35" />
       <g className="duo-buddy-eyes">

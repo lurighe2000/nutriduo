@@ -44,7 +44,13 @@ export default function NotchNav({
   useLayoutEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const update = () => setWidth(Math.max(280, node.clientWidth));
+    const update = () =>
+      setWidth(
+        Math.max(
+          280,
+          Math.min(node.clientWidth, document.documentElement.clientWidth),
+        ),
+      );
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);

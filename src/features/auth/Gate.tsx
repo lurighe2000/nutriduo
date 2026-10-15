@@ -17,6 +17,7 @@ import { profileSchema, type Profile } from "../../schemas";
 import { today, rounded } from "../../utils/date";
 import { Button, Field, NumberField, Modal } from "../../components/ui";
 import CloudAccount from "../settings/CloudAccount";
+import { DuoBuddy } from "../../components/motion";
 export default function Gate({
   profiles,
   onUnlock,
@@ -126,6 +127,10 @@ export default function Gate({
       </div>
       {!p ? (
         <section className="welcome-content">
+          <div className="gate-duo" aria-hidden="true">
+            <DuoBuddy className="tone-luca" size={84} label="" />
+            <DuoBuddy className="tone-ari" size={74} label="" />
+          </div>
           <span className="eyebrow">NUTRIDUO</span>
           <h1>Elegí tu perfil</h1>
           <p>Comidas, entrenamiento y progreso, en un solo lugar.</p>

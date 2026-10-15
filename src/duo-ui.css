@@ -989,3 +989,284 @@
     transform: translateY(26px);
   }
 }
+
+/* ---------- 1.10: one visual language across the app ---------- */
+.app-shell {
+  font-family: Manrope, "DM Sans", system-ui, sans-serif;
+}
+.app-shell h1,
+.app-shell h2,
+.app-shell h3 {
+  font-family: Manrope, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.app-shell .eyebrow {
+  color: var(--primary);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.app-shell .card,
+.app-shell .cloud-backup-prompt,
+.app-shell .coach-note {
+  border-radius: 26px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 16px 36px -28px rgba(20, 40, 90, 0.35);
+}
+.app-shell .button:not(.secondary) {
+  border: none;
+  background: var(--duo-button, var(--primary));
+  color: #fff;
+  box-shadow: 0 12px 24px -14px var(--duo-shadow, rgba(0, 0, 0, 0.4));
+}
+.app-shell .button {
+  border-radius: 999px;
+  font-weight: 800;
+}
+.app-shell .topbar {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+.app-shell .day-complete {
+  border-radius: 999px;
+  font-weight: 800;
+}
+.app-shell .day-complete.checked {
+  background: var(--duo-button, var(--primary));
+  color: #fff;
+  border-color: transparent;
+}
+@media (max-width: 650px) {
+  /* Keep the page taller than the screen at all times: when a section was
+     loading the page shrank, the browser toolbar toggled and every fixed
+     element (bar and + button) jumped. */
+  .app-shell main {
+    min-height: calc(100lvh + 2px);
+  }
+  .app-shell .loading {
+    min-height: 100lvh;
+  }
+  .app-shell .bottom-nav.notch-nav {
+    transform: translateZ(0);
+  }
+  .app-shell .section-title {
+    align-items: flex-end;
+  }
+  .app-shell .section-title h1 {
+    font-size: 30px;
+  }
+  .app-shell .section-title > .button {
+    display: none;
+  }
+  .app-shell .page-subtitle {
+    display: none;
+  }
+  .app-shell .cloud-backup-prompt {
+    margin: 20px 0 0;
+    padding: 14px 16px;
+  }
+  .app-shell .dashboard-grid {
+    gap: 12px;
+  }
+}
+
+.app-shell .duo-score .eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---------- Soft relief ("profundo") surfaces, same feel as the switch ---------- */
+.app-shell.theme-luca {
+  --neo-bg: #e4ebf5;
+  --neo-hi: #ffffff;
+  --neo-lo: #c3d0e3;
+}
+.app-shell.theme-ari {
+  --neo-bg: #f4e6ec;
+  --neo-hi: #ffffff;
+  --neo-lo: #dfc7d2;
+}
+.app-shell.theme-luca.dark {
+  --neo-bg: #0e1631;
+  --neo-hi: rgba(78, 104, 176, 0.2);
+  --neo-lo: rgba(0, 0, 0, 0.6);
+}
+.app-shell.theme-ari.dark {
+  --neo-bg: #200d1d;
+  --neo-hi: rgba(170, 80, 140, 0.18);
+  --neo-lo: rgba(0, 0, 0, 0.6);
+}
+.app-shell {
+  --bg: var(--neo-bg);
+  --surface: var(--neo-bg);
+  --soft: color-mix(in srgb, var(--neo-lo) 35%, var(--neo-bg));
+  --border: transparent;
+  --neo-out: 9px 9px 20px var(--neo-lo), -9px -9px 20px var(--neo-hi);
+  --neo-out-sm: 5px 5px 12px var(--neo-lo), -5px -5px 12px var(--neo-hi);
+  --neo-in:
+    inset 5px 5px 10px var(--neo-lo), inset -5px -5px 10px var(--neo-hi);
+  background: var(--neo-bg);
+}
+.app-shell .card,
+.app-shell .cloud-backup-prompt,
+.app-shell .coach-note,
+.app-shell .duo-greeting,
+.app-shell .duo-rings-card,
+.app-shell .duo-score,
+.app-shell .energy-card,
+.app-shell .training-preview,
+.app-shell .suggestion {
+  background: var(--neo-bg);
+  border: none;
+  box-shadow: var(--neo-out);
+  color: var(--ink);
+}
+.app-shell .duo-greeting {
+  background: var(--neo-bg);
+}
+/* Accents live in the content, not in big colored blocks. */
+.app-shell .duo-score strong,
+.app-shell .energy-card .ring-text strong,
+.app-shell .energy-copy > strong {
+  background: var(--duo-button, var(--primary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.app-shell .duo-score p,
+.app-shell .duo-score .eyebrow,
+.app-shell .energy-card h2,
+.app-shell .energy-copy p,
+.app-shell .energy-copy .eyebrow,
+.app-shell .ring-text > span,
+.app-shell .energy-note,
+.app-shell .macro > span,
+.app-shell .macro strong small {
+  color: var(--muted);
+}
+.app-shell .energy-card .macro strong,
+.app-shell .energy-card h2 {
+  color: var(--ink);
+}
+.app-shell .energy-card .ring-text svg {
+  color: var(--primary);
+}
+.app-shell .energy-card .ring-track {
+  stroke: var(--soft);
+}
+.app-shell .energy-card .pill,
+.app-shell .duo-chip {
+  background: var(--neo-bg);
+  color: var(--primary);
+  border: none;
+  box-shadow: var(--neo-out-sm);
+}
+.app-shell .duo-week i {
+  border: none;
+  box-shadow: var(--neo-in);
+}
+.app-shell .duo-week li.done i {
+  background: var(--duo-button, var(--primary));
+  box-shadow: var(--neo-out-sm);
+}
+.app-shell .duo-week li {
+  color: var(--muted);
+}
+.app-shell .progress-track {
+  background: var(--neo-bg);
+  box-shadow: var(--neo-in);
+  height: 10px;
+  border-radius: 99px;
+}
+.app-shell .progress-track div {
+  border-radius: 99px;
+  background: var(--duo-button, var(--primary)) !important;
+}
+.app-shell .duo-ring-track {
+  stroke: var(--soft);
+}
+.app-shell .button.secondary,
+.app-shell .water-actions button,
+.app-shell .day-complete {
+  background: var(--neo-bg);
+  border: none;
+  box-shadow: var(--neo-out-sm);
+  color: var(--ink);
+}
+.app-shell .button.secondary:active,
+.app-shell .water-actions button:active,
+.app-shell .day-complete:active {
+  box-shadow: var(--neo-in);
+  transform: none;
+}
+.app-shell .day-complete.checked {
+  box-shadow: var(--neo-in);
+  background: var(--neo-bg);
+  color: var(--primary);
+}
+.app-shell input,
+.app-shell select,
+.app-shell textarea {
+  background: var(--neo-bg);
+  border-color: transparent;
+  box-shadow: var(--neo-in);
+}
+.app-shell .meal-row,
+.app-shell .suggestion-icon,
+.app-shell .meal-emoji {
+  background: var(--neo-bg);
+}
+.app-shell .meal-emoji,
+.app-shell .suggestion-icon {
+  box-shadow: var(--neo-in);
+  border-radius: 16px;
+}
+.app-shell .mobile-add {
+  box-shadow:
+    var(--neo-out-sm),
+    0 10px 24px -8px var(--duo-shadow, #213c6450);
+}
+.app-shell .topbar .profile-avatar {
+  box-shadow: var(--neo-out-sm);
+}
+/* Switch matches the surface it sits on. */
+.app-shell .duo-switch {
+  --sw-track: var(--neo-bg);
+  --sw-track-shadow: var(--neo-in);
+  --sw-knob: var(--neo-bg);
+  --sw-knob-shadow: var(--neo-out-sm);
+  margin-top: 0;
+}
+@media (max-width: 650px) {
+  .app-shell .topbar {
+    height: 84px;
+    padding-top: 14px;
+  }
+  .app-shell .notch-nav-bar {
+    fill: var(--neo-bg);
+  }
+  .app-shell .notch-nav-shape {
+    filter: drop-shadow(6px 8px 12px var(--neo-lo))
+      drop-shadow(-4px -4px 8px var(--neo-hi));
+  }
+  .app-shell .notch-nav-circle {
+    border-radius: 50%;
+    box-shadow: var(--neo-out-sm);
+  }
+}
+
+/* Section slides (translateX) must never widen the page: on phones a wider page
+   zooms the layout out and fixed elements (bar, + button) slide off-screen. */
+html,
+body {
+  overflow-x: clip;
+}
+.app-shell {
+  overflow-x: clip;
+}
+.app-shell .bottom-nav.notch-nav {
+  max-width: 100vw;
+}
+.notch-nav-shape {
+  max-width: 100%;
+}

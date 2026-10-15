@@ -13,6 +13,7 @@ import AppUpdate from "./components/AppUpdate";
 import "./styles.css";
 import "./refinement.css";
 import "./duo-ui.css";
+import "./duo-gate.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AppUpdate />

@@ -157,6 +157,7 @@ export default function Dashboard() {
                   />
                   <circle
                     className={`duo-ring ${ring.tone}`}
+                    opacity={ring.value > 0 ? 1 : 0}
                     cx="66"
                     cy="66"
                     r={ring.r}
@@ -246,6 +247,7 @@ export default function Dashboard() {
                   cy="100"
                   r="84"
                   strokeDasharray={`${(filled ? ratio : 0) * 528} 528`}
+                  opacity={ratio > 0 ? 1 : 0}
                 />
               </svg>
               <div className="ring-text">
