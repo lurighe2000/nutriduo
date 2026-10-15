@@ -21,7 +21,11 @@ import { rounded, shiftDate, niceDate } from "../../utils/date";
 import { type Meal, type Recipe, type Food } from "../../schemas";
 import { SOURCE_LABELS } from "../../nutrition/constants";
 import MealEditor, { ItemFields } from "./MealEditor";
-import { measurementOf, quantityLabel } from "../../services/mealQuantity";
+import {
+  foodMeasurement,
+  measurementOf,
+  quantityLabel,
+} from "../../services/mealQuantity";
 import Micronutrients from "../../components/Micronutrients";
 import WeeklyMenu from "./WeeklyMenu";
 export default function Meals() {
@@ -324,10 +328,7 @@ export default function Meals() {
                 id: food.id,
                 name: food.name,
                 grams: food.servingSize,
-                measurement: food.measurement ?? {
-                  basis: food.unit,
-                  mode: food.unit,
-                },
+                measurement: foodMeasurement(food),
                 per100: food.per100,
                 source: food.source,
                 cooking: "",

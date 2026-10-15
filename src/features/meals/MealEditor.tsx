@@ -40,7 +40,11 @@ import AIAnalyzer from "./AIAnalyzer";
 import NutritionLookup from "./NutritionLookup";
 import Micronutrients from "../../components/Micronutrients";
 import MealQuantity from "./MealQuantity";
-import { measurementOf, quantityReady } from "../../services/mealQuantity";
+import {
+  foodMeasurement,
+  measurementOf,
+  quantityReady,
+} from "../../services/mealQuantity";
 import { aiSchema } from "../../schemas";
 import { z } from "zod";
 export function blankItem(): Item {
@@ -249,7 +253,7 @@ export default function MealEditor({
         foodId: food.id,
         name: food.name,
         grams,
-        measurement: food.measurement ?? { basis: food.unit, mode: food.unit },
+        measurement: foodMeasurement(food),
         per100: food.per100,
         source: food.source,
         cooking: "",

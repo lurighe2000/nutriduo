@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { foodSchema, itemSchema } from "../schemas";
 import { itemTotal, recipePortion } from "../nutrition/formulas";
+import { micronutrientTotals } from "../nutrition/micronutrients";
 import {
   measurementOf,
+  foodMeasurement,
   quantityFactor,
   quantityLabel,
   quantityReady,
@@ -29,6 +31,7 @@ describe("cantidades de comidas", () => {
     );
     expect(quantityLabel(edited)).toBe("3 unidades · 150 g");
     expect(itemTotal(edited)).toMatchObject({ calories: 210, protein: 18 });
+    expect(micronutrientTotals([edited]).values.sodium_mg).toBe(150);
   });
   it("no cambia los registros anteriores ni requiere una migración", () => {
     const { measurement: _measurement, ...legacy } = egg();
@@ -120,5 +123,9 @@ describe("cantidades de comidas", () => {
       measurement: item.measurement,
     });
     expect(food.measurement?.unitSize).toBe(50);
+    expect(foodMeasurement({ ...food, unit: "ml" })).toEqual({
+      basis: "ml",
+      mode: "ml",
+    });
   });
 });

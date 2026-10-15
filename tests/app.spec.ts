@@ -38,7 +38,10 @@ async function manualMeal(page: Page) {
   await page.getByRole("button", { name: "Agregar componente manual" }).click();
   await page.getByLabel("Alimento", { exact: true }).fill("Arroz de prueba");
   await page.getByLabel("Cantidad (g)").fill("200");
-  await page.getByText("Valores por 100 g").click();
+  await page
+    .locator(".ingredient summary")
+    .filter({ hasText: "Valores por 100 g" })
+    .click();
   await page.getByLabel("kcal / 100", { exact: true }).fill("130");
   await page.getByLabel("Proteína g / 100").fill("3");
   await page.getByLabel("Carbos g / 100").fill("28");
@@ -345,7 +348,10 @@ test("selectores centrados conservan valores y formularios en comidas, entreno, 
     .fill("Borrador que debe conservarse");
   await pickCentered(page, "Momento", "Cena");
   await page.getByRole("button", { name: "Agregar componente manual" }).click();
-  await page.getByText("Valores por 100 g", { exact: false }).click();
+  await page
+    .locator(".ingredient summary")
+    .filter({ hasText: "Valores por 100 g" })
+    .click();
   await pickCentered(page, "Procedencia", "Etiqueta");
   await page.getByRole("button", { name: "Momento", exact: true }).click();
   await page
@@ -1398,7 +1404,10 @@ test("producto, corrección, IA validada y receta", async ({ page }) => {
   await page.getByLabel("Nombre de la receta").fill("Mi receta");
   await page.getByRole("button", { name: "Agregar componente manual" }).click();
   await page.getByLabel("Alimento", { exact: true }).fill("Ingrediente");
-  await page.getByText("Valores por 100 g").click();
+  await page
+    .locator(".ingredient summary")
+    .filter({ hasText: "Valores por 100 g" })
+    .click();
   await page.getByLabel("kcal / 100", { exact: true }).fill("200");
   await page.getByLabel("Porciones de la receta").fill("2");
   await page

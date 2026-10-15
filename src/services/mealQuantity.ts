@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Item } from "../schemas";
+import type { Item, Food } from "../schemas";
 
 const positive = z.number().finite().positive().max(10000);
 export const measurementSchema = z
@@ -32,6 +32,13 @@ export function measurementOf(
   item: Pick<Item, "measurement" | "grams">,
 ): Measurement {
   return item.measurement ?? { basis: "g", mode: "g" };
+}
+export function foodMeasurement(
+  food: Pick<Food, "measurement" | "unit">,
+): Measurement {
+  return food.measurement?.basis === food.unit
+    ? food.measurement
+    : { basis: food.unit, mode: food.unit };
 }
 /** Canonical amount is always expressed in the nutrition label's basis. */
 export function quantityFactor(m: Measurement): number | undefined {

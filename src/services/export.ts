@@ -4,6 +4,7 @@ import { micronutrientExport } from "../nutrition/micronutrients";
 import { type ProfileId, type Backup } from "../schemas";
 import { menuFoods, menuRecipes } from "../nutrition/weeklyMenu";
 import { shiftDate } from "../utils/date";
+import { measurementOf, quantityLabel } from "./mealQuantity";
 type Cell = string | number | boolean | null | undefined;
 type Row = Record<string, Cell>;
 export function exportRows(b: Backup): Record<string, Row[]> {
@@ -24,7 +25,9 @@ export function exportRows(b: Backup): Record<string, Row[]> {
         Tipo: m.type,
         Comida: m.name,
         Alimento: i.name,
-        Cantidad_g: i.grams,
+        Cantidad: quantityLabel(i),
+        Cantidad_g: measurementOf(i).basis === "g" ? i.grams : undefined,
+        Cantidad_ml: measurementOf(i).basis === "ml" ? i.grams : undefined,
         Kcal: itemTotal(i).calories,
         Proteína: itemTotal(i).protein,
         Carbohidratos: itemTotal(i).carbs,
@@ -134,7 +137,9 @@ export function exportRows(b: Backup): Record<string, Row[]> {
         Receta: r.name,
         Porciones: r.servings,
         Ingrediente: i.name,
-        Gramos: i.grams,
+        Cantidad: quantityLabel(i),
+        Gramos: measurementOf(i).basis === "g" ? i.grams : undefined,
+        Mililitros: measurementOf(i).basis === "ml" ? i.grams : undefined,
         ...itemTotal(i),
         ...micronutrientExport(i),
       })),

@@ -80,7 +80,7 @@ export default function NutritionLookup({
             const rebased = rebaseQuantity(item, "g");
             if (!rebased) {
               setError(
-                "Esta ficha está por 100 g. Indicá primero el peso de 100 ml en la cantidad para poder convertirla.",
+                "Esta ficha está por 100 g. Elegí Gramos en Medida e indicá el peso de 100 ml para convertirla.",
               );
               return;
             }

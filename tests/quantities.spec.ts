@@ -64,7 +64,10 @@ for (const name of ["Luca", "Ari"] as const) {
       await page.setViewportSize({ width, height: 915 });
       for (const dark of [false, true]) {
         await page.evaluate(
-          (value) => document.querySelectorAll(".app-shell, dialog").forEach(e => e.classList.toggle("dark", value)),
+          (value) =>
+            document
+              .querySelectorAll(".app-shell, dialog")
+              .forEach((e) => e.classList.toggle("dark", value)),
           dark,
         );
         await page.locator(".meal-quantity").scrollIntoViewIfNeeded();
@@ -77,7 +80,13 @@ for (const name of ["Luca", "Ari"] as const) {
           page.getByLabel("Unidades", { exact: true }),
         ).toBeVisible();
         if (width === 412 || width === 1280)
-          await page.screenshot({ path: test.info().outputPath(`quantity-${name}-${dark ? "dark" : "light"}-${width}.png`) });
+          await page.screenshot({
+            path: test
+              .info()
+              .outputPath(
+                `quantity-${name}-${dark ? "dark" : "light"}-${width}.png`,
+              ),
+          });
       }
     }
     await page.screenshot({ path: `test-results/quantity-${name}.png` });
@@ -124,3 +133,32 @@ for (const name of ["Luca", "Ari"] as const) {
     await expect(page.locator(".meal-detail")).toContainText("100 ml · 120 g");
   });
 }
+test("una ficha por 100 ml mantiene el volumen al guardarla y reutilizarla", async ({
+  page,
+}) => {
+  await setup(page, "Luca");
+  await page.getByLabel("Nombre de la comida").fill("Leche por volumen");
+  await page.getByRole("button", { name: "Agregar componente manual" }).click();
+  await page.getByLabel("Alimento", { exact: true }).fill("Leche de prueba");
+  await measure(page, "Mililitros (ml)");
+  await page.getByLabel("Cantidad (ml)").fill("250");
+  await page
+    .locator(".ingredient summary")
+    .filter({ hasText: "Valores por 100 ml" })
+    .click();
+  await page.getByLabel("kcal / 100", { exact: true }).fill("60");
+  await page.getByLabel("Proteína g / 100").fill("3");
+  await expect(page.locator(".item-total")).toContainText("150 kcal");
+  await page.getByRole("button", { name: "Confirmar y registrar" }).click();
+  await expect(page.locator(".meal-detail")).toContainText("250 ml");
+  await page
+    .getByRole("button", { name: "Registrar comida", exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Mis alimentos", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Leche de prueba/ }).click();
+  await expect(page.getByLabel("Cantidad (ml)")).toHaveValue("250");
+  await expect(page.locator(".item-total")).toContainText("150 kcal");
+});

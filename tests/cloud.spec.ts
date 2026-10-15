@@ -55,7 +55,10 @@ async function meal(page: Page, name: string, photo = false) {
     .getByLabel("Alimento", { exact: true })
     .fill("Alimento privado de prueba");
   await page.getByLabel("Cantidad (g)").fill("150");
-  await page.getByText("Valores por 100 g").click();
+  await page
+    .locator(".ingredient summary")
+    .filter({ hasText: "Valores por 100 g" })
+    .click();
   await page.getByLabel("kcal / 100", { exact: true }).fill("100");
   await page.getByLabel("Proteína g / 100").fill("20");
   await page.getByLabel("Carbos g / 100").fill("2");

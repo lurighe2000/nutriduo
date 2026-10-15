@@ -57,7 +57,12 @@ export default function MealQuantity({
             const next = {
               ...m,
               mode,
-              ...(blank && mode !== "units" ? { basis: mode } : {}),
+              ...(blank && mode !== "units"
+                ? {
+                    basis: mode,
+                    unitSize: mode !== m.basis ? undefined : m.unitSize,
+                  }
+                : {}),
             };
             const nextFactor = quantityFactor(next);
             update(next, nextFactor ? item.grams / nextFactor : 1);
@@ -72,7 +77,11 @@ export default function MealQuantity({
             min={0.01}
             max={10000}
             onChange={(n) =>
-              update({ ...m, unitSize: Number.isFinite(n) ? n : undefined })
+              update({
+                ...m,
+                unitSize:
+                  Number.isFinite(n) && n > 0 && n <= 10000 ? n : undefined,
+              })
             }
           />
           <p className="muted small">
@@ -91,7 +100,10 @@ export default function MealQuantity({
             onChange={(n) =>
               update({
                 ...m,
-                gramsPerMl: Number.isFinite(n) ? n / 100 : undefined,
+                gramsPerMl:
+                  Number.isFinite(n) && n > 0 && n <= 10000
+                    ? n / 100
+                    : undefined,
               })
             }
           />
