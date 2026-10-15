@@ -17,14 +17,15 @@ from mathutils.kdtree import KDTree
 from mathutils.geometry import tessellate_polygon
 
 FPS = 30
-CLIPS = {"idle": 6, "wave": 4, "look": 4, "scratch": 4,
-         "nose": 4, "point": 4, "celebrate": 5, "sad": 6,
+CLIPS = {"idle": 12, "wave": 4, "look": 6, "scratch": 5,
+         "nose": 5, "point": 4, "celebrate": 5, "sad": 6,
          "dance": 6, "headstand": 7, "reference": 5}
 
 
 def smooth(value):
     value = min(1, max(0, value))
-    return value * value * (3 - 2 * value)
+    # Zero velocity AND acceleration at both ends of a gesture.
+    return value**3 * (value * (value * 6 - 15) + 10)
 
 
 def envelope(t, duration, edge=0.85):
@@ -494,37 +495,67 @@ class Character:
         self.motion.location = (0, 0, 0)
         self.motion.rotation_euler = (0, 0, 0)
         self.motion.scale = (1, 1, 1)
-        self.rotate("L_ude1_061", y=64)
-        self.rotate("R_ude1_082", y=-64)
-        self.rotate("L_ude2_062", z=-12)
-        self.rotate("R_ude2_083", z=12)
-        breathing = math.sin(t * math.tau / 3)
-        self.rotate("hara1_07", x=breathing * .8)
-        self.rotate("atama_010", x=breathing * .7, z=math.sin(t*1.2)*1.5)
+        phase = t * math.tau / 12
+        breathing = math.sin(phase * 4)
+        sway = math.sin(phase)
+        # A living rest pose: chest leads, head counters, arms and ears follow.
+        # Integer periods close the idle loop without a pose/velocity jump.
+        self.rotate("L_ude1_061", y=62+2*math.sin(phase*2), x=2*breathing)
+        self.rotate("R_ude1_082", y=-62+2*math.sin(phase*2), x=-2*breathing)
+        self.rotate("L_ude2_062", z=-20-3*breathing)
+        self.rotate("R_ude2_083", z=20+3*breathing)
+        self.rotate("L_te_063", x=3*math.sin(phase*2))
+        self.rotate("R_te_084", x=-3*math.sin(phase*2))
+        self.rotate("hara1_07", x=breathing*1.5, z=2.2*sway)
+        self.rotate("hara2_00", z=-1.2*sway)
+        self.rotate("mune_08", x=-breathing*.6, z=-sway)
+        self.rotate("atama_010", x=breathing*1.6,
+                    y=4*math.sin(phase), z=2.8*math.sin(phase*2))
+        self.rotate("tail1_0108", z=5*math.sin(phase*2-.4))
+        self.rotate("tail2_0109", z=7*math.sin(phase*2-.9))
+        if self.kind == "stitch":
+            self.rotate("C_jaw_040", x=2+1.2*breathing)
         if self.kind == "angel":
             self.rotate("C_jaw_040", x=8)
             self.translate("LU_cor_052", (0, -.005, .034))
             self.translate("RU_cor_056", (0, -.005, .034))
         ear_base = 0
-        self.rotate("L_mimi1_011", y=ear_base + math.sin(t*2)*2)
-        self.rotate("R_mimi1_015", y=-ear_base + math.sin(t*2+.5)*2)
+        self.rotate("L_mimi1_011", y=ear_base+5*math.sin(phase*2), x=2*breathing)
+        self.rotate("R_mimi1_015", y=-ear_base+5*math.sin(phase*2+.5), x=-2*breathing)
+        for index, (left, right) in enumerate([
+            ("L_mimi2_012", "R_mimi2_016"),
+            ("L_mimi3_013", "R_mimi3_017"),
+            ("L_mimi4_014", "R_mimi4_018"),
+        ]):
+            follow = phase*2-(index+1)*.3
+            self.rotate(left, y=2.5*math.sin(follow))
+            self.rotate(right, y=2.5*math.sin(follow+.5))
         for j, name in enumerate(self.extra_bones):
             self.rotate(name, x=math.sin(t*2-j*.6)*3, y=math.sin(t*1.6-j*.8)*2)
         # Two brief asymmetric blinks in the idle cycle; never stretch whole eyes.
-        blink = max(0, 1-abs(t-1.7)/.12, 1-abs(t-4.8)/.12)
+        blink = smooth(max(0, 1-abs(t-1.7)/.16,
+                           1-abs(t-4.8)/.16, 1-abs(t-9.2)/.16))
         for name in ("LU_eyelid_a_024", "LU_eyelid_b_025", "LU_eyelid_c_028",
                      "RU_eyelid_a_032", "RU_eyelid_b_033", "RU_eyelid_c_036"):
             self.translate(name, (0, -.003*blink, -.07*blink))
         if clip == "wave":
-            self.hand(1, (.60 + .08*math.sin(t*9), -.16, 1.9), e)
-            self.rotate("atama_010", y=-6*e, z=5*e)
+            self.hand(1, (.60+.07*math.sin(t*8), -.16, 1.84+.025*math.sin(t*8+.5)), e)
+            self.rotate("atama_010", x=-2*e, y=-8*e, z=5*e)
+            self.rotate("mune_08", z=3*e)
+            self.rotate("L_te_063", x=12*math.sin(t*8-.3)*e)
         elif clip == "look":
-            self.rotate("atama_010", x=-3*e, y=5*math.sin(t*2)*e, z=22*math.sin(t*1.5)*e)
+            glance = math.sin(t*math.tau/5)*e
+            self.rotate("atama_010", x=-5*e, y=7*e, z=24*glance)
+            self.rotate("mune_08", z=5*glance)
+            self.rotate("G_eye_020", z=5*glance)
         elif clip in ("scratch", "nose"):
             target = (.42, -.03, 1.76) if clip == "scratch" else (.03, -.49, 1.50)
-            wiggle = .025*math.sin(t*16)*e
+            wiggle = .018*math.sin(t*13)*e
             self.hand(1, (target[0]+wiggle, target[1], target[2]+wiggle), e)
             self.rotate("atama_010", x=-4*e, y=8*e, z=-8*e)
+            self.rotate("mune_08", z=-4*e, x=-2*e)
+            self.rotate("L_mimi1_011", y=-9*e+3*math.sin(t*5)*e)
+            self.rotate("C_jaw_040", x=5*e)
             for name in ("L_yubiB1_067", "L_yubiC1_069", "L_yubiD1_071"):
                 self.rotate(name, y=30*e)
         elif clip == "point":
@@ -543,9 +574,10 @@ class Character:
             self.translate("LU_cor_052", (0, 0, -.022*e))
             self.translate("RU_cor_056", (0, 0, -.022*e))
         elif clip == "dance":
-            self.motion.location.x = .09*math.sin(t*math.tau)*e
-            self.rotate("hara1_07", y=5*math.sin(t*math.tau)*e)
-            self.rotate("atama_010", y=-6*math.sin(t*math.tau)*e)
+            beat = math.sin(t*math.tau*.75)*e
+            self.rotate("hara1_07", y=6*beat, z=6*beat)
+            self.rotate("mune_08", z=-4*beat)
+            self.rotate("atama_010", y=-8*beat, z=-5*beat)
             self.hand(1, (.65, -.22, 1.3+.16*math.sin(t*math.tau)), e)
             self.hand(-1, (-.65, -.22, 1.3-.16*math.sin(t*math.tau)), e)
         elif clip == "reference":
@@ -576,7 +608,8 @@ class Character:
                 continue
             self.arm.animation_data_clear()
             self.motion.animation_data_clear()
-            for frame in range(0, duration*FPS+1, 3):
+            # Bake at 30 Hz: the old 10 Hz keys visibly kinked quick hand motion.
+            for frame in range(0, duration*FPS+1):
                 self.pose(clip, frame/FPS, duration)
                 for bone in self.bones:
                     bone.keyframe_insert("rotation_quaternion", frame=frame)
@@ -612,7 +645,7 @@ class Character:
         bpy.ops.export_scene.gltf(filepath=str(output / f"{self.kind}.glb"),
             export_format="GLB", use_selection=True, export_animations=True,
             export_animation_mode="NLA_TRACKS", export_force_sampling=True,
-            export_frame_step=2, export_optimize_animation_size=True,
+            export_frame_step=1, export_optimize_animation_size=True,
             export_nla_strips=True, export_extras=False,
             export_image_format="AUTO", export_materials="EXPORT")
 

@@ -1,5 +1,31 @@
 import { test, expect } from "@playwright/test";
 
+test("un gesto espera a que Stitch termine de bajar de la postura invertida", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.goto("/mascots.html");
+  await expect(page.getByRole("status")).toHaveText("Listo para moverse");
+  const headstand = page.getByRole("button", {
+    name: "Ponerse de cabeza",
+    exact: true,
+  });
+  const nose = page.getByRole("button", {
+    name: "Travesura de la nariz",
+    exact: true,
+  });
+  await headstand.click();
+  await expect(headstand).toHaveAttribute("aria-pressed", "true");
+  await nose.click();
+  await expect(headstand).toHaveAttribute("aria-pressed", "true");
+  await expect(nose).toHaveAttribute("aria-pressed", "true", {
+    timeout: 15000,
+  });
+  await expect(
+    page.getByRole("button", { name: "Respirar y parpadear" }),
+  ).toHaveAttribute("aria-pressed", "true", { timeout: 12000 });
+});
+
 test("los dos personajes cargan y los controles caben en celular, con pausa y movimiento reducido", async ({
   page,
 }) => {

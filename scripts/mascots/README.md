@@ -29,6 +29,14 @@ película, y no se afirma una reproducción cinematográfica exacta.
 - Se liberan escenas, texturas y recursos GPU al cambiar de vista. Ante un error
   WebGL se mantiene una alternativa utilizable. La primera descarga necesita red;
   el service worker guarda cada modelo solicitado para próximos usos sin red.
+- Los gestos cotidianos (mirar, rascarse, nariz y saludo) están disponibles sin
+  cargar comidas. Cada 8 segundos visibles se intenta una acción; el gesto en
+  curso termina antes del siguiente. Baile y postura invertida acompañan los
+  estados de progreso, sin exigir superar objetivos. En apoyo se usan gestos suaves.
+- Stitch usa un reposo cíclico de 12 segundos con pecho, brazos, cabeza, orejas
+  y cola; sus clips se hornean a 30 Hz. Entradas y salidas tienen velocidad y
+  aceleración nulas, con mezclas suaves de 550 ms. La postura invertida conserva
+  su salida completa antes de responder al próximo toque.
 
 ## Fuentes reproducibles
 
@@ -45,7 +53,7 @@ Usar `--background --factory-startup --disable-autoexec --python-exit-code 1`.
   contactos de todos los fotogramas; el visor permite revisar las transiciones.
 
 Proyectos editables locales:
-`C:/Users/lucar/.codex/tools/mascot-3d/sources/stitch.blend` y
+`C:/Users/lucar/.codex/tools/mascot-3d/fluid-stitch/sources/stitch.blend` y
 `C:/Users/lucar/.codex/tools/mascot-3d/approved-angel/angel.blend`.
 El original aprobado se conserva como `angel-sculpt.glb`; el original de alta
 resolución permanece en `C:/Users/lucar/.codex/tools/mascot-3d/angel-from-reference.glb`.

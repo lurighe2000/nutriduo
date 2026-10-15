@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui";
+import { activateAppUpdate } from "../services/appUpdate";
 
 export default function AppUpdate() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [needRefresh, setNeedRefresh] = useState(false);
-  const requestedUpdate = useRef(false);
+  const updateAbort = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
@@ -19,10 +20,6 @@ export default function AppUpdate() {
     const installing = () => {
       current?.installing?.addEventListener("statechange", waiting);
     };
-    const controlled = () => {
-      if (requestedUpdate.current) location.reload();
-    };
-    navigator.serviceWorker.addEventListener("controllerchange", controlled);
     void navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`, {
         scope: import.meta.env.BASE_URL,
@@ -39,11 +36,8 @@ export default function AppUpdate() {
       .catch(() => {});
     return () => {
       mounted = false;
+      updateAbort.current?.abort();
       current?.removeEventListener("updatefound", installing);
-      navigator.serviceWorker.removeEventListener(
-        "controllerchange",
-        controlled,
-      );
     };
   }, []);
 
@@ -79,25 +73,38 @@ export default function AppUpdate() {
       <div className="actions">
         <Button
           disabled={busy}
-          onClick={() => {
+          onClick={async () => {
+            if (busy) return;
             setBusy(true);
             setError("");
+            const abort = new AbortController();
+            updateAbort.current = abort;
             try {
-              const worker = registration?.waiting;
-              if (!worker) {
-                location.reload();
-                return;
-              }
-              requestedUpdate.current = true;
-              worker.postMessage({ type: "SKIP_WAITING" });
-            } catch {
-              requestedUpdate.current = false;
-              setBusy(false);
-              setError("No se pudo actualizar. Volvé a intentar con conexión.");
+              if (!registration)
+                throw new Error(
+                  "Volvé a abrir la app con conexión para actualizar.",
+                );
+              await activateAppUpdate(registration, navigator.serviceWorker, {
+                signal: abort.signal,
+              });
+              if (!abort.signal.aborted) location.reload();
+            } catch (failure) {
+              if (!abort.signal.aborted)
+                setError(
+                  failure instanceof Error
+                    ? failure.message
+                    : "No se pudo actualizar. Volvé a intentar con conexión.",
+                );
+            } finally {
+              if (!abort.signal.aborted) setBusy(false);
             }
           }}
         >
-          {busy ? "Actualizando…" : "Actualizar ahora"}
+          {busy
+            ? "Actualizando…"
+            : error
+              ? "Reintentar actualización"
+              : "Actualizar ahora"}
         </Button>
         <Button secondary disabled={busy} onClick={() => setNeedRefresh(false)}>
           Después

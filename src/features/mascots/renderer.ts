@@ -39,7 +39,7 @@ export async function createCharacter(
   const renderer = new WebGLRenderer({
     alpha: true,
     antialias: true,
-    powerPreference: "low-power",
+    powerPreference: "default",
   });
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -64,6 +64,14 @@ export async function createCharacter(
   let reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let active: AnimationAction | undefined;
   let queued: Motion | undefined;
+  let blend:
+    | {
+        from: AnimationAction;
+        to: AnimationAction;
+        elapsed: number;
+        duration: number;
+      }
+    | undefined;
   let actions = new Map<string, AnimationAction>();
   const disposeScene = () => {
     const textures = new Set<Texture>();
@@ -93,30 +101,35 @@ export async function createCharacter(
     renderer.setSize(width, height, false);
     renderer.render(scene, camera);
   };
-  const play = (motion: Motion) => {
+  const play = (motion: Motion, interrupt = true) => {
     if (
       disposed ||
       ((!visible || document.hidden || reduced || paused) && motion !== "idle")
     )
       return false;
-    if (
-      active?.getClip().name === "headstand" &&
-      active.time < active.getClip().duration - 0.15
-    ) {
+    const next = actions.get(motion);
+    if (!next) return false;
+    // Finish the authored return pose before another gesture. In particular,
+    // never blend an inverted body directly into standing at the user's tap.
+    if (blend || (active?.getClip().name !== "idle" && active?.isRunning())) {
+      if (!interrupt) return false;
       queued = motion;
       return true;
     }
-    const next = actions.get(motion);
-    if (!next || next === active) return false;
-    next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1);
+    if (next === active) return false;
+    next
+      .reset()
+      .setEffectiveTimeScale(1)
+      .setEffectiveWeight(active ? 0 : 1);
     next.setLoop(
       motion === "idle" ? LoopRepeat : LoopOnce,
       motion === "idle" ? Infinity : 1,
     );
     next.clampWhenFinished = motion !== "idle";
-    if (active) active.crossFadeTo(next, 0.38, false);
+    if (active) blend = { from: active, to: next, elapsed: 0, duration: 0.55 };
     next.play();
     active = next;
+    host.dataset.motion = motion;
     onMotion?.(motion);
     if (reduced || paused) {
       // Keep the resting pose when motion has been disabled.
@@ -150,10 +163,26 @@ export async function createCharacter(
   const render = (now: number) => {
     frame = 0;
     if (disposed) return;
-    const delta = last ? Math.min((now - last) / 1000, 0.05) : 0;
+    const delta = last ? Math.min((now - last) / 1000, 0.1) : 0;
     last = now;
     if (shouldRun()) {
+      if (blend) {
+        blend.elapsed += delta;
+        const t = Math.min(1, blend.elapsed / blend.duration);
+        const weight = t * t * t * (t * (t * 6 - 15) + 10);
+        blend.from.setEffectiveWeight(1 - weight);
+        blend.to.setEffectiveWeight(weight);
+        if (t === 1) {
+          blend.from.stop();
+          blend = undefined;
+        }
+      }
       mixer?.update(delta);
+      if (!blend && queued && active?.getClip().name === "idle") {
+        const motion = queued;
+        queued = undefined;
+        play(motion);
+      }
       renderer.render(scene, camera);
     }
     synchronizeLoop();
@@ -165,6 +194,7 @@ export async function createCharacter(
       mixer?.stopAllAction();
       active = undefined;
       queued = undefined;
+      blend = undefined;
     }
     play("idle");
     if (reduced) {
@@ -202,7 +232,7 @@ export async function createCharacter(
   };
   signal.addEventListener("abort", dispose, { once: true });
   try {
-    const revision = "20261015-2";
+    const revision = character === "stitch" ? "20261015-3" : "20261015-2";
     const asset = character;
     const gltf = await new GLTFLoader().loadAsync(
       `${import.meta.env.BASE_URL}mascots/${asset}.glb?v=${revision}`,

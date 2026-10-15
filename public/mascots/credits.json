@@ -12,6 +12,13 @@
     "sourceSha256": "15d2b15060aa0d30afb71d73433d168fdba32ad008f542e3b9ec0ed3591996b4"
   },
   "adaptations": "Stitch: blasters removed and motion clips authored in Blender. The rejected Angel adaptation of Stitch is no longer loaded by the preview.",
+  "stitchRuntime": {
+    "file": "stitch.glb",
+    "sha256": "679917a923744e840999a12f87669e85f55e0a3bdf6392da75ca4c16b05ad01d",
+    "bytes": 5250740,
+    "triangles": 31774,
+    "animation": "Custom 30 Hz authored clips; 12-second seamless idle, torso/arm/ear follow-through, quintic gesture envelopes and eased runtime blending. Not original film animation."
+  },
   "angelSculpt": {
     "appearanceReference": "Only Luca's supplied e9d7c2032d1d829d746280cefeae2df4.jpg",
     "referenceSha256": "0add4a29ef9c512343b447d30b45519caa12067f5ee399125f441b3874c8c575",

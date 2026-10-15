@@ -9,7 +9,8 @@ import {
   prefersReducedMotion,
 } from "../../components/motion";
 import type { companionState } from "../../services/mascotState";
-import type { createCharacter, Motion } from "./renderer";
+import { companionGesture } from "../../services/mascotMotion";
+import type { createCharacter } from "./renderer";
 import "./companion.css";
 
 type State = ReturnType<typeof companionState>;
@@ -33,20 +34,8 @@ export default function Companion({
   const [reduced, setReduced] = useState(prefersReducedMotion);
   const paused = profile.mascotPaused ?? false;
   latest.current = state;
-  const choose = () => {
-    const pool: Motion[] =
-      latest.current.mood === "happy" || latest.current.mood === "celebrate"
-        ? [
-            "wave",
-            "look",
-            "scratch",
-            "nose",
-            "dance",
-            ...(character === "stitch" ? ["headstand" as const] : []),
-          ]
-        : ["wave", "look"];
-    return pool[gesture.current++ % pool.length];
-  };
+  const choose = () =>
+    companionGesture(character, latest.current.mood, gesture.current);
   const chooseRef = useRef(choose);
   chooseRef.current = choose;
   useEffect(() => {
@@ -79,10 +68,14 @@ export default function Companion({
         }
         engine.current = value;
         setReady(true);
+        let nextGestureAt = performance.now() + 8000;
         interval = setInterval(() => {
-          if (!document.hidden && latest.current.mood !== "support")
-            value.play(chooseRef.current());
-        }, 16000);
+          if (document.hidden || performance.now() < nextGestureAt) return;
+          if (value.play(chooseRef.current(), false)) {
+            gesture.current++;
+            nextGestureAt = performance.now() + 8000;
+          }
+        }, 1000);
       })
       .catch(() => {
         if (!abort.signal.aborted) fail();
@@ -124,7 +117,10 @@ export default function Companion({
         aria-label={`Jugar con ${name}`}
         disabled={!ready || paused || reduced}
         onClick={() => {
-          if (engine.current?.play(chooseRef.current())) haptic();
+          if (engine.current?.play(chooseRef.current())) {
+            gesture.current++;
+            haptic();
+          }
         }}
       >
         <span ref={host} className="companion-canvas" aria-hidden="true" />

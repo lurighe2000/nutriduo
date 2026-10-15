@@ -63,6 +63,20 @@ for (const name of ["Luca", "Ari"]) {
     await expect(
       page.getByRole("button", { name: `Jugar con ${character}` }),
     ).toBeEnabled();
+    if (name === "Luca") {
+      // A brand-new profile must have more personality than waving/looking.
+      await expect(companion.locator(".companion-canvas")).toHaveAttribute(
+        "data-motion",
+        "scratch",
+        { timeout: 15000 },
+      );
+      await page.getByRole("button", { name: "Jugar con Stitch" }).click();
+      await expect(companion.locator(".companion-canvas")).toHaveAttribute(
+        "data-motion",
+        "look",
+        { timeout: 10000 },
+      );
+    }
     await page
       .getByRole("button", { name: `Pausar movimiento de ${character}` })
       .click();
@@ -763,102 +777,160 @@ test("guarda salida sin inventar pulso y adopta fuerza en casa", async ({
   ).toBeVisible();
 });
 
-test("una actualización pide confirmación y conserva PIN y comidas guardadas", async ({
-  page,
-}) => {
-  let servePreviousWorker = true;
-  const root = resolve("dist");
-  const server = createServer(async (request, response) => {
-    const path = new URL(request.url!, "http://localhost").pathname;
-    response.setHeader("Cache-Control", "no-store");
-    if (path === "/sw.js" && servePreviousWorker) {
-      response.setHeader("Content-Type", "application/javascript");
-      response.end(`self.addEventListener('install', () => self.skipWaiting());
+for (const stalled of [false, true]) {
+  test(`una actualización ${stalled ? "silenciosa permite reintentar" : "pide confirmación"} y conserva PIN y comidas guardadas`, async ({
+    page,
+  }) => {
+    let servePreviousWorker = true;
+    test.setTimeout(90000);
+    let serveSilentWorker = stalled;
+    const root = resolve("dist");
+    const server = createServer(async (request, response) => {
+      const path = new URL(request.url!, "http://localhost").pathname;
+      response.setHeader("Cache-Control", "no-store");
+      if (path === "/sw.js" && servePreviousWorker) {
+        response.setHeader("Content-Type", "application/javascript");
+        response.end(`self.addEventListener('install', () => self.skipWaiting());
         self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));`);
-      return;
-    }
-    const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
-    if (!file.startsWith(root + "\\") && !file.startsWith(root + "/")) {
-      response.writeHead(404).end();
-      return;
-    }
+        return;
+      }
+      if (path === "/sw.js" && serveSilentWorker) {
+        response.setHeader("Content-Type", "application/javascript");
+        response.end(`self.addEventListener('install', () => {});
+        self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));`);
+        return;
+      }
+      if (path === "/sw.js") {
+        // Exercise the real browser worker lifecycle without making this
+        // activation test depend on downloading the entire offline bundle.
+        // The separate offline/backup tests use the production Workbox worker.
+        response.setHeader("Content-Type", "application/javascript");
+        response.end(`self.addEventListener('message', event => {
+          if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+        });
+        self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));`);
+        return;
+      }
+      const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
+      if (!file.startsWith(root + "\\") && !file.startsWith(root + "/")) {
+        response.writeHead(404).end();
+        return;
+      }
+      try {
+        const mime: Record<string, string> = {
+          ".html": "text/html",
+          ".js": "application/javascript",
+          ".css": "text/css",
+          ".svg": "image/svg+xml",
+          ".png": "image/png",
+          ".woff2": "font/woff2",
+          ".webmanifest": "application/manifest+json",
+        };
+        response.setHeader(
+          "Content-Type",
+          mime[extname(file)] ?? "application/octet-stream",
+        );
+        response.end(await readFile(file));
+      } catch {
+        response.writeHead(404).end();
+      }
+    });
+    await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+    const address = server.address();
+    if (!address || typeof address === "string")
+      throw new Error("Test server unavailable");
     try {
-      const mime: Record<string, string> = {
-        ".html": "text/html",
-        ".js": "application/javascript",
-        ".css": "text/css",
-        ".svg": "image/svg+xml",
-        ".png": "image/png",
-        ".woff2": "font/woff2",
-        ".webmanifest": "application/manifest+json",
-      };
-      response.setHeader(
-        "Content-Type",
-        mime[extname(file)] ?? "application/octet-stream",
-      );
-      response.end(await readFile(file));
-    } catch {
-      response.writeHead(404).end();
+      await page.setViewportSize({ width: 393, height: 851 });
+      await setup(page, "Luca", `http://127.0.0.1:${address.port}`);
+      await manualMeal(page);
+      await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+      });
+      servePreviousWorker = false;
+      await page.evaluate(async () => {
+        await (await navigator.serviceWorker.ready).update();
+      });
+      const banner = page.getByRole("status", {
+        name: "Actualización disponible",
+      });
+      await expect(banner).toBeVisible({ timeout: 15000 });
+      await expect(
+        page.getByRole("heading", { name: "Hoy, Luca" }),
+      ).toBeVisible();
+      await page.screenshot({ path: "test-results/update-mobile.png" });
+      await page
+        .getByRole("button", { name: "Actualizar ahora", exact: true })
+        .click();
+      if (stalled) {
+        await expect(banner.getByText(/tardó más de lo esperado/)).toBeVisible({
+          timeout: 16000,
+        });
+        await expect(
+          page.getByRole("heading", { name: "Hoy, Luca" }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("button", {
+            name: "Reintentar actualización",
+            exact: true,
+          }),
+        ).toBeEnabled();
+        serveSilentWorker = false;
+        await page.evaluate(async () => {
+          await (await navigator.serviceWorker.ready).update();
+        });
+        // Wait for the replacement worker, rather than retrying the silent one.
+        await expect
+          .poll(
+            () =>
+              page.evaluate(async () => {
+                const registration = await navigator.serviceWorker.ready;
+                return (
+                  !!registration.waiting?.scriptURL && !registration.installing
+                );
+              }),
+            { timeout: 20000 },
+          )
+          .toBe(true);
+        await page
+          .getByRole("button", {
+            name: "Reintentar actualización",
+            exact: true,
+          })
+          .click();
+      }
+      await expect(
+        page.getByRole("heading", { name: "Elegí tu perfil" }),
+      ).toBeVisible();
+      await expect(banner).toHaveCount(0);
+      await page.getByRole("button", { name: /Luca Construir/ }).click();
+      await page.getByLabel("PIN", { exact: true }).fill("1234");
+      await page
+        .getByRole("button", { name: "Entrar a mi espacio", exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Hoy, Luca" }),
+      ).toBeVisible();
+      await page
+        .locator(".bottom-nav")
+        .getByRole("button", { name: "Comidas", exact: true })
+        .click();
+      await expect(
+        page.getByText("Almuerzo de prueba", { exact: true }),
+      ).toBeVisible();
+      await page
+        .locator(".bottom-nav")
+        .getByRole("button", { name: "Más", exact: true })
+        .click();
+      await expect(
+        page.getByRole("button", { name: /Análisis de comidas/ }),
+      ).toBeVisible();
+      await page.screenshot({ path: "test-results/more-ai-mobile.png" });
+    } finally {
+      await page.close();
+      await new Promise<void>((done) => server.close(() => done()));
     }
   });
-  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
-  const address = server.address();
-  if (!address || typeof address === "string")
-    throw new Error("Test server unavailable");
-  try {
-    await page.setViewportSize({ width: 393, height: 851 });
-    await setup(page, "Luca", `http://127.0.0.1:${address.port}`);
-    await manualMeal(page);
-    await page.evaluate(async () => {
-      await navigator.serviceWorker.ready;
-    });
-    servePreviousWorker = false;
-    await page.evaluate(async () => {
-      await (await navigator.serviceWorker.ready).update();
-    });
-    const banner = page.getByRole("status", {
-      name: "Actualización disponible",
-    });
-    await expect(banner).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Hoy, Luca" }),
-    ).toBeVisible();
-    await page.screenshot({ path: "test-results/update-mobile.png" });
-    await page
-      .getByRole("button", { name: "Actualizar ahora", exact: true })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: "Elegí tu perfil" }),
-    ).toBeVisible();
-    await expect(banner).toHaveCount(0);
-    await page.getByRole("button", { name: /Luca Construir/ }).click();
-    await page.getByLabel("PIN", { exact: true }).fill("1234");
-    await page
-      .getByRole("button", { name: "Entrar a mi espacio", exact: true })
-      .click();
-    await expect(
-      page.getByRole("heading", { name: "Hoy, Luca" }),
-    ).toBeVisible();
-    await page
-      .locator(".bottom-nav")
-      .getByRole("button", { name: "Comidas", exact: true })
-      .click();
-    await expect(
-      page.getByText("Almuerzo de prueba", { exact: true }),
-    ).toBeVisible();
-    await page
-      .locator(".bottom-nav")
-      .getByRole("button", { name: "Más", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", { name: /Análisis de comidas/ }),
-    ).toBeVisible();
-    await page.screenshot({ path: "test-results/more-ai-mobile.png" });
-  } finally {
-    await page.close();
-    await new Promise<void>((done) => server.close(() => done()));
-  }
-});
+}
 test("IA integrada en móvil pide detalles, permite elegir ficha y guarda sólo al confirmar", async ({
   page,
 }) => {
@@ -1751,6 +1823,9 @@ test("fotos de comida se suman en carga manual, persisten y restauran fotos anti
 test("tema responde al tacto en modo instalado aunque el guardado esté ocupado", async ({
   browser,
 }) => {
+  // Includes two profile unlocks and reloads while a write lock is held.
+  // Keep the 1 s responsiveness assertions below, independent of total setup time.
+  test.setTimeout(120000);
   const context = await browser.newContext({
     viewport: { width: 412, height: 915 },
     isMobile: true,
