@@ -1003,6 +1003,255 @@
   }
 }
 
+/* ---------- 1.13: a busier buddy ---------- */
+.duo-switch-buddy .bd-fill {
+  fill: var(--duo-2, #f47cae);
+  stroke: none;
+}
+.duo-switch-buddy .bd-fill-2 {
+  fill: var(--duo-3, #8fd3ff);
+  stroke: none;
+}
+.duo-switch-buddy .bd-leaf {
+  fill: #5bc98a;
+  stroke: none;
+}
+.duo-switch-buddy .bd-ball {
+  fill: #fff;
+  stroke: var(--sw-walker);
+  stroke-width: 0.9;
+}
+.duo-switch-buddy .bd-star {
+  fill: #fff6c9;
+  stroke: none;
+}
+.duo-switch-buddy .bd-bubble {
+  fill: #fff;
+  stroke: var(--duo-3, #8fd3ff);
+  stroke-width: 0.5;
+  opacity: 0;
+}
+.duo-switch-buddy .bd-flash {
+  fill: #fff7d6;
+  stroke: none;
+  opacity: 0;
+}
+.duo-switch-buddy .bd-shadow {
+  fill: var(--sw-walker);
+  stroke: none;
+  opacity: 0.18;
+  transform-origin: 14px 25.5px;
+}
+.bd-hoop {
+  stroke: var(--duo-2, #f47cae);
+  stroke-width: 1.3;
+  transform-origin: 14px 15.5px;
+}
+.bd-scope {
+  stroke-width: 2.4;
+}
+.bd-steam {
+  stroke-width: 0.9;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .act-jog .bd-walk {
+    animation-duration: 3.75s;
+  }
+  .act-jog .bd-leg-a,
+  .act-jog .bd-leg-b {
+    animation-duration: 0.22s;
+  }
+  .act-jog .bd-bounce {
+    animation-duration: 0.22s;
+  }
+  .act-skate .bd-walk {
+    animation-timing-function: ease-in-out;
+  }
+  .act-skate .bd-bounce {
+    animation-duration: 0.9s;
+  }
+  .act-rope .bd-frame-a,
+  .act-rope .bd-frame-b,
+  .act-guitar .bd-frame-a,
+  .act-guitar .bd-frame-b {
+    animation-duration: 0.5s;
+  }
+  .act-rope .bd-bounce {
+    animation-duration: 0.25s;
+  }
+  .act-pushup .bd-frame-a,
+  .act-pushup .bd-frame-b {
+    animation-duration: 1.2s;
+  }
+  .act-curl .bd-frame-a,
+  .act-curl .bd-frame-b,
+  .act-eat .bd-frame-a,
+  .act-eat .bd-frame-b {
+    animation-duration: 1.6s;
+  }
+  .act-stretch .bd-frame-a,
+  .act-stretch .bd-frame-b {
+    animation-duration: 2.6s;
+  }
+  .act-dance .bd-frame-a,
+  .act-dance .bd-frame-b {
+    animation-duration: 0.8s;
+  }
+  .act-mate .bd-tilt {
+    transform-origin: 12px 6px;
+    animation-duration: 3s;
+  }
+  .bd-steam {
+    animation: bd-steam 2s ease-out infinite;
+  }
+  .bd-juggle {
+    animation: bd-juggle 0.35s cubic-bezier(0.2, 0.7, 0.4, 1) infinite alternate;
+  }
+  .bd-orbit {
+    transform-origin: 14px 1px;
+    animation: bd-spin 1.1s linear infinite;
+  }
+  .bd-cartwheel {
+    transform-origin: 14px 14px;
+    animation: bd-cartwheel 3.75s ease-in-out infinite alternate;
+  }
+  .bd-flash {
+    animation: bd-flash 1.8s ease-out infinite;
+  }
+  .bd-hoop {
+    animation: bd-hoop 0.3s ease-in-out infinite alternate;
+  }
+  .act-hula .bd-sway {
+    animation-duration: 0.6s;
+  }
+  .bd-float {
+    animation: bd-float 1.8s ease-in-out infinite alternate;
+  }
+  .bd-shadow {
+    animation: bd-shadow 1.8s ease-in-out infinite alternate;
+  }
+  .bd-kite {
+    transform-origin: 15px 11px;
+    animation: bd-kite 1.6s ease-in-out infinite alternate;
+  }
+  .bd-star {
+    animation: bd-twinkle 1.2s ease-in-out infinite alternate;
+  }
+  .bd-star.s2 {
+    animation-delay: 0.4s;
+  }
+  .bd-star.s3 {
+    animation-delay: 0.8s;
+  }
+  .bd-brush {
+    animation: bd-brush 0.18s ease-in-out infinite alternate;
+  }
+  .bd-bubble {
+    animation: bd-z 1.6s ease-out infinite;
+  }
+  .bd-bubble.z2 {
+    animation-delay: 0.5s;
+  }
+  .bd-bubble.z3 {
+    animation-delay: 1s;
+  }
+}
+@keyframes bd-steam {
+  0% {
+    opacity: 0;
+    transform: translateY(1px);
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes bd-juggle {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-9px);
+  }
+}
+@keyframes bd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes bd-cartwheel {
+  from {
+    transform: translateX(-18px) rotate(0deg);
+  }
+  to {
+    transform: translateX(24px) rotate(720deg);
+  }
+}
+@keyframes bd-flash {
+  0%,
+  78% {
+    opacity: 0;
+  }
+  84% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes bd-hoop {
+  from {
+    transform: translateX(-1.5px) rotate(-8deg);
+  }
+  to {
+    transform: translateX(1.5px) rotate(8deg);
+  }
+}
+@keyframes bd-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-3px);
+  }
+}
+@keyframes bd-shadow {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0.7);
+  }
+}
+@keyframes bd-kite {
+  from {
+    transform: rotate(-7deg);
+  }
+  to {
+    transform: rotate(7deg);
+  }
+}
+@keyframes bd-twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes bd-brush {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-0.8px);
+  }
+}
+
 /* ---------- 1.10: one visual language across the app ---------- */
 .app-shell {
   font-family: Manrope, "DM Sans", system-ui, sans-serif;

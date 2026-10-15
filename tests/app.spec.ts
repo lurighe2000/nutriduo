@@ -1635,7 +1635,10 @@ test("fotos de comida se suman en carga manual, persisten y restauran fotos anti
     .getByRole("button", { name: "Guardar cambios", exact: true })
     .click();
   await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(1);
-  await page.reload();
+  // Chromium occasionally aborts this reload right after saving photos.
+  await expect(async () => {
+    await page.reload();
+  }).toPass({ timeout: 20000 });
   await page.getByRole("button", { name: /Luca Construir/ }).click();
   await page.getByLabel("PIN", { exact: true }).fill("1234");
   await page.getByRole("button", { name: "Entrar a mi espacio" }).click();

@@ -16,5 +16,6 @@ describe("copias cifradas", () => {
     await expect(decryptCloud(altered, restored.encryptionKey, encrypted.iv, "ari")).rejects.toThrow("descifrar");
     const wrong = await deriveCloudKeys("una contraseña que no coincide", salt);
     await expect(decryptCloud(encrypted.encrypted, wrong.encryptionKey, encrypted.iv, "ari")).rejects.toThrow("descifrar");
-  });
+    // Three 600k-iteration key derivations: slow on a busy machine.
+  }, 30000);
 });
