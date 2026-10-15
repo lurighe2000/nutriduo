@@ -23,10 +23,23 @@ const mark = await readFile(
   "utf8",
 );
 // Rasterize the glyph only: untouched alpha outside the white shapes, no tile.
-await sharp(Buffer.from(mark))
-  .resize(96, 96)
-  .png()
-  .toFile(fileURLToPath(publicFile("badge-duo.png")));
+const badge = await sharp(Buffer.from(mark)).resize(96, 96).png().toBuffer();
+await writeFile(publicFile("badge-duo.png"), badge);
+// Notification images can be fetched outside the service worker's precache.
+// Keep this small glyph self-contained, including when a push wakes an offline app.
+const pushFile = publicFile("push-handler.js");
+const pushHandler = await readFile(pushFile, "utf8");
+const badgeDeclaration = /const NUTRIDUO_NOTIFICATION_BADGE =\s*"[^"]*";/;
+if (!badgeDeclaration.test(pushHandler)) {
+  throw new Error("Missing embedded notification badge declaration.");
+}
+await writeFile(
+  pushFile,
+  pushHandler.replace(
+    badgeDeclaration,
+    `const NUTRIDUO_NOTIFICATION_BADGE =\n  "data:image/png;base64,${badge.toString("base64")}";`,
+  ),
+);
 const favicon = mark
   .replace(
     '<g fill="#fff">',
