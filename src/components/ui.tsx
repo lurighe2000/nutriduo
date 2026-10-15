@@ -3,10 +3,11 @@ import {
   useContext,
   useRef,
   useId,
+  useState,
   type ReactNode,
   type InputHTMLAttributes,
 } from "react";
-import { X, Plus, ArrowRight } from "lucide-react";
+import { X, Plus, ArrowRight, Check, ChevronDown } from "lucide-react";
 import { AppContext } from "../app/context";
 import { useDialogBack } from "../app/navigation";
 export function Button({
@@ -91,14 +92,112 @@ export function Select({
   options: readonly string[];
 }) {
   return (
-    <label className="field">
-      <span>{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((v) => (
-          <option key={v}>{v}</option>
-        ))}
-      </select>
-    </label>
+    <ChoicePicker
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options.map((v) => ({ value: v, label: v }))}
+    />
+  );
+}
+export function ChoicePicker<T extends string | number>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false,
+  description = "Elegí una opción.",
+}: {
+  label: string;
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void | boolean | Promise<void | boolean>;
+  disabled?: boolean;
+  description?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const selected = options.find((option) => option.value === value);
+  const labelId = useId(),
+    valueId = useId();
+  return (
+    <div className="choice-field">
+      <span className="choice-label" id={labelId}>
+        {label}
+      </span>
+      <button
+        type="button"
+        className="choice-trigger"
+        aria-labelledby={labelId}
+        aria-describedby={valueId}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => {
+          setError("");
+          setOpen(true);
+        }}
+      >
+        <span id={valueId}>{selected?.label ?? "Elegir opción"}</span>
+        <ChevronDown size={18} aria-hidden="true" />
+      </button>
+      {open && (
+        <Modal
+          title={label}
+          className="choice-sheet"
+          onClose={() => setOpen(false)}
+          showNotice={false}
+        >
+          <p className="muted small">{description}</p>
+          <div className="choice-options" aria-busy={busy}>
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className="choice-option"
+                aria-pressed={option.value === value}
+                disabled={busy}
+                onClick={async () => {
+                  if (busy) return;
+                  if (option.value === value) {
+                    setOpen(false);
+                    return;
+                  }
+                  setBusy(true);
+                  setError("");
+                  try {
+                    if ((await onChange(option.value)) !== false)
+                      setOpen(false);
+                    else
+                      setError(
+                        "No pudimos guardar la opción. Volvé a intentarlo.",
+                      );
+                  } catch {
+                    setError(
+                      "No pudimos guardar la opción. Volvé a intentarlo.",
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <span>{option.label}</span>
+                <span className="choice-check" aria-hidden="true">
+                  {option.value === value && <Check size={16} />}
+                </span>
+              </button>
+            ))}
+          </div>
+          {busy && <p role="status">Guardando…</p>}
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+        </Modal>
+      )}
+    </div>
   );
 }
 export function Modal({
@@ -106,11 +205,13 @@ export function Modal({
   children,
   onClose,
   className = "",
+  showNotice = true,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   className?: string;
+  showNotice?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const headingId = useId();
@@ -128,6 +229,7 @@ export function Modal({
       className={`modal ${className}`}
       onCancel={(e) => {
         e.preventDefault();
+        e.stopPropagation();
         close();
       }}
       onClick={(e) => {
@@ -136,12 +238,17 @@ export function Modal({
     >
       <div className="modal-head">
         <h2 id={headingId}>{title}</h2>
-        <button className="icon-button" aria-label="Cerrar" onClick={close}>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Cerrar"
+          onClick={close}
+        >
           <X size={20} />
         </button>
       </div>
       <div className="modal-content">
-        {context?.notice && (
+        {showNotice && context?.notice && (
           <div className="notice" role="status">
             {context.notice}
           </div>

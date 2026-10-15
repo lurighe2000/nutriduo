@@ -24,7 +24,14 @@ import {
 import { zero, mealTotal, itemTotal, scale } from "../../nutrition/formulas";
 import { MEAL_TYPES, SOURCE_LABELS } from "../../nutrition/constants";
 import { rounded } from "../../utils/date";
-import { Modal, Button, Field, NumberField, Select } from "../../components/ui";
+import {
+  Modal,
+  Button,
+  Field,
+  NumberField,
+  Select,
+  ChoicePicker,
+} from "../../components/ui";
 import { compressPhoto, mealPhotos } from "../../services/photos";
 import MealPhotos from "./MealPhotos";
 import { aiItems, aiPrompt, parseAnalysis } from "../../services/ai";
@@ -115,21 +122,17 @@ export function ItemFields({
           )}
         </div>
         <div className="form-grid">
-          <label className="field">
-            <span>Procedencia</span>
-            <select
-              value={item.source}
-              onChange={(e) =>
-                onChange({ ...item, source: e.target.value as Item["source"] })
-              }
-            >
-              {Object.entries(SOURCE_LABELS).map(([v, label]) => (
-                <option value={v} key={v}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ChoicePicker
+            label="Procedencia"
+            value={item.source}
+            onChange={(value) =>
+              onChange({ ...item, source: value as Item["source"] })
+            }
+            options={Object.entries(SOURCE_LABELS).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+          />
           <Field
             label="Método de cocción"
             value={item.cooking}

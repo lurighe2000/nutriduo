@@ -149,7 +149,8 @@ test("controles y tarjetas caben en celular y el selector de platos respeta el t
   await page.getByRole("button", { name: "Menú semanal", exact: true }).click();
   await page.getByRole("button", { name: "Preparar mi menú semanal" }).click();
   const trigger = page.getByRole("button", {
-    name: /^Cambiar plato de Desayuno:/,
+    name: "Cambiar plato de Desayuno",
+    exact: true,
   });
   const previous = await trigger.innerText();
   await trigger.click();
@@ -173,6 +174,173 @@ test("controles y tarjetas caben en celular y el selector de platos respeta el t
     selected,
   );
 });
+async function pickCentered(page: Page, label: string, option: string) {
+  const trigger = page.getByRole("button", { name: label, exact: true });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: label, exact: true });
+  await expect(dialog).toBeVisible();
+  const box = await dialog.boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(Math.abs(box!.x + box!.width / 2 - viewport.width / 2)).toBeLessThan(
+    2,
+  );
+  expect(Math.abs(box!.y + box!.height / 2 - viewport.height / 2)).toBeLessThan(
+    2,
+  );
+  await dialog.getByRole("button", { name: option, exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toHaveText(option);
+  await expect(page.locator("select")).toHaveCount(0);
+}
+
+test("selectores centrados conservan valores y formularios en comidas, entreno, balanza y perfil", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await setup(page);
+  await page
+    .getByRole("button", { name: "Registrar comida", exact: true })
+    .last()
+    .click();
+  await page
+    .getByLabel("Nombre de la comida")
+    .fill("Borrador que debe conservarse");
+  await pickCentered(page, "Momento", "Cena");
+  await page.getByRole("button", { name: "Agregar componente manual" }).click();
+  await page.getByText("Valores por 100 g / ml", { exact: false }).click();
+  await pickCentered(page, "Procedencia", "Etiqueta");
+  await page.getByRole("button", { name: "Momento", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Momento", exact: true })
+    .getByRole("button", { name: "Cerrar", exact: true })
+    .click();
+  await expect(page.getByLabel("Nombre de la comida")).toHaveValue(
+    "Borrador que debe conservarse",
+  );
+  await expect(
+    page.getByRole("button", { name: "Momento", exact: true }),
+  ).toHaveText("Cena");
+  await page.getByRole("button", { name: "Momento", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.getByLabel("Nombre de la comida")).toHaveValue(
+    "Borrador que debe conservarse",
+  );
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Entreno", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Caminata y trote", exact: true })
+    .click();
+  await pickCentered(page, "Tipo de salida", "Carrera");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Progreso", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Balanza", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Registrar datos de la balanza", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Agregar dato de la balanza" })
+    .click();
+  await page.getByRole("button", { name: "Dato", exact: true }).click();
+  await page.setViewportSize({ width: 740, height: 360 });
+  const longList = page.getByRole("dialog", { name: "Dato", exact: true });
+  await expect(longList).toBeVisible();
+  const dimensions = await longList.boundingBox();
+  expect(dimensions!.height).toBeLessThanOrEqual(288);
+  expect(Math.abs(dimensions!.y + dimensions!.height / 2 - 180)).toBeLessThan(
+    2,
+  );
+  await longList
+    .getByRole("button", { name: "Edad metabólica", exact: true })
+    .click();
+  await page.setViewportSize({ width: 412, height: 915 });
+  await pickCentered(page, "Unidad", "años");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.getByRole("button", { name: "Medidas", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Registrar medida", exact: true })
+    .click();
+  await pickCentered(page, "Medida", "Cadera");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.getByRole("button", { name: "Fotos", exact: true }).click();
+  await pickCentered(page, "Vista", "Espalda");
+  await page.getByRole("button", { name: "Agregar foto", exact: true }).click();
+  await pickCentered(page, "Vista de la foto", "Frente");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Más", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Tu perfil y objetivos/ }).click();
+  await pickCentered(page, "Actividad", "Moderada");
+  await pickCentered(
+    page,
+    "Dirección del objetivo",
+    "Reducción de grasa / definición",
+  );
+  await page.screenshot({ path: "test-results/profile-choices-mobile.png" });
+});
+
+test("actividad inicial y check-in usan opciones centradas con tema claro y oscuro", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByRole("switch", { name: "Modo oscuro" }).click();
+  await page.getByRole("button", { name: /Luca Construir/ }).click();
+  await page.getByLabel("Crear PIN", { exact: true }).fill("1234");
+  await page.getByLabel("Repetir PIN").fill("1234");
+  await page.getByRole("button", { name: "Crear mi PIN" }).click();
+  await pickCentered(page, "Actividad actual", "Moderada · 3–4 días");
+  await page
+    .getByRole("button", { name: "Actividad actual", exact: true })
+    .click();
+  await page.screenshot({ path: "test-results/onboarding-choice-dark.png" });
+  await page
+    .getByRole("dialog", { name: "Actividad actual", exact: true })
+    .getByRole("button", { name: "Cerrar" })
+    .click();
+  await page.getByLabel("Peso actual (kg)").fill("60");
+  await page.getByLabel("Altura (cm)").fill("169");
+  await page.getByLabel("Fecha de nacimiento").fill("2000-06-15");
+  await page.getByRole("button", { name: "Ver propuesta" }).click();
+  await page.getByRole("button", { name: "Confirmar y empezar" }).click();
+  await page
+    .locator(".bottom-nav")
+    .getByRole("button", { name: "Progreso", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Mi análisis", exact: true }).click();
+  await page.getByRole("button", { name: "Hacer mi primer check-in" }).click();
+  await pickCentered(page, "Hambre (1 poca · 5 mucha)", "4");
+  await pickCentered(page, "Energía (1 baja · 5 alta)", "2");
+  await pickCentered(page, "Sueño (1 malo · 5 bueno)", "5");
+  await pickCentered(page, "Rendimiento (1 bajo · 5 alto)", "4");
+  await pickCentered(
+    page,
+    "Dificultad con la alimentación (1 poca · 5 mucha)",
+    "1",
+  );
+  await pickCentered(
+    page,
+    "Cumplimiento del entrenamiento (1 bajo · 5 alto)",
+    "5",
+  );
+  await page
+    .getByRole("button", { name: "Guardar registro", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText(/energía 2\/5 · descanso 5\/5/)).toBeVisible();
+});
+
 function syntheticFemmtoPDF() {
   const lines = [
     "ID Altura Edad Genero Fecha / hora",

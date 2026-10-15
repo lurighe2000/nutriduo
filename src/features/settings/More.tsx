@@ -43,6 +43,7 @@ import {
   Button,
   Field,
   NumberField,
+  ChoicePicker,
   Modal,
   SectionTitle,
   Confirm,
@@ -412,35 +413,31 @@ export default function More({
                 value={draft.gymDays}
                 onChange={(n) => setDraft({ ...draft, gymDays: n })}
               />
-              <label className="field">
-                <span>Actividad</span>
-                <select
-                  value={draft.activity}
-                  onChange={(e) =>
-                    setDraft({ ...draft, activity: Number(e.target.value) })
-                  }
-                >
-                  <option value={1.2}>Baja</option>
-                  <option value={1.375}>Ligera</option>
-                  <option value={1.55}>Moderada</option>
-                  <option value={1.725}>Alta</option>
-                </select>
-              </label>
-              <label className="field">
-                <span>Dirección del objetivo</span>
-                <select
-                  value={draft.goal}
-                  onChange={(e) =>
-                    setDraft({
-                      ...draft,
-                      goal: e.target.value as Profile["goal"],
-                    })
-                  }
-                >
-                  <option value="gain">Ganancia muscular controlada</option>
-                  <option value="loss">Reducción de grasa / definición</option>
-                </select>
-              </label>
+              <ChoicePicker
+                label="Actividad"
+                value={draft.activity}
+                onChange={(activity) => setDraft({ ...draft, activity })}
+                options={[
+                  { value: 1.2, label: "Baja" },
+                  { value: 1.375, label: "Ligera" },
+                  { value: 1.55, label: "Moderada" },
+                  { value: 1.725, label: "Alta" },
+                ]}
+              />
+              <ChoicePicker
+                label="Dirección del objetivo"
+                value={draft.goal}
+                onChange={(value) =>
+                  setDraft({
+                    ...draft,
+                    goal: value as Profile["goal"],
+                  })
+                }
+                options={[
+                  { value: "gain", label: "Ganancia muscular controlada" },
+                  { value: "loss", label: "Reducción de grasa / definición" },
+                ]}
+              />
             </div>
             <h3>Objetivos diarios</h3>
             <p className="muted small">

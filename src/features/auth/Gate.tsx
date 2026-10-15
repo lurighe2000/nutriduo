@@ -15,7 +15,13 @@ import { initialPlan } from "../../services/workouts";
 import { targets, age } from "../../nutrition/formulas";
 import { profileSchema, type Profile } from "../../schemas";
 import { today, rounded } from "../../utils/date";
-import { Button, Field, NumberField, Modal } from "../../components/ui";
+import {
+  Button,
+  Field,
+  NumberField,
+  Modal,
+  ChoicePicker,
+} from "../../components/ui";
 import CloudAccount from "../settings/CloudAccount";
 import { DuoBuddy } from "../../components/motion";
 export default function Gate({
@@ -295,27 +301,22 @@ export default function Gate({
                         setSelected({ ...p, birthDate: e.target.value })
                       }
                     />
-                    <label className="field">
-                      <span>Actividad actual</span>
-                      <select
-                        value={p.activity}
-                        onChange={(e) =>
-                          setSelected({
-                            ...p,
-                            activity: Number(e.target.value),
-                          })
-                        }
-                      >
-                        <option value={1.2}>Poco movimiento</option>
-                        <option value={1.375}>
-                          Ligera · 1–2 días por semana
-                        </option>
-                        <option value={1.55}>Moderada · 3–4 días</option>
-                        <option value={1.725}>
-                          Alta · casi todos los días
-                        </option>
-                      </select>
-                    </label>
+                    <ChoicePicker
+                      label="Actividad actual"
+                      value={p.activity}
+                      onChange={(activity) =>
+                        setSelected({
+                          ...p,
+                          activity,
+                        })
+                      }
+                      options={[
+                        { value: 1.2, label: "Poco movimiento" },
+                        { value: 1.375, label: "Ligera · 1–2 días por semana" },
+                        { value: 1.55, label: "Moderada · 3–4 días" },
+                        { value: 1.725, label: "Alta · casi todos los días" },
+                      ]}
+                    />
                     <NumberField
                       label="Días disponibles para fuerza"
                       value={p.gymDays}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Cloud, KeyRound } from "lucide-react";
-import { Button, Field } from "../../components/ui";
+import { Button, Field, ChoicePicker } from "../../components/ui";
 import { useCloudStatus } from "../../components/CloudBackupStatus";
 import type { ProfileId } from "../../schemas";
 import { currentAIConnection } from "../../services/integratedAI";
@@ -222,21 +222,25 @@ export default function CloudAccount({
                 ? "Crear cuenta y activar respaldo"
                 : "Ingresar y recuperar mi cuenta"}
             </h3>
-            <label className="field">
-              <span>Usuario de NutriDuo</span>
-              <select
-                value={id}
-                disabled={Boolean(profileId) || busy}
-                onChange={(e) => {
-                  setId(e.target.value as ProfileId);
-                  setError("");
-                }}
-                autoComplete="username"
-              >
-                <option value="luca">luca</option>
-                <option value="ari">ari</option>
-              </select>
-            </label>
+            <ChoicePicker
+              label="Usuario de NutriDuo"
+              value={id}
+              disabled={Boolean(profileId) || busy}
+              onChange={(value) => {
+                setId(value as ProfileId);
+                setError("");
+              }}
+              options={[
+                { value: "luca", label: "luca" },
+                { value: "ari", label: "ari" },
+              ]}
+            />
+            <input
+              type="hidden"
+              name="username"
+              autoComplete="username"
+              value={id}
+            />
             <Field
               label="Contraseña de la cuenta"
               type="password"

@@ -2,7 +2,13 @@ import { useState } from "react";
 import { useApp } from "../../app/context";
 import { meta } from "../../db";
 import { activitySchema, type Records } from "../../schemas";
-import { Button, Field, Modal, Confirm } from "../../components/ui";
+import {
+  Button,
+  Field,
+  Modal,
+  Confirm,
+  ChoicePicker,
+} from "../../components/ui";
 type Run = NonNullable<Records["activity"]["runs"]>[number];
 const formatPace = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -150,17 +156,15 @@ export default function RunningLog({ onClose }: { onClose: () => void }) {
             .finally(() => setBusy(false));
         }}
       >
-        <label className="field">
-          <span>Tipo de salida</span>
-          <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value as Run["kind"])}
-          >
-            {["Caminata", "Caminata y trote", "Carrera"].map((k) => (
-              <option key={k}>{k}</option>
-            ))}
-          </select>
-        </label>
+        <ChoicePicker
+          label="Tipo de salida"
+          value={kind}
+          onChange={(value) => setKind(value as Run["kind"])}
+          options={["Caminata", "Caminata y trote", "Carrera"].map((value) => ({
+            value,
+            label: value,
+          }))}
+        />
         <div className="form-grid">
           <Field
             label="Distancia (km)"

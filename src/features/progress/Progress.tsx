@@ -10,6 +10,7 @@ import {
   NumberField,
   Modal,
   Select,
+  ChoicePicker,
   SectionTitle,
   Confirm,
 } from "../../components/ui";
@@ -592,30 +593,25 @@ export default function Progress() {
               <>
                 {(Object.keys(check) as (keyof typeof check)[]).map(
                   (key, i) => (
-                    <label className="field" key={key}>
-                      <span>
-                        {
-                          [
-                            "Hambre (1 poca · 5 mucha)",
-                            "Energía (1 baja · 5 alta)",
-                            "Sueño (1 malo · 5 bueno)",
-                            "Rendimiento (1 bajo · 5 alto)",
-                            "Dificultad con la alimentación (1 poca · 5 mucha)",
-                            "Cumplimiento del entrenamiento (1 bajo · 5 alto)",
-                          ][i]
-                        }
-                      </span>
-                      <select
-                        value={check[key]}
-                        onChange={(e) =>
-                          setCheck({ ...check, [key]: Number(e.target.value) })
-                        }
-                      >
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <option key={n}>{n}</option>
-                        ))}
-                      </select>
-                    </label>
+                    <ChoicePicker
+                      key={key}
+                      label={
+                        [
+                          "Hambre (1 poca · 5 mucha)",
+                          "Energía (1 baja · 5 alta)",
+                          "Sueño (1 malo · 5 bueno)",
+                          "Rendimiento (1 bajo · 5 alto)",
+                          "Dificultad con la alimentación (1 poca · 5 mucha)",
+                          "Cumplimiento del entrenamiento (1 bajo · 5 alto)",
+                        ][i]
+                      }
+                      value={check[key]}
+                      onChange={(value) => setCheck({ ...check, [key]: value })}
+                      options={[1, 2, 3, 4, 5].map((value) => ({
+                        value,
+                        label: String(value),
+                      }))}
+                    />
                   ),
                 )}
               </>

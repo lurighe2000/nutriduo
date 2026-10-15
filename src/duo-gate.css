@@ -1,5 +1,11 @@
 /* NutriDuo welcome, profile choice and PIN: same visual language as Inicio. */
 .appearance-frame {
+  --bg: var(--g-bg);
+  --surface: var(--g-card);
+  --ink: var(--g-ink);
+  --muted: var(--g-muted);
+  --border: var(--g-border);
+  --primary: #2563d9;
   --g-bg: #f3f6fc;
   --g-ink: #121a33;
   --g-muted: #5f6b86;
@@ -8,6 +14,9 @@
   --g-luca: linear-gradient(135deg, #2a6ff0, #5ccaff);
   --g-ari: linear-gradient(135deg, #d93b84, #f78bb9);
   --g-shadow: 0 18px 40px -24px rgba(20, 40, 90, 0.35);
+}
+.appearance-frame .welcome.theme-ari {
+  --primary: #c42f74;
 }
 .appearance-frame.dark {
   --g-bg: #070b1f;

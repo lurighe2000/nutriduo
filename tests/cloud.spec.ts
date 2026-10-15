@@ -147,7 +147,20 @@ test("respaldo cifrado sobre SQLite real: reinstalar, fotos, usuarios separados 
     await fresh
       .getByRole("button", { name: /Ya tengo cuenta · Recuperar/ })
       .click();
-    await fresh.getByLabel("Usuario de NutriDuo").selectOption("luca");
+    await fresh
+      .getByRole("button", { name: "Usuario de NutriDuo", exact: true })
+      .click();
+    await fresh
+      .getByRole("dialog", { name: "Usuario de NutriDuo", exact: true })
+      .getByRole("button", { name: "ari", exact: true })
+      .click();
+    await fresh
+      .getByRole("button", { name: "Usuario de NutriDuo", exact: true })
+      .click();
+    await fresh
+      .getByRole("dialog", { name: "Usuario de NutriDuo", exact: true })
+      .getByRole("button", { name: "luca", exact: true })
+      .click();
     await fresh
       .getByLabel("Contraseña de la cuenta", { exact: true })
       .fill("contraseña equivocada");
@@ -348,7 +361,7 @@ test("respaldo cifrado sobre SQLite real: reinstalar, fotos, usuarios separados 
     });
     await third.getByRole("button", { name: "Platos", exact: true }).click();
     await third
-      .getByRole("button", { name: /^Cambiar plato de Desayuno:/ })
+      .getByRole("button", { name: "Cambiar plato de Desayuno", exact: true })
       .click();
     const nextBreakfast = third
       .getByRole("dialog")

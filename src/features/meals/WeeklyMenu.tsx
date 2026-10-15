@@ -331,6 +331,7 @@ export default function WeeklyMenu() {
                       </details>
                       <ChoicePicker
                         label={`Cambiar plato de ${m.slot}`}
+                        description="Elegí el plato que querés preparar."
                         value={m.recipe}
                         options={allowedRecipes(m.slot, sharedExcluded).map(
                           (r) => ({ value: r.id, label: r.name }),
