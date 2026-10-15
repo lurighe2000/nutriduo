@@ -11,6 +11,7 @@ export function toShared(food: Food, profileId: ProfileId): SharedProduct {
     name: food.name,
     brand: food.brand.slice(0, 150),
     quantity: food.quantity,
+    category: food.category,
     image: food.image,
     servingSize: food.servingSize,
     unit: food.unit,
@@ -75,6 +76,7 @@ export function fromShared(
           }
         : existing?.nutritionReference,
     quantity: product.quantity,
+    category: product.category,
     image: product.image,
     ingredients: product.ingredients,
     allergens: product.allergens,

@@ -47,7 +47,7 @@ const sections = [
       "Recordar conexión en este dispositivo viene activado y conserva el acceso para ambos perfiles en ese celular. Al abrir la sección se comprueba automáticamente y aparece Ya estás conectado. Configurala una vez en cada celular. Si no hay red, se conserva el acceso y la verificación queda pendiente.",
       "Componentes: cargá alimentos, cantidades y valores de la etiqueta manualmente.",
       "Mis alimentos: reutilizá la biblioteca personal y una porción de tus recetas.",
-      "Código de barras: escribí el código o usá la cámara para buscar un producto. Verificá la ficha con su etiqueta; si no aparece, cargala en Componentes.",
+      "Código de barras: tocá Escanear producto y apuntá al código. Ves qué es, toda la tabla nutricional, alérgenos e ingredientes; elegís cuánto comiste y lo agregás. Si no aparece, sacale una foto a la tabla y la IA copia los valores. Todo lo escaneado queda en Productos de la casa para los dos.",
       "IA externa: copiá el prompt para analizar fuera de la app, pegá la respuesta JSON y tocá Validar y revisar antes de guardar.",
       "Sin conexión o con la cuota de IA agotada, podés seguir cargando manualmente. Analizar envía únicamente las fotos adjuntas y descripción de esa consulta.",
     ],

@@ -1,14 +1,26 @@
-import { useState } from "react";
-import { Check, PencilLine, Plus, Users } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, Check, PencilLine, Plus, Users } from "lucide-react";
 import { useApp } from "../../app/context";
 import { Button, Field, Modal, NumberField } from "../../components/ui";
 import { saveProduct } from "../../services/pantry";
+import { readNutritionLabel } from "../../services/integratedAI";
+import { labelPer100 } from "../../services/labelContract";
 import type { Food } from "../../schemas";
 
 const round = (n: number, d = 1) => {
   const f = 10 ** d;
   return Math.round(n * f) / f;
 };
+/** Grams or ml of the whole package, from "400 g", "1 kg", "1,5 L"… */
+function packageAmount(quantity?: string) {
+  const m = /([\d.,]+)\s*(kg|g|ml|cl|l)\b/i.exec(quantity ?? "");
+  if (!m) return undefined;
+  const n = Number(m[1].replace(",", "."));
+  const unit = m[2].toLowerCase();
+  const value =
+    n * (unit === "kg" || unit === "l" ? 1000 : unit === "cl" ? 10 : 1);
+  return value > 0 && value <= 10000 ? Math.round(value) : undefined;
+}
 const fmt = (n?: number, d = 1) =>
   n === undefined ? "—" : round(n, d).toLocaleString("es-AR");
 
@@ -35,6 +47,69 @@ export default function ProductSheet({
   const [draft, setDraft] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [isShared, setShared] = useState(shared);
+  const [reading, setReading] = useState(false);
+  const photo = useRef<HTMLInputElement>(null);
+  const pack = packageAmount(food.quantity);
+  const amounts = [
+    {
+      g: food.servingSize,
+      label: `1 porción · ${food.servingSize} ${food.unit}`,
+    },
+    {
+      g: food.servingSize * 2,
+      label: `2 porciones · ${food.servingSize * 2} ${food.unit}`,
+    },
+    ...(pack && pack > food.servingSize
+      ? [
+          {
+            g: Math.round(pack / 2),
+            label: `½ envase · ${Math.round(pack / 2)} ${food.unit}`,
+          },
+          { g: pack, label: `Envase entero · ${pack} ${food.unit}` },
+        ]
+      : []),
+    { g: 100, label: `100 ${food.unit}` },
+  ].filter((a, i, list) => list.findIndex((b) => b.g === a.g) === i);
+
+  async function readLabel(file: File) {
+    setReading(true);
+    try {
+      const url = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      const result = await readNutritionLabel(profile.id, url);
+      if (result.status !== "ready") {
+        notify(`No se pudo leer: ${result.reason}`);
+        return;
+      }
+      const values = labelPer100(result.label);
+      setDraft((d) => ({
+        ...d,
+        name: d.name || result.label.name?.trim() || "",
+        brand: d.brand || result.label.brand?.trim() || "",
+        per100: values.per100,
+        fiberKnown: values.fiberKnown,
+        sugars: values.sugars,
+        saturatedFat: values.saturatedFat,
+        sodium:
+          values.sodiumMg === undefined ? undefined : values.sodiumMg / 1000,
+        micronutrientsPer100:
+          values.sodiumMg === undefined
+            ? d.micronutrientsPer100
+            : { ...d.micronutrientsPer100, sodium_mg: values.sodiumMg },
+        servingSize: values.servingSize ?? d.servingSize,
+        unit: values.unit,
+      }));
+      notify("Etiqueta leída: revisá que los números coincidan");
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "No se pudo leer la etiqueta.");
+    } finally {
+      setReading(false);
+    }
+  }
   const unit = food.unit;
   const sodiumMg =
     food.micronutrientsPer100?.sodium_mg ??
@@ -119,6 +194,35 @@ export default function ProductSheet({
               nutricional del envase y queda guardado para los dos.
             </p>
           )}
+          <button
+            type="button"
+            className="products-scan product-photo"
+            disabled={reading}
+            onClick={() => photo.current?.click()}
+          >
+            <Camera size={26} />
+            <span>
+              <strong>
+                {reading
+                  ? "Leyendo la etiqueta…"
+                  : "Sacale una foto a la tabla"}
+              </strong>
+              <small>La IA copia los valores y vos los revisás</small>
+            </span>
+          </button>
+          <input
+            ref={photo}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            aria-label="Foto de la tabla nutricional"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void readLabel(file);
+            }}
+          />
           <Field
             label="Nombre del producto"
             required
@@ -208,6 +312,9 @@ export default function ProductSheet({
                 {[food.brand, food.quantity].filter(Boolean).join(" · ") ||
                   food.barcode}
               </span>
+              {food.category && (
+                <span className="product-category">{food.category}</span>
+              )}
               <div className="product-badges">
                 {food.nutriScore && (
                   <span className={`nutri-score ns-${food.nutriScore}`}>
@@ -227,17 +334,16 @@ export default function ProductSheet({
           </div>
 
           <div className="product-amount">
-            <span>Cantidad</span>
+            <span>¿Cuánto comiste?</span>
             <div className="product-amount-chips">
-              {[...new Set([food.servingSize, 100])].map((g) => (
+              {amounts.map((a) => (
                 <button
                   type="button"
-                  key={g}
-                  aria-pressed={grams === g}
-                  onClick={() => setGrams(g)}
+                  key={a.g}
+                  aria-pressed={grams === a.g}
+                  onClick={() => setGrams(a.g)}
                 >
-                  {g === food.servingSize && g !== 100 ? "1 porción · " : ""}
-                  {g} {unit}
+                  {a.label}
                 </button>
               ))}
             </div>
@@ -256,7 +362,7 @@ export default function ProductSheet({
                 <th scope="col">Nutriente</th>
                 <th scope="col">100 {unit}</th>
                 <th scope="col">
-                  {Number.isFinite(grams) ? fmt(grams, 0) : "—"} {unit}
+                  Comiste {Number.isFinite(grams) ? fmt(grams, 0) : "—"} {unit}
                 </th>
               </tr>
             </thead>

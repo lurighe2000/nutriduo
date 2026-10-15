@@ -10,6 +10,11 @@ import type { Micronutrients } from "../src/schemas";
 import catalog from "./nutrition-catalog.json";
 import { pushRoute, sendReminders, type PushEnv } from "./notifications";
 import { cloudRoute, type CloudEnv } from "./cloud";
+import {
+  LABEL_INSTRUCTIONS,
+  labelRequestSchema,
+  labelResponseSchema,
+} from "../src/services/labelContract";
 export { BackupVault } from "./cloud";
 const normalize = (text: string) =>
   text
@@ -289,7 +294,7 @@ export function createHandler(upstream: typeof fetch = fetch) {
     }
     if (
       request.method !== "POST" ||
-      !["/analyze", "/nutrition/search"].includes(path)
+      !["/analyze", "/nutrition/search", "/label"].includes(path)
     )
       return reply({ error: "Ruta no disponible." }, 404);
     if (!request.headers.get("content-type")?.startsWith("application/json"))
@@ -303,7 +308,10 @@ export function createHandler(upstream: typeof fetch = fetch) {
       );
     let body: unknown;
     try {
-      body = await readBody(request, path === "/analyze" ? 6100000 : MAX_BODY);
+      body = await readBody(
+        request,
+        path === "/analyze" ? 6100000 : path === "/label" ? 2200000 : MAX_BODY,
+      );
     } catch (error) {
       return reply(
         { error: "Solicitud inválida o fotos demasiado grandes." },
@@ -347,6 +355,64 @@ export function createHandler(upstream: typeof fetch = fetch) {
             response.status === 429 ? 429 : 502,
           );
         return reply({ foods: mapUSDA(await response.json()) });
+      }
+      if (path === "/label") {
+        const label = labelRequestSchema.safeParse(body);
+        if (!label.success)
+          return reply(
+            { error: "Mandá una foto de la tabla nutricional." },
+            400,
+          );
+        const response = await upstream(
+          "https://api.groq.com/openai/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${env.GROQ_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: GROQ_MODEL,
+              messages: [
+                { role: "system", content: LABEL_INSTRUCTIONS },
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: "Leé esta tabla nutricional." },
+                    { type: "image_url", image_url: { url: label.data.photo } },
+                  ],
+                },
+              ],
+              response_format: { type: "json_object" },
+              max_completion_tokens: 500,
+            }),
+            signal: AbortSignal.timeout(45000),
+          },
+        );
+        if (!response.ok)
+          return reply(
+            {
+              error:
+                response.status === 429
+                  ? "Se agotó por ahora la cuota gratuita de la IA. Probá en unos minutos o cargá los valores a mano."
+                  : "No pudimos leer la etiqueta. Cargá los valores a mano.",
+            },
+            response.status === 429 ? 429 : 502,
+          );
+        try {
+          const result = groqResponse.parse(await response.json()).choices[0];
+          return reply(
+            labelResponseSchema.parse(JSON.parse(result.message.content)),
+          );
+        } catch {
+          return reply(
+            {
+              error:
+                "No pudimos leer bien la etiqueta. Probá otra foto más cerca y derecha, o cargá los valores a mano.",
+            },
+            502,
+          );
+        }
       }
       const input = analysisRequestSchema.safeParse(body);
       if (!input.success)

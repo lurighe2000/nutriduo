@@ -11,7 +11,8 @@ description: Barcode scanning, Open Food Facts lookups and the shared "Productos
 2. "Escanear producto" opens `BarcodeScanner.tsx`: its own `<dialog>` (so it stacks above the meal modal), back camera (`facingMode: environment`), native `BarcodeDetector` when present (Chrome Android), otherwise ZXing `decodeFromStream`. Codes are accepted only with a valid EAN/UPC check digit (`validBarcode`). Torch toggle when the track supports it; "Escribir el número" fallback.
 3. `findProduct` (`src/services/products.ts`): this profile's saved products first, then Open Food Facts (`lc=es`, label fields, image, ingredients, allergens, Nutri-Score, NOVA). Missing macros are listed so the card opens in edit mode.
 4. `ProductSheet.tsx`: full label table per 100 and per chosen amount, allergens, ingredients, "Agregar a la comida" (adds the item with the chosen grams) and "Corregir datos" (marks it verified).
-5. Not on Open Food Facts: the card opens empty with the scanned barcode so it is typed once from the package.
+5. Not on Open Food Facts, or missing values: the card opens in edit mode. "Sacale una foto a la tabla" sends one photo to the Worker route `/label` (Groq vision, `src/services/labelContract.ts`); it returns the printed values per 100 or per portion and `labelPer100` converts them. The person always reviews before saving.
+6. "¿Cuánto comiste?": 1 or 2 portions, half or whole package (parsed from the package quantity), 100 g, or any amount.
 
 ## Sharing between Luca and Ari
 

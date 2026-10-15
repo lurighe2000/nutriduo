@@ -33,6 +33,23 @@ function blankProduct(profileId: Food["profileId"], barcode: string): Food {
   };
 }
 
+/**
+ * Closing the product card pops its history entry; adding the food switches
+ * the meal tab, which pushes a new one. Wait for the pop so the meal editor
+ * itself is not closed by it.
+ */
+function afterBack(action: () => void) {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    window.removeEventListener("popstate", run);
+    window.setTimeout(action, 0);
+  };
+  window.addEventListener("popstate", run);
+  window.setTimeout(run, 700);
+}
+
 /** Scan or type a barcode, see the full label and pick from the shared list. */
 export default function ProductsPanel({
   onAdd,
@@ -230,7 +247,7 @@ export default function ProductsPanel({
           shared={sheet.shared}
           onAdd={(food, grams) => {
             setSheet(undefined);
-            onAdd(food, grams);
+            afterBack(() => onAdd(food, grams));
           }}
           onClose={() => setSheet(undefined)}
         />
