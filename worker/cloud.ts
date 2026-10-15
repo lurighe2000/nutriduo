@@ -8,7 +8,9 @@ import {
 } from "../src/services/cloudContract";
 import type { CloudMeta } from "../src/services/cloudContract";
 import { householdRoute } from "./household";
+import { pantryRoute } from "./pantry";
 import { householdActionSchema } from "../src/services/householdContract";
+import { pantryActionSchema } from "../src/services/pantryContract";
 
 // Structural types also allow exercising the real vault protocol in Node tests.
 export interface VaultStore {
@@ -116,6 +118,8 @@ export class BackupVault {
       const body = await request.json();
       if (new URL(request.url).pathname === "/internal/household")
         return householdRoute(body, this.state.storage);
+      if (new URL(request.url).pathname === "/internal/pantry")
+        return pantryRoute(body, this.state.storage);
       base.parse(body);
       const path = new URL(request.url).pathname;
       const store = this.state.storage;
@@ -299,6 +303,7 @@ export async function cloudRoute(request: Request, env: CloudEnv) {
       "commit",
       "read",
       "household",
+      "pantry",
     ].some((route) => path === `/cloud/${route}`)
   )
     return result({ error: "Ruta no disponible." }, 404);
@@ -350,6 +355,31 @@ export async function cloudRoute(request: Request, env: CloudEnv) {
     }
     text += decoder.decode();
     const parsed = base.parse(JSON.parse(text));
+    if (path === "/cloud/pantry") {
+      const input = pantryActionSchema.parse(JSON.parse(text));
+      const own = await env.BACKUP_VAULTS.get(
+        env.BACKUP_VAULTS.idFromName(parsed.profileId),
+      ).fetch(
+        new Request("https://vault.internal/cloud/head", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: request.headers.get("authorization") ?? "",
+          },
+          body: JSON.stringify(parsed),
+        }),
+      );
+      if (!own.ok) return own;
+      return env.BACKUP_VAULTS.get(
+        env.BACKUP_VAULTS.idFromName("nutriduo-household"),
+      ).fetch(
+        new Request("https://vault.internal/internal/pantry", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input),
+        }),
+      );
+    }
     if (path === "/cloud/household") {
       const input = householdActionSchema.parse(JSON.parse(text));
       const own = await env.BACKUP_VAULTS.get(

@@ -262,6 +262,15 @@ async function request(
     );
   return data;
 }
+/** Authenticated call for data shared by both profiles; undefined without an account. */
+export async function cloudRequest(
+  id: ProfileId,
+  route: string,
+  body: object = {},
+) {
+  const credentials = cloudCredentials(id);
+  return credentials ? request(credentials, route, body) : undefined;
+}
 export async function registerCloud(
   id: ProfileId,
   password: string,

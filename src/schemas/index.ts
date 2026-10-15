@@ -68,6 +68,14 @@ export const foodSchema = baseSchema.extend({
   micronutrientsPer100: micronutrientsSchema.optional(),
   fiberKnown: z.boolean().optional(),
   nutritionReference: nutritionReferenceSchema.optional(),
+  // Packaged products (barcode): label details shared in "Productos de la casa".
+  quantity: z.string().max(60).optional(),
+  image: z.string().max(500).optional(),
+  ingredients: z.string().max(2000).optional(),
+  allergens: z.array(z.string().max(60)).max(30).optional(),
+  nutriScore: z.enum(["a", "b", "c", "d", "e"]).optional(),
+  nova: z.number().int().min(1).max(4).optional(),
+  sharedBy: z.enum(["luca", "ari"]).optional(),
 });
 export const itemSchema = z.object({
   id: z.string(),
