@@ -49,6 +49,18 @@ Continuar desde la interfaz oficial después de su aviso; no extraer cookies ni
 pedir claves en el chat. Una generación válida todavía necesita inspección,
 retopología/articulaciones y revisión visual; no equivale a personaje terminado.
 
+Actualización: Luca ya inició sesión y se comprobó su página de bienvenida.
+La interfaz oficial de TRELLIS.2 está lista en Chrome, pestaña `208932980`:
+1024 de resolución, semilla 1234 fija, 100.000 caras y textura 1024. Falta que
+Luca adjunte manualmente la imagen en **Image Prompt**; los selectores dentro
+del iframe no entregaron el evento de archivo al controlador, y el pegado
+tampoco adjuntó una imagen. No repetir la carga en bucle ni extraer cookies.
+La pestaña directa sin contexto del portal devolvió un error genérico al generar;
+no hay todavía un resultado válido autenticado. La referencia exacta también
+está convertida sin cambios visuales a `C:/Users/lucar/Downloads/NutriDuo-Angel-referencia.png`
+para facilitar ese único paso. Se escribió esa imagen en el portapapeles durante
+la prueba de pegado; no se leyó el contenido previo del portapapeles.
+
 ## Reproducir la vista de volumen
 
 Blender oficial instalado en
