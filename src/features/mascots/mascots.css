@@ -1,0 +1,197 @@
+.mascot-preview {
+  --mascot-bg: #eef3fa;
+  --mascot-ink: #172743;
+  --mascot-muted: #4d5e78;
+  --mascot-accent: #1854be;
+  --mascot-surface: #fff;
+  min-height: 100dvh;
+  background: var(--mascot-bg);
+  color: var(--mascot-ink);
+  padding: max(20px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  font-family: Manrope, sans-serif;
+}
+.mascot-preview.angel {
+  --mascot-accent: #a82b68;
+  --mascot-bg: #faf0f5;
+}
+.mascot-preview.is-dark {
+  --mascot-bg: #111a2b;
+  --mascot-ink: #eff3fd;
+  --mascot-muted: #b5c3d9;
+  --mascot-accent: #91baff;
+  --mascot-surface: #202e45;
+}
+.mascot-preview.angel.is-dark {
+  --mascot-bg: #281625;
+  --mascot-surface: #40263a;
+  --mascot-accent: #ffa7d0;
+}
+.mascot-preview header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  max-width: 1040px;
+  margin: auto;
+}
+.mascot-preview a {
+  color: var(--mascot-accent);
+  text-underline-offset: 0.2em;
+  font-weight: 700;
+}
+.mascot-preview button {
+  color: var(--mascot-ink);
+  background: var(--mascot-surface);
+  border: 1px solid color-mix(in srgb, var(--mascot-ink) 18%, transparent);
+  border-radius: 16px;
+  min-height: 44px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.mascot-preview button[aria-pressed="true"] {
+  background: var(--mascot-accent);
+  color: var(--mascot-bg);
+  border-color: transparent;
+}
+.mascot-preview button:focus-visible,
+.mascot-preview a:focus-visible {
+  outline: 3px solid var(--mascot-accent);
+  outline-offset: 4px;
+}
+.mascot-preview button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.mascot-preview-content {
+  max-width: 960px;
+  margin: 56px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: center;
+}
+.mascot-preview h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  margin: 0 0 20px;
+  text-wrap: balance;
+  font-weight: 800;
+}
+.mascot-preview p {
+  color: var(--mascot-muted);
+  line-height: 1.65;
+  max-width: 48ch;
+}
+.mascot-profile-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.mascot-demo {
+  position: relative;
+  text-align: center;
+  min-width: 0;
+}
+.mascot-stage {
+  height: clamp(280px, 40vw, 430px);
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+.mascot-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.mascot-stage-floor {
+  width: 50%;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mascot-ink) 10%, transparent);
+  margin: -54px auto 35px;
+}
+.mascot-state {
+  display: block;
+  min-height: 26px;
+  font-size: 13px;
+  color: var(--mascot-muted);
+  margin: 8px 0;
+}
+.mascot-motion-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+.mascot-view-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mascot-view-picker button {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.mascot-preview-note {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font-size: 13px;
+  text-align: center;
+  margin: 0;
+}
+.mascot-credits {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font-size: 12px;
+}
+.mascot-reference {
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin: 0;
+  text-align: center;
+}
+.mascot-reference img {
+  width: min(300px, 100%);
+  height: auto;
+  display: block;
+  border-radius: 20px;
+}
+.mascot-reference figcaption {
+  font-size: 13px;
+  margin-top: 12px;
+  color: var(--mascot-muted);
+}
+@media (max-width: 640px) {
+  .mascot-preview-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 36px;
+  }
+  .mascot-preview-copy {
+    text-align: center;
+  }
+  .mascot-preview-copy p {
+    margin-inline: auto;
+  }
+  .mascot-profile-picker {
+    justify-content: center;
+  }
+  .mascot-stage {
+    height: 320px;
+  }
+  .mascot-preview h1 {
+    font-size: 36px;
+  }
+}

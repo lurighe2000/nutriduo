@@ -1,0 +1,32 @@
+{
+  "status": "Development preview only. Stitch motion contacts under review; Angel is an unrigged neutral sculpt, not a finished animated character.",
+  "baseModel": {
+    "title": "Stitch (KH3) Rig",
+    "author": "Guilherme Navarro",
+    "source": "https://sketchfab.com/3d-models/stitch-kh3-rig-d1c674e7c0424687935d1839a2a55843",
+    "licenseAsListedByUploader": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "uploaderSourceCredit": "Model Ripped By WhiteMageSunny; Kingdom Hearts 3",
+    "characterRights": "Stitch and Angel are Disney characters. The uploader's model license does not grant ownership of these characters or establish rights to game assets.",
+    "downloaded": "2026-10-15",
+    "sourceSha256": "15d2b15060aa0d30afb71d73433d168fdba32ad008f542e3b9ec0ed3591996b4"
+  },
+  "adaptations": "Stitch: blasters removed and motion clips authored in Blender. The rejected Angel adaptation of Stitch is no longer loaded by the preview.",
+  "angelSculpt": {
+    "appearanceReference": "Only Luca's supplied e9d7c2032d1d829d746280cefeae2df4.jpg",
+    "referenceSha256": "0add4a29ef9c512343b447d30b45519caa12067f5ee399125f441b3874c8c575",
+    "geometryService": "Tencent Hunyuan3D-2.1 official geometry-only demo",
+    "source": "https://huggingface.co/spaces/tencent/Hunyuan3D-2.1",
+    "toolTerms": "https://huggingface.co/tencent/Hunyuan3D-2.1/blob/main/LICENSE",
+    "generated": "2026-10-15",
+    "seed": 1234,
+    "steps": 30,
+    "octreeResolution": 256,
+    "rawGeometrySha256": "0ff983a9971d4beec1f682c280bf02ea99f3a6d928ad7ba5cd407a86ce40a1f3",
+    "previewSha256": "15fd0130ceed9ee1b7d595308ea15e52ddc82204a2563ccf71ad51cc067a32f8",
+    "changes": "Uniform normalization, decimation from 415870 to 116442 triangles, neutral clay material. No rig, clips, textures or facial morphs. Source preserved separately.",
+    "outstanding": "Correct the dropped ear, face proportions, limbs and contacts; then author materials, topology, rig, expressions and motions. Hidden surfaces are inferred from the single image.",
+    "characterRights": "Angel remains a Disney character; generation is not a grant of character rights."
+  },
+  "cost": "Free hosted geometry generation and local Blender preparation. Playback has no AI calls or paid services."
+}
