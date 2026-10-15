@@ -1993,3 +1993,44 @@ test("nombre y foto de perfil persisten en backup sin cambiar el PIN ni el otro 
   ).toBeVisible();
   await expect(page.locator(".ring-text strong")).toHaveText("260");
 });
+
+test("graba una salida con GPS, la guarda y muestra el recorrido", async ({
+  page,
+  context,
+}) => {
+  await page.route(/tile\.openstreetmap\.org/, (route) => route.abort());
+  await context.grantPermissions(["geolocation"]);
+  const start = { latitude: -34.5717, longitude: -58.4176 };
+  await context.setGeolocation({ ...start, accuracy: 5 });
+  await setup(page);
+  await navigate(page, "Entreno");
+  await expect(
+    page.getByRole("heading", { name: "Mis salidas", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Salir a correr" }).click();
+  const km = page.getByTestId("run-km");
+  await expect(km).toBeVisible({ timeout: 15000 });
+  for (let i = 1; i <= 16; i++) {
+    await context.setGeolocation({
+      latitude: start.latitude + (i * 8) / 111195,
+      longitude: start.longitude,
+      accuracy: 5,
+    });
+    await page.waitForTimeout(1100);
+  }
+  await expect(km).not.toHaveText("0,00");
+  await page.getByRole("button", { name: "Pausar" }).click();
+  await page.getByRole("button", { name: "Terminar" }).click();
+  await expect(
+    page.getByRole("heading", { name: "¡Bien ahí, Luca!" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /Recorrido de la salida/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Volver a Mis salidas" }).click();
+  await expect(page.locator(".my-runs-item")).toHaveCount(1);
+  await page.locator(".my-runs-item").click();
+  await expect(
+    page.getByRole("dialog", { name: "Detalle de la salida" }),
+  ).toBeVisible();
+});

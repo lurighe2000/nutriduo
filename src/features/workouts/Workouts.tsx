@@ -15,6 +15,7 @@ import {
 } from "../../components/ui";
 import { niceDate } from "../../utils/date";
 import RunningLog from "./RunningLog";
+import MySalidas from "./MySalidas";
 import HomeRoutine from "./HomeRoutine";
 export default function Workouts() {
   const { profile: p, data, date, repo, run, notify } = useApp();
@@ -69,6 +70,7 @@ export default function Workouts() {
       <p className="page-subtitle">
         Técnica primero. La constancia hace el resto.
       </p>
+      <MySalidas onManual={() => setRunningLog(true)} />
       <div className="workout-intro">
         <div>
           <span className="eyebrow">TU PLAN</span>
