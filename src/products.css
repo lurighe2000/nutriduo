@@ -426,3 +426,20 @@
   display: grid;
   gap: 12px;
 }
+.product-category {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--duo-1, var(--primary));
+}
+.product-photo {
+  min-height: 64px;
+}
+.product-photo:disabled {
+  opacity: 0.75;
+}
+dialog.modal.product-sheet,
+.app-shell dialog.modal.product-sheet {
+  background: var(--neo-bg, var(--surface));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

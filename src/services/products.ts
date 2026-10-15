@@ -8,6 +8,9 @@ const responseSchema = z.object({
     .object({
       product_name: z.string().optional(),
       product_name_es: z.string().optional(),
+      generic_name_es: z.string().optional(),
+      generic_name: z.string().optional(),
+      categories: z.string().optional(),
       brands: z.string().optional(),
       quantity: z.string().optional(),
       serving_quantity: z.union([z.number(), z.string()]).optional(),
@@ -64,6 +67,9 @@ export async function fetchProduct(profileId: ProfileId, barcode: string) {
   const fields = [
     "product_name",
     "product_name_es",
+    "generic_name_es",
+    "generic_name",
+    "categories",
     "brands",
     "quantity",
     "serving_quantity",
@@ -144,6 +150,16 @@ export async function fetchProduct(profileId: ProfileId, barcode: string) {
       description: name.slice(0, 150),
     },
     quantity: p.quantity?.slice(0, 60) || undefined,
+    category:
+      (
+        p.generic_name_es ||
+        p.generic_name ||
+        (p.categories ?? "").split(",").pop() ||
+        ""
+      )
+        .replace(/^[a-z]{2}:/, "")
+        .trim()
+        .slice(0, 120) || undefined,
     image:
       image && /^https:\/\//.test(image) && image.length <= 500
         ? image

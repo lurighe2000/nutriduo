@@ -13,6 +13,7 @@ export const sharedProductSchema = z
     name: z.string().trim().min(1).max(150),
     brand: z.string().max(150).default(""),
     quantity: z.string().max(60).optional(),
+    category: z.string().max(120).optional(),
     image: z
       .string()
       .max(500)

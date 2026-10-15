@@ -8,6 +8,8 @@ export default tseslint.config(
       "playwright-report/**",
       "test-results/**",
       "**/.wrangler/**",
+      // Review screenshots and Playwright traces left by agents.
+      ".impeccable/**",
     ],
   },
   js.configs.recommended,

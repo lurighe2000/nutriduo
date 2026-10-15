@@ -1,3 +1,4 @@
+import { labelRequestSchema, labelResponseSchema } from "./labelContract";
 import { analysisPhotos } from "./photos";
 import { z } from "zod";
 import {
@@ -189,6 +190,27 @@ export async function analyzeMeal(
   const input = analysisRequestSchema.parse({ photos: images, description });
   return analysisResponseSchema.parse(
     await request(connection, "/analyze", input, signal),
+  );
+}
+/** Reads a package's nutrition table from one photo. */
+export async function readNutritionLabel(
+  id: ProfileId,
+  photo: string,
+  signal?: AbortSignal,
+) {
+  const connection = currentAIConnection(id);
+  if (!connection)
+    throw new Error(
+      "Para leer etiquetas conectá el análisis de comidas en Más → Análisis de comidas.",
+    );
+  const [image] = await analysisPhotos([photo], signal);
+  return labelResponseSchema.parse(
+    await request(
+      connection,
+      "/label",
+      labelRequestSchema.parse({ photo: image }),
+      signal,
+    ),
   );
 }
 export async function searchNutrition(

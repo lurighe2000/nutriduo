@@ -72,6 +72,7 @@ export const foodSchema = baseSchema.extend({
   nutritionReference: nutritionReferenceSchema.optional(),
   // Packaged products (barcode): label details shared in "Productos de la casa".
   quantity: z.string().max(60).optional(),
+  category: z.string().max(120).optional(),
   image: z.string().max(500).optional(),
   ingredients: z.string().max(2000).optional(),
   allergens: z.array(z.string().max(60)).max(30).optional(),
