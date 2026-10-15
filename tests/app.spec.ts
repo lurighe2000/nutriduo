@@ -37,8 +37,8 @@ async function manualMeal(page: Page) {
   await page.getByLabel("Nombre de la comida").fill("Almuerzo de prueba");
   await page.getByRole("button", { name: "Agregar componente manual" }).click();
   await page.getByLabel("Alimento", { exact: true }).fill("Arroz de prueba");
-  await page.getByLabel("Cantidad (g / ml)").fill("200");
-  await page.getByText("Valores por 100 g / ml").click();
+  await page.getByLabel("Cantidad (g)").fill("200");
+  await page.getByText("Valores por 100 g").click();
   await page.getByLabel("kcal / 100", { exact: true }).fill("130");
   await page.getByLabel("Proteína g / 100").fill("3");
   await page.getByLabel("Carbos g / 100").fill("28");
@@ -59,10 +59,11 @@ for (const name of ["Luca", "Ari"]) {
         models.push(request.url());
     });
     await page.setViewportSize({ width: 412, height: 915 });
+    await page.clock.setFixedTime(new Date(new Date().setHours(12, 0, 0, 0)));
     await setup(page, name);
-    const character = name === "Luca" ? "Stitch" : "Angel";
+    const character = "tu bulldog";
     const companion = page.getByRole("region", {
-      name: `Tu compañero: ${character}`,
+      name: "Tu compañero: bulldog",
     });
     await expect(companion.locator(".cartoon-character")).toHaveCount(1);
     await expect(companion.locator("canvas")).toHaveCount(0);
@@ -76,7 +77,7 @@ for (const name of ["Luca", "Ari"]) {
         "scratch",
         { timeout: 15000 },
       );
-      await page.getByRole("button", { name: "Jugar con Stitch" }).click();
+      await page.getByRole("button", { name: "Jugar con tu bulldog" }).click();
       await expect(companion.locator(".companion-art")).toHaveAttribute(
         "data-motion",
         "look",
@@ -107,8 +108,8 @@ for (const name of ["Luca", "Ari"]) {
           ),
         ).toBe(true);
         const stage = await companion.locator(".companion-stage").boundingBox();
-        expect(stage?.height).toBe(210);
-        expect(stage?.width).toBeGreaterThan(180);
+        expect(stage?.height).toBe(110);
+        expect(stage?.width).toBe(94);
         const drawing = await companion
           .locator(".cartoon-character")
           .boundingBox();
@@ -344,7 +345,7 @@ test("selectores centrados conservan valores y formularios en comidas, entreno, 
     .fill("Borrador que debe conservarse");
   await pickCentered(page, "Momento", "Cena");
   await page.getByRole("button", { name: "Agregar componente manual" }).click();
-  await page.getByText("Valores por 100 g / ml", { exact: false }).click();
+  await page.getByText("Valores por 100 g", { exact: false }).click();
   await pickCentered(page, "Procedencia", "Etiqueta");
   await page.getByRole("button", { name: "Momento", exact: true }).click();
   await page
@@ -1284,8 +1285,8 @@ test("perfil, comida, edición de gramos, peso, PIN y aislamiento", async ({
   await manualMeal(page);
   await expect(page.locator(".ring-text strong")).toHaveText("260");
   await navigate(page, "Comidas");
-  await page.getByRole("button", { name: "Editar gramos" }).click();
-  await page.getByLabel("Cantidad (g / ml)").fill("300");
+  await page.getByRole("button", { name: "Editar cantidades" }).click();
+  await page.getByLabel("Cantidad (g)").fill("300");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await navigate(page, "Inicio");
   await expect(page.locator(".ring-text strong")).toHaveText("390");
@@ -1357,7 +1358,7 @@ test("producto, corrección, IA validada y receta", async ({ page }) => {
     "10",
   );
   await product.getByRole("button", { name: "Agregar a la comida" }).click();
-  await page.getByLabel("Cantidad (g / ml)").fill("150");
+  await page.getByLabel("Cantidad (g)").fill("150");
   await page.getByRole("button", { name: "Confirmar y registrar" }).click();
   await expect(page.locator(".ring-text strong")).toHaveText("300");
   await page
@@ -1397,7 +1398,7 @@ test("producto, corrección, IA validada y receta", async ({ page }) => {
   await page.getByLabel("Nombre de la receta").fill("Mi receta");
   await page.getByRole("button", { name: "Agregar componente manual" }).click();
   await page.getByLabel("Alimento", { exact: true }).fill("Ingrediente");
-  await page.getByText("Valores por 100 g / ml").click();
+  await page.getByText("Valores por 100 g").click();
   await page.getByLabel("kcal / 100", { exact: true }).fill("200");
   await page.getByLabel("Porciones de la receta").fill("2");
   await page
@@ -1766,7 +1767,7 @@ test("fotos de comida se suman en carga manual, persisten y restauran fotos anti
   await setup(page);
   await manualMeal(page);
   await navigate(page, "Comidas");
-  await page.getByRole("button", { name: "Editar gramos" }).click();
+  await page.getByRole("button", { name: "Editar cantidades" }).click();
   await page
     .getByLabel("Elegir fotos de comida")
     .setInputFiles(["public/icon-192.png", "public/icon-512.png"]);
@@ -1818,7 +1819,7 @@ test("fotos de comida se suman en carga manual, persisten y restauran fotos anti
   await expect(page.locator(".toast")).toHaveText("Backup restaurado");
   await navigate(page, "Comidas");
   await expect(page.locator(".meal-detail .meal-photo-card")).toHaveCount(1);
-  await page.getByRole("button", { name: "Editar gramos" }).click();
+  await page.getByRole("button", { name: "Editar cantidades" }).click();
   await expect(
     page.getByAltText("Comida registrada", { exact: true }),
   ).toHaveAttribute("src", original!);

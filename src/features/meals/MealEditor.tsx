@@ -39,6 +39,8 @@ import ProductsPanel from "./ProductsPanel";
 import AIAnalyzer from "./AIAnalyzer";
 import NutritionLookup from "./NutritionLookup";
 import Micronutrients from "../../components/Micronutrients";
+import MealQuantity from "./MealQuantity";
+import { measurementOf, quantityReady } from "../../services/mealQuantity";
 import { aiSchema } from "../../schemas";
 import { z } from "zod";
 export function blankItem(): Item {
@@ -62,20 +64,13 @@ export function ItemFields({
 }) {
   const total = itemTotal(item);
   return (
-    <div className="ingredient">
+    <div className="ingredient item-with-quantity">
       <div className="ingredient-top">
         <Field
           label="Alimento"
           value={item.name}
           required
           onChange={(e) => onChange({ ...item, name: e.target.value })}
-        />
-        <NumberField
-          label="Cantidad (g / ml)"
-          value={item.grams}
-          min={0.1}
-          max={10000}
-          onChange={(n) => onChange({ ...item, grams: n })}
         />
         <button
           className="icon-button danger"
@@ -86,12 +81,33 @@ export function ItemFields({
           <Trash2 size={18} />
         </button>
       </div>
+      <MealQuantity item={item} onChange={onChange} />
       <details>
-        <summary>Valores por 100 g / ml · {SOURCE_LABELS[item.source]}</summary>
+        <summary>
+          Valores por 100 {measurementOf(item).basis} ·{" "}
+          {SOURCE_LABELS[item.source]}
+        </summary>
         <p className="muted small">
           Copiá los valores por 100 de la etiqueta. Si el dato es por porción,
           convertí según el peso de esa porción.
         </p>
+        <ChoicePicker
+          label="Medida de la ficha nutricional"
+          value={measurementOf(item).basis}
+          options={[
+            { value: "g", label: "Valores por 100 g" },
+            { value: "ml", label: "Valores por 100 ml" },
+          ]}
+          onChange={(value) =>
+            onChange({
+              ...item,
+              measurement: {
+                basis: value as "g" | "ml",
+                mode: value as "g" | "ml",
+              },
+            })
+          }
+        />
         <div className="macro-fields">
           {(["calories", "protein", "carbs", "fat", "fiber"] as const).map(
             (k, i) => (
@@ -141,9 +157,15 @@ export function ItemFields({
         </div>
       </details>
       <div className="item-total">
-        Esta cantidad: ≈ {rounded(total.calories)} kcal ·{" "}
-        {rounded(total.protein)} g proteína · {rounded(total.carbs)} g carbos ·{" "}
-        {rounded(total.fat)} g grasas
+        {quantityReady(item) ? (
+          <>
+            Esta cantidad: ≈ {rounded(total.calories)} kcal ·{" "}
+            {rounded(total.protein)} g proteína · {rounded(total.carbs)} g
+            carbos · {rounded(total.fat)} g grasas
+          </>
+        ) : (
+          "Completá la equivalencia para ver el aporte de esta cantidad."
+        )}
       </div>
       {item.nutritionReference && (
         <p className="muted small">
@@ -173,7 +195,7 @@ export function ItemFields({
           completarla desde la etiqueta.
         </p>
       )}
-      <Micronutrients items={[item]} />
+      {quantityReady(item) && <Micronutrients items={[item]} />}
       <NutritionLookup item={item} onChange={onChange} />
     </div>
   );
@@ -227,6 +249,7 @@ export default function MealEditor({
         foodId: food.id,
         name: food.name,
         grams,
+        measurement: food.measurement ?? { basis: food.unit, mode: food.unit },
         per100: food.per100,
         source: food.source,
         cooking: "",
@@ -292,6 +315,8 @@ export default function MealEditor({
                       per100: item.per100,
                       source: item.source,
                       servingSize: item.grams,
+                      unit: measurementOf(item).basis,
+                      measurement: item.measurement,
                       micronutrientsPer100: item.micronutrientsPer100,
                       nutritionReference: item.nutritionReference,
                       fiberKnown: item.fiberKnown,
@@ -664,18 +689,30 @@ export default function MealEditor({
             </>
           )}
           <div className="editor-total">
-            <span>{recipeMode ? "Por porción" : "Total de la comida"}</span>
-            <strong>
-              ≈ {rounded(total.calories / (recipeMode ? servings : 1))} kcal
-            </strong>
-            <small>
-              {rounded(total.protein / (recipeMode ? servings : 1))} g proteína
-              · {rounded(total.carbs / (recipeMode ? servings : 1))} g carbos ·{" "}
-              {rounded(total.fat / (recipeMode ? servings : 1))} g grasas
-            </small>
+            {items.every(quantityReady) ? (
+              <>
+                <span>{recipeMode ? "Por porción" : "Total de la comida"}</span>
+                <strong>
+                  ≈ {rounded(total.calories / (recipeMode ? servings : 1))} kcal
+                </strong>
+                <small>
+                  {rounded(total.protein / (recipeMode ? servings : 1))} g
+                  proteína ·{" "}
+                  {rounded(total.carbs / (recipeMode ? servings : 1))} g carbos
+                  · {rounded(total.fat / (recipeMode ? servings : 1))} g grasas
+                </small>
+              </>
+            ) : (
+              <span>Completá las cantidades para ver el total.</span>
+            )}
           </div>
-          <Micronutrients items={items} />
-          <Button type="submit" disabled={busy || photosBusy || !items.length}>
+          {items.every(quantityReady) && <Micronutrients items={items} />}
+          <Button
+            type="submit"
+            disabled={
+              busy || photosBusy || !items.length || !items.every(quantityReady)
+            }
+          >
             {busy
               ? "Guardando…"
               : recipeMode

@@ -7,6 +7,7 @@ import {
 } from "../../services/integratedAI";
 import type { Item } from "../../schemas";
 import type { NutrientFood } from "../../services/aiContract";
+import { rebaseQuantity } from "../../services/mealQuantity";
 export default function NutritionLookup({
   item,
   onChange,
@@ -76,8 +77,15 @@ export default function NutritionLookup({
           className="list-button"
           key={food.nutritionReference.id}
           onClick={() => {
+            const rebased = rebaseQuantity(item, "g");
+            if (!rebased) {
+              setError(
+                "Esta ficha está por 100 g. Indicá primero el peso de 100 ml en la cantidad para poder convertirla.",
+              );
+              return;
+            }
             onChange({
-              ...item,
+              ...rebased,
               per100: food.per100,
               micronutrientsPer100: food.micronutrientsPer100,
               nutritionReference: food.nutritionReference,

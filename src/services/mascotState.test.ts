@@ -9,6 +9,24 @@ const base = {
   currentDay: true,
 };
 describe("compañero según registros", () => {
+  it("se muestra triste por cargas pendientes al final del día, sin afirmar que no comiste", () => {
+    expect(
+      companionState({ ...base, meals: 0, logOverdue: true }),
+    ).toMatchObject({
+      mood: "support",
+      focus: "meal",
+      action: "Registrar una comida",
+    });
+    expect(companionState({ ...base, meals: 0, logOverdue: false }).mood).toBe(
+      "neutral",
+    );
+    expect(
+      companionState({ ...base, currentDay: false, logOverdue: true }).mood,
+    ).toBe("neutral");
+    expect(
+      companionState({ ...base, complete: true, logOverdue: true }).mood,
+    ).toBe("celebrate");
+  });
   it("no interpreta datos ausentes ni un día histórico como un fracaso", () => {
     expect(
       companionState({

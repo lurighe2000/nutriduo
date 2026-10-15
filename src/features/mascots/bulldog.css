@@ -1,0 +1,224 @@
+.bulldog-character {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.bulldog-character g,
+.bulldog-character path {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.dog-body {
+  animation: dog-breathe 4s ease-in-out infinite;
+  transform-origin: 50% 100% !important;
+}
+.dog-head {
+  animation: dog-idle 7s ease-in-out infinite;
+  transform-origin: 50% 80% !important;
+}
+.dog-ear-left {
+  transform-origin: 70% 95% !important;
+  animation: dog-ear 8s ease-in-out infinite;
+}
+.dog-ear-right {
+  transform-origin: 30% 95% !important;
+  animation: dog-ear 8s ease-in-out 2s infinite;
+}
+.dog-open-eyes {
+  animation: dog-blink 5.8s linear infinite;
+}
+.dog-closed-eyes {
+  opacity: 0;
+  animation: dog-lids 5.8s linear infinite;
+}
+.dog-tail {
+  transform-origin: 5% 50% !important;
+}
+[data-mood="happy"] .dog-tail,
+[data-mood="celebrate"] .dog-tail {
+  animation: dog-wag 0.5s ease-in-out infinite alternate;
+}
+[data-mood="support"] .dog-ear-left {
+  animation: none;
+  transform: rotate(-10deg);
+}
+[data-mood="support"] .dog-ear-right {
+  animation: none;
+  transform: rotate(10deg);
+}
+[data-mood="support"] .dog-head {
+  animation-name: dog-soft;
+}
+[data-motion="wave"] .dog-paw,
+[data-motion="point"] .dog-paw {
+  animation: dog-paw 2.6s ease-in-out both;
+  transform-origin: 50% 5% !important;
+}
+[data-motion="look"] .dog-head,
+[data-motion="reference"] .dog-head,
+[data-motion="nose"] .dog-head {
+  animation: dog-look 3.2s ease-in-out both;
+}
+[data-motion="scratch"] .dog-ear-right {
+  animation: dog-scratch 2.8s ease-in-out both;
+}
+[data-motion="celebrate"] .dog-body,
+[data-motion="dance"] .dog-body,
+[data-motion="headstand"] .dog-body {
+  animation: dog-hop 3s ease-in-out both;
+}
+[data-motion="sad"] .dog-head {
+  animation: dog-soft 3.2s ease-in-out both;
+}
+.bulldog-character[data-running="false"] * {
+  animation-play-state: paused !important;
+}
+@keyframes dog-breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.012);
+  }
+}
+@keyframes dog-idle {
+  0%,
+  30%,
+  100% {
+    transform: rotate(0);
+  }
+  45%,
+  65% {
+    transform: rotate(-3deg);
+  }
+  82% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes dog-ear {
+  0%,
+  75%,
+  88%,
+  100% {
+    transform: rotate(0);
+  }
+  80% {
+    transform: rotate(-5deg);
+  }
+  84% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes dog-blink {
+  0%,
+  40%,
+  44%,
+  77%,
+  81%,
+  100% {
+    transform: scaleY(1);
+  }
+  42%,
+  79% {
+    transform: scaleY(0.04);
+  }
+}
+@keyframes dog-lids {
+  0%,
+  40%,
+  44%,
+  77%,
+  81%,
+  100% {
+    opacity: 0;
+  }
+  42%,
+  79% {
+    opacity: 1;
+  }
+}
+@keyframes dog-wag {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(11deg);
+  }
+}
+@keyframes dog-soft {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  35%,
+  70% {
+    transform: translateY(2px) rotate(3deg);
+  }
+}
+@keyframes dog-look {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  42% {
+    transform: rotate(-6deg);
+  }
+  65%,
+  82% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes dog-paw {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  20%,
+  70% {
+    transform: translateY(-9px) rotate(-18deg);
+  }
+  35%,
+  58% {
+    transform: translateY(-12px) rotate(-30deg);
+  }
+}
+@keyframes dog-scratch {
+  0%,
+  20%,
+  80%,
+  100% {
+    transform: rotate(0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: rotate(13deg);
+  }
+  40%,
+  60% {
+    transform: rotate(-8deg);
+  }
+}
+@keyframes dog-hop {
+  0%,
+  15%,
+  45%,
+  75%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  30% {
+    transform: translateY(-7px) rotate(-2deg);
+  }
+  60% {
+    transform: translateY(-7px) rotate(2deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bulldog-character * {
+    animation: none !important;
+  }
+}

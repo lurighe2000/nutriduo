@@ -1,14 +1,14 @@
 # Compañeros 2D de NutriDuo
 
 Luca pidió retirar las mascotas 3D y confirmó usar dibujos vectoriales animados.
-Inicio y `mascots.html` usan ahora `CartoonCharacter.tsx`: trazos originales con
-colores planos, contornos y partes articuladas. No se usan fotogramas oficiales.
+Inicio y `mascots.html` usan ahora `BulldogCharacter.tsx`: un dibujo original
+del bulldog francés de las fotos de Luca, con partes articuladas.
 
-- Stitch azul para Luca; Angel rosa para Ari. Angel conserva pestañas, flor,
-  V blanca corta y antenas dibujadas detrás del cuerpo.
-- Respiración, parpadeo, orejas, cola, saludo, mirada, manos, señal, baile y
-  celebración. Stitch tiene una rutina invertida con entrada y salida.
-- `cartoon.css` anima transformaciones y opacidad; no hay WebGL, Three.js,
+- Negro atigrado, pecho blanco, orejas grandes y hocico corto. Collar con el
+  acento de cada perfil. Inicio reserva 94 × 110px al lado del mensaje.
+- Respiración, parpadeo, orejas, cola, patita, mirada y pequeños festejos.
+  La expresión es neutral, contenta o triste suave según los registros.
+- `bulldog.css` anima transformaciones y opacidad; no hay WebGL, Three.js,
   modelos descargados ni un bucle de React por fotograma.
 - `useCartoonMotion.ts` coordina las acciones completas y su cola, congela los
   tiempos al pausar u ocultar y respeta movimiento reducido. La pausa del perfil

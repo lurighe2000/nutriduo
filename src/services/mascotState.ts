@@ -9,6 +9,7 @@ export function companionState(input: {
   complete: boolean;
   currentDay: boolean;
   trained?: boolean;
+  logOverdue?: boolean;
 }): {
   mood: CompanionMood;
   focus: CompanionFocus;
@@ -25,6 +26,13 @@ export function companionState(input: {
       focus: "progress",
       message: "Cada día cuenta en tu recorrido.",
       action: "Ver mi progreso",
+    };
+  if (input.logOverdue && !input.complete)
+    return {
+      mood: "support",
+      focus: "meal",
+      message: "Quedaron comidas sin registrar. Las retomamos cuando puedas.",
+      action: "Registrar una comida",
     };
   if (input.trained && !input.complete)
     return {

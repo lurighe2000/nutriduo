@@ -37,15 +37,25 @@ Fixed to the bottom (12px + safe area), height 96, bar top 31, raised circle r=2
 
 ## Character companions
 
-Inicio uses Stitch for Luca and Angel for Ari, inside one reserved 210px stage.
-The user replaced the 3D direction on 15/10: use original 2D vector drawings,
-flat cel colors, ink outlines and articulated parts. Stitch stays blue; Angel
-stays bright pink with long antennae behind her body, lashes, flower and white V.
-Do not reintroduce GLBs, Three.js or WebGL. Pause CSS motion when hidden,
-outside the viewport or paused by the user. Respect reduced motion.
-Animate drawn parts with transform/opacity. Keep characters inside their stage and preserve
-touch targets. Missing food entries or rest days never imply failure. Celebrate
-consistency without asking for extra food or exercise.
+The user selected a compact French bulldog on 15/10, replacing Stitch and Angel.
+Use the supplied dog photos: dark brindle coat, white chest, upright bat ears and
+short muzzle. Original 2D articulated SVG; no GLBs, Three.js or WebGL. Inicio
+reserves only 94 × 110px beside its message. Keep full ears and paws visible.
+The collar uses the profile accent; the coat keeps its natural color in both profiles.
+Mood is neutral at the start, happy as entries accumulate, celebratory on completed
+goals and softly sad for unfinished targets in a closed day or fewer than two meal
+entries after 21:00. The latter describes pending records, never skipped eating.
+Past dates are neutral and rest is not penalized. Pause motion when hidden,
+outside the viewport or paused by the user. Respect reduced motion and animate
+only transform/opacity. Keep touch targets at least 44px.
+
+## Meal quantities
+
+Cantidad and Medida sit side by side in each ingredient. Use the existing centered
+ChoicePicker for g, ml and units. Reveal only the needed equivalence field. Keep
+nutrition totals in the label's declared 100 g / 100 ml basis; never assume a piece
+is 100 g or that 1 ml weighs 1 g. Units and equivalences persist with meals,
+recipes and saved foods. Legacy entries remain grams.
 
 ## Checks before shipping
 

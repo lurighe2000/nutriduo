@@ -5,12 +5,21 @@ import { db } from "../../db";
 import { profileSchema } from "../../schemas";
 import { haptic } from "../../components/motion";
 import type { companionState } from "../../services/mascotState";
-import { companionGesture } from "../../services/mascotMotion";
-import CartoonCharacter from "./CartoonCharacter";
+import BulldogCharacter from "./BulldogCharacter";
+import type { Motion } from "./types";
 import { useCartoonMotion } from "./useCartoonMotion";
 import "./companion.css";
 
 type State = ReturnType<typeof companionState>;
+function dogGesture(mood: State["mood"], step: number): Motion {
+  const gestures: Motion[] =
+    mood === "celebrate"
+      ? ["celebrate", "wave", "look"]
+      : mood === "support"
+        ? ["look", "sad", "wave"]
+        : ["scratch", "look", "wave", "dance"];
+  return gestures[step % gestures.length];
+}
 export default function Companion({
   state,
   onFocus,
@@ -19,8 +28,7 @@ export default function Companion({
   onFocus: () => void;
 }) {
   const { profile, run } = useApp();
-  const character = profile.id === "ari" ? "angel" : "stitch";
-  const name = character === "angel" ? "Angel" : "Stitch";
+  const name = "tu bulldog";
   const paused = profile.mascotPaused ?? false;
   const { host, pose, play, running, reduced } = useCartoonMotion(paused);
   const latest = useRef(state);
@@ -31,18 +39,13 @@ export default function Companion({
     let next = performance.now() + 8000;
     const timer = setInterval(() => {
       if (performance.now() < next) return;
-      if (
-        play(
-          companionGesture(character, latest.current.mood, gesture.current),
-          false,
-        )
-      ) {
+      if (play(dogGesture(latest.current.mood, gesture.current), false)) {
         gesture.current++;
         next = performance.now() + 8000;
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [character, play]);
+  }, [play]);
   useEffect(() => {
     if (paused || reduced) return;
     const reaction = `${state.mood}:${state.focus}`;
@@ -63,8 +66,7 @@ export default function Companion({
   return (
     <section
       className="companion"
-      aria-label={`Tu compañero: ${name}`}
-      data-character={character}
+      aria-label="Tu compañero: bulldog"
       data-mood={state.mood}
     >
       <button
@@ -72,62 +74,74 @@ export default function Companion({
         aria-label={`Jugar con ${name}`}
         disabled={paused || reduced}
         onClick={() => {
-          if (play(companionGesture(character, state.mood, gesture.current))) {
+          if (play(dogGesture(state.mood, gesture.current))) {
             gesture.current++;
             haptic();
           }
         }}
       >
         <span ref={host} className="companion-art" data-motion={pose.name}>
-          <CartoonCharacter
+          <BulldogCharacter
             key={pose.id}
-            character={character}
+            mood={state.mood}
             motion={pose.name}
             running={running}
           />
         </span>
-        <span className="companion-floor" aria-hidden="true" />
       </button>
-      <div className="companion-toolbar">
-        <span>{name} · tu compañero</span>
+      <div className="companion-copy">
+        <div className="companion-toolbar">
+          <span>
+            {state.mood === "support"
+              ? "Te acompaño"
+              : state.mood === "celebrate"
+                ? "¡Bien ahí!"
+                : state.mood === "happy"
+                  ? "Vamos sumando"
+                  : "Estoy con vos"}
+          </span>
+          <button
+            type="button"
+            className="companion-pause"
+            disabled={reduced}
+            aria-label={
+              reduced
+                ? "Movimiento reducido"
+                : paused
+                  ? `Activar movimiento de ${name}`
+                  : `Pausar movimiento de ${name}`
+            }
+            aria-pressed={paused || reduced}
+            onClick={() => {
+              void run(async () =>
+                db.transaction("rw", db.profiles, async () => {
+                  const current = await db.profiles.get(profile.id);
+                  if (current)
+                    await db.profiles.put(
+                      profileSchema.parse({
+                        ...current,
+                        mascotPaused: !paused,
+                      }),
+                    );
+                }),
+              );
+            }}
+          >
+            {paused || reduced ? <Play size={15} /> : <Pause size={15} />}
+          </button>
+        </div>
+        <p className="companion-message">{state.message}</p>
         <button
-          type="button"
-          className="companion-pause"
-          disabled={reduced}
-          aria-label={
-            reduced
-              ? "Movimiento reducido"
-              : paused
-                ? `Activar movimiento de ${name}`
-                : `Pausar movimiento de ${name}`
-          }
-          aria-pressed={paused || reduced}
+          className="text-button companion-focus"
           onClick={() => {
-            void run(async () =>
-              db.transaction("rw", db.profiles, async () => {
-                const current = await db.profiles.get(profile.id);
-                if (current)
-                  await db.profiles.put(
-                    profileSchema.parse({ ...current, mascotPaused: !paused }),
-                  );
-              }),
-            );
+            play("point");
+            onFocus();
           }}
         >
-          {paused || reduced ? <Play size={15} /> : <Pause size={15} />}
+          {state.action}
+          <ArrowRight size={15} />
         </button>
       </div>
-      <p className="companion-message">{state.message}</p>
-      <button
-        className="text-button companion-focus"
-        onClick={() => {
-          play("point");
-          onFocus();
-        }}
-      >
-        {state.action}
-        <ArrowRight size={15} />
-      </button>
     </section>
   );
 }

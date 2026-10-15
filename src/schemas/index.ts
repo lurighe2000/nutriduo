@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { measurementSchema as mealMeasurementSchema } from "../services/mealQuantity";
 export const nonnegative = z.number().finite().min(0).max(100000);
 export const dateSchema = z
   .string()
@@ -58,6 +59,7 @@ export const foodSchema = baseSchema.extend({
   per100: macrosSchema,
   servingSize: z.number().positive().max(10000).default(100),
   unit: z.enum(["g", "ml"]).default("g"),
+  measurement: mealMeasurementSchema.optional(),
   verified: z.boolean().default(false),
   favorite: z.boolean().default(false),
   sourceUrl: z.string().default(""),
@@ -81,6 +83,7 @@ export const itemSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1).max(150),
   grams: z.number().positive().max(10000),
+  measurement: mealMeasurementSchema.optional(),
   per100: macrosSchema,
   source: sourceSchema,
   confidence: z.number().min(0).max(1).optional(),

@@ -1,11 +1,7 @@
 {
-  "format": "Original animated 2D vector drawings, authored in the NutriDuo source code.",
-  "source": "src/features/mascots/CartoonCharacter.tsx and cartoon.css",
-  "characters": {
-    "stitch": "Blue Stitch for Luca. Appearance guided by the user-supplied 34b7ec5240d03ce0f7c245f5621f4dde.jpg and the traditional cartoon design.",
-    "angel": "Pink Angel for Ari, with eyelashes, flower, white V and antennae behind her body. Appearance guided by the user-supplied e9d7c2032d1d829d746280cefeae2df4.jpg, reinterpreted in flat 2D."
-  },
-  "animation": "Locally authored articulated SVG/CSS gestures. No original film frames, 3D models, WebGL or AI calls at runtime.",
-  "characterRights": "Stitch and Angel are Disney characters. These custom drawings are not official Disney assets or an assertion of ownership of the characters.",
-  "cost": "No paid services, keys or external downloads are required for playback."
+  "reference": "Two dog photographs supplied by Luca on 15 October 2026: dark brindle French bulldog, white chest, upright ears and short muzzle.",
+  "animation": "Locally authored SVG/CSS gestures, expressions and persistent pause. No original photographs are published.",
+  "source": "src/features/mascots/BulldogCharacter.tsx and bulldog.css",
+  "cost": "No paid services, keys, WebGL or model downloads are needed for playback.",
+  "format": "Original animated 2D vector drawing"
 }

@@ -78,6 +78,16 @@ export default function Dashboard() {
     return () => cancelAnimationFrame(t);
   }, []);
   const [party, setParty] = useState(false);
+  const [clock, setClock] = useState(() => new Date());
+  useEffect(() => {
+    const refresh = () => setClock(new Date());
+    const timer = setInterval(refresh, 60000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
   useEffect(() => {
     if (!party) return;
     const t = setTimeout(() => setParty(false), 1800);
@@ -107,6 +117,7 @@ export default function Dashboard() {
     calories: total.calories / Math.max(1, goal.calories),
     complete: completed?.complete ?? false,
     currentDay: date === today(),
+    logOverdue: clock.getHours() >= 21 && meals.length < 2,
     trained:
       data.sessions.some((s) => s.date === date) ||
       !!data.activity.find((a) => a.date === date)?.runs?.length,
