@@ -1332,6 +1332,12 @@ test("producto, corrección, IA validada y receta", async ({ page }) => {
   await page
     .getByRole("button", { name: "Buscar producto", exact: true })
     .click();
+  const product = page.getByRole("dialog", { name: "Producto" });
+  await expect(product).toContainText("Producto de prueba");
+  await expect(product.getByRole("row", { name: /Proteínas/ })).toContainText(
+    "10",
+  );
+  await product.getByRole("button", { name: "Agregar a la comida" }).click();
   await page.getByLabel("Cantidad (g / ml)").fill("150");
   await page.getByRole("button", { name: "Confirmar y registrar" }).click();
   await expect(page.locator(".ring-text strong")).toHaveText("300");
@@ -2253,4 +2259,39 @@ test("importa un GPX, cambia la meta semanal y arma la imagen para compartir", a
   await expect(
     page.getByRole("button", { name: "Guardar imagen" }),
   ).toBeEnabled();
+});
+
+test("escanea un producto que no existe, lo carga y queda en Productos de la casa", async ({
+  page,
+}) => {
+  await page.route("**/api/v2/product/**", (r) =>
+    r.fulfill({ status: 404, json: { status: 0 } }),
+  );
+  await setup(page);
+  await page
+    .getByRole("button", { name: "Registrar comida", exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Código de barras", exact: true })
+    .click();
+  await page
+    .getByLabel("Código de barras", { exact: true })
+    .fill("7790580123456");
+  await page
+    .getByRole("button", { name: "Buscar producto", exact: true })
+    .click();
+  const sheet = page.getByRole("dialog", { name: "Datos de la etiqueta" });
+  await sheet.getByLabel("Nombre del producto").fill("Yogur de casa");
+  await sheet.getByLabel("Energía (kcal) cada 100").fill("80");
+  await sheet.getByLabel("Proteínas (g)").fill("9");
+  await sheet.getByLabel("Carbohidratos (g)").fill("6");
+  await sheet.getByLabel("Grasas (g)", { exact: true }).fill("2");
+  await sheet.getByRole("button", { name: "Guardar producto" }).click();
+  const product = page.getByRole("dialog", { name: "Producto" });
+  await expect(product).toContainText("Yogur de casa");
+  await product.getByRole("button", { name: "Cerrar" }).click();
+  await expect(
+    page.getByRole("region", { name: "Productos de la casa" }),
+  ).toContainText("Yogur de casa");
 });

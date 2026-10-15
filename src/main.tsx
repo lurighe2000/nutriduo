@@ -15,6 +15,7 @@ import "./refinement.css";
 import "./duo-ui.css";
 import "./duo-gate.css";
 import "./run.css";
+import "./products.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AppUpdate />

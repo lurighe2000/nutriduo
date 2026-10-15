@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   Plus,
   Trash2,
@@ -35,7 +35,7 @@ import {
 import { compressPhoto, mealPhotos } from "../../services/photos";
 import MealPhotos from "./MealPhotos";
 import { aiItems, aiPrompt, parseAnalysis } from "../../services/ai";
-import { lookupProduct } from "../../services/products";
+import ProductsPanel from "./ProductsPanel";
 import AIAnalyzer from "./AIAnalyzer";
 import NutritionLookup from "./NutritionLookup";
 import Micronutrients from "../../components/Micronutrients";
@@ -209,8 +209,6 @@ export default function MealEditor({
     [json, setJson] = useState(""),
     [description, setDescription] = useState(""),
     [questions, setQuestions] = useState<string[]>([]),
-    [code, setCode] = useState(""),
-    [scanning, setScanning] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [remember, setRemember] = useState(true);
@@ -221,14 +219,14 @@ export default function MealEditor({
   const total = mealTotal(items);
   const update = (idx: number, item: Item) =>
     setItems((v) => v.map((it, i) => (i === idx ? item : it)));
-  function addFood(food: Food) {
+  function addFood(food: Food, grams = food.servingSize) {
     setItems((v) => [
       ...v,
       {
         id: crypto.randomUUID(),
         foodId: food.id,
         name: food.name,
-        grams: food.servingSize,
+        grams,
         per100: food.per100,
         source: food.source,
         cooking: "",
@@ -312,21 +310,6 @@ export default function MealEditor({
           : e instanceof Error
             ? e.message
             : "No pudimos guardar.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function findProduct(value = code) {
-    setBusy(true);
-    setError("");
-    try {
-      const food = await lookupProduct(p.id, value);
-      await repo.save("foods", food);
-      addFood(food);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "No pudimos consultar el producto.",
       );
     } finally {
       setBusy(false);
@@ -505,42 +488,7 @@ export default function MealEditor({
           </Button>
         </>
       ) : tab === "código" ? (
-        <>
-          <p>
-            Buscá un producto en Open Food Facts y verificá los datos con su
-            etiqueta.
-          </p>
-          <Field
-            label="Código de barras"
-            inputMode="numeric"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Ej. 779…"
-          />
-          <div className="actions">
-            <Button disabled={busy} onClick={() => void findProduct()}>
-              {busy ? "Buscando…" : "Buscar producto"}
-            </Button>
-            <Button secondary onClick={() => setScanning(!scanning)}>
-              <Camera size={17} />
-              Usar cámara
-            </Button>
-          </div>
-          {scanning && (
-            <Scanner
-              onResult={(v) => {
-                setScanning(false);
-                setCode(v);
-                void findProduct(v);
-              }}
-              onError={setError}
-            />
-          )}
-          <p className="muted small">
-            Si no aparece, cargá los valores de la etiqueta en Componentes. La
-            cámara requiere HTTPS y permiso.
-          </p>
-        </>
+        <ProductsPanel onAdd={(food, grams) => addFood(food, grams)} />
       ) : tab === "IA externa" ? (
         <>
           <p>
@@ -740,48 +688,6 @@ export default function MealEditor({
       )}
     </Modal>
   );
-}
-function Scanner({
-  onResult,
-  onError,
-}: {
-  onResult: (code: string) => void;
-  onError: (s: string) => void;
-}) {
-  const video = useRef<HTMLVideoElement>(null);
-  const handlers = useRef({ onResult, onError });
-  handlers.current = { onResult, onError };
-  useEffect(() => {
-    let cancelled = false;
-    let controls: { stop: () => void } | undefined;
-    void import("@zxing/browser")
-      .then(async ({ BrowserMultiFormatReader }) => {
-        if (cancelled) return;
-        const reader = new BrowserMultiFormatReader();
-        controls = await reader.decodeFromVideoDevice(
-          undefined,
-          video.current!,
-          (result) => {
-            if (result && !cancelled) {
-              cancelled = true;
-              controls?.stop();
-              handlers.current.onResult(result.getText());
-            }
-          },
-        );
-        if (cancelled) controls.stop();
-      })
-      .catch(() =>
-        handlers.current.onError(
-          "No pudimos abrir la cámara. Revisá el permiso o escribí el código.",
-        ),
-      );
-    return () => {
-      cancelled = true;
-      controls?.stop();
-    };
-  }, []);
-  return <video className="scanner" ref={video} muted playsInline />;
 }
 export function foodFromPortion(
   name: string,
